@@ -1,4 +1,4 @@
-package com.example.kbbqreview
+package com.example.kbbqreview.data.location
 
 import android.Manifest
 import android.content.Context
