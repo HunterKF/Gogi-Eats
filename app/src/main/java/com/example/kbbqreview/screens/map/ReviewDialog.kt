@@ -15,9 +15,15 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.example.kbbqreview.CameraView
+import com.example.kbbqreview.R
+import com.example.kbbqreview.Screen
 import com.example.kbbqreview.camera.CameraViewModel
 import com.example.kbbqreview.data.roomplaces.StoredPlace
 import com.example.kbbqreview.data.roomplaces.StoredPlaceViewModel
@@ -36,6 +42,7 @@ fun ReviewDialog(
     val showCamera = cameraViewModel.shouldShowCamera
     val scope = rememberCoroutineScope()
     val focusRequester = FocusRequester()
+
 
     Column {
         val textFieldState = remember {
@@ -61,6 +68,7 @@ fun ReviewDialog(
             shape = RoundedCornerShape(16.dp),
             color = Color.White
         ) {
+
             Box(
                 contentAlignment = Alignment.Center
             ) {
@@ -99,22 +107,36 @@ fun ReviewDialog(
                         title = "Atmosphere",
                         focusManager = focusManager
                     )
-                    CameraButton(showCamera = showCamera)
-                    submitButton(
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .fillMaxWidth(),
-                        storedPlaceViewModel = storedPlaceViewModel,
-                        mapViewModel = mapViewModel,
-                        valueMeat = valueMeat,
-                        valueBanchan = valueBanchan,
-                        valueAmenities = valueAmenities,
-                        valueAtmosphere = valueAtmosphere,
-                        context = context,
-                        openDialog = openDialog,
-                        textFieldState = textFieldState
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        CancelButton(
+                            modifier = Modifier.weight(1f),
+                            openDialog = openDialog
+                        )
+                        submitButton(
+                            modifier = Modifier
+                                .weight(2f)
+                                .padding(MaterialTheme.spacing.small),
+                            storedPlaceViewModel = storedPlaceViewModel,
+                            mapViewModel = mapViewModel,
+                            valueMeat = valueMeat,
+                            valueBanchan = valueBanchan,
+                            valueAmenities = valueAmenities,
+                            valueAtmosphere = valueAtmosphere,
+                            context = context,
+                            openDialog = openDialog,
+                            textFieldState = textFieldState
+                        )
+                        CameraButton(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(MaterialTheme.spacing.small),
+                            showCamera = showCamera
+                        )
+                    }
 
-                    )
                 }
             }
             if (showCamera.value) {
@@ -129,6 +151,20 @@ fun ReviewDialog(
                 })
             }
         }
+
+
+    }
+
+}
+
+
+@Composable
+fun CancelButton(modifier: Modifier, openDialog: MutableState<Boolean>) {
+    IconButton(onClick = { openDialog.value = false }) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_outline_cancel),
+            contentDescription = "Cancel review"
+        )
     }
 }
 
@@ -176,10 +212,13 @@ fun radioGroups(value: MutableState<Int>, title: String, focusManager: FocusMana
 }
 
 @Composable
-fun CameraButton(showCamera: MutableState<Boolean>) {
+fun CameraButton(showCamera: MutableState<Boolean>, modifier: Modifier) {
 
-    IconButton(onClick = { showCamera.value = true}) {
-
+    IconButton(onClick = { showCamera.value = true }) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_outline_camera),
+            contentDescription = "Open camera"
+        )
     }
 }
 
@@ -197,7 +236,7 @@ fun submitButton(
     textFieldState: MutableState<String>
 
 ) {
-    Button(modifier = Modifier.fillMaxWidth(), onClick = {
+    Button(modifier = Modifier, onClick = {
         if (valueMeat.value != 0 && valueBanchan.value != 0 && valueAmenities.value != 0 && valueAtmosphere.value != 0 && textFieldState.value != "") {
             /*storedPlaceViewModel.addStoredPlace(
                 StoredPlace(

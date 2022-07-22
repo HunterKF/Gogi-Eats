@@ -3,6 +3,7 @@ package com.example.kbbqreview.camera
 import android.content.Context
 import android.media.MediaScannerConnection
 import android.net.Uri
+import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -57,7 +58,7 @@ fun ImageCapture.takePicture(
                     arrayOf(savedUri.toFile().absolutePath),
                     arrayOf(mimeType)
                 ) { _, uri ->
-
+                    Log.d("pictureTaken", "This is the value of uri: $uri")
                 }
                 onImageCaptured(savedUri, false)
             }

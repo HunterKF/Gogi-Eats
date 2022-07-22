@@ -13,15 +13,19 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.navigation.compose.rememberNavController
+import coil.compose.rememberAsyncImagePainter
 import com.example.kbbqreview.camera.CameraViewModel
 import com.example.kbbqreview.ui.theme.KBBQReviewTheme
 import com.google.android.libraries.places.api.Places
@@ -65,6 +69,13 @@ class MainActivity : ComponentActivity() {
                 Navigation(
                     navController = navController,
                     applicationViewModel = applicationViewModel
+                )
+            }
+            if (shouldShowPhoto.value) {
+                Image(
+                    painter = rememberAsyncImagePainter(photoUri),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize()
                 )
             }
             requestCameraPermission()

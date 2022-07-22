@@ -1,8 +1,6 @@
 package com.example.kbbqreview
 
 import android.app.Application
-import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -14,6 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.kbbqreview.data.location.LocationDetails
 import com.example.kbbqreview.data.roomplaces.StoredPlaceViewModel
 import com.example.kbbqreview.screens.map.MapViewModel
@@ -25,12 +27,12 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
-import kotlinx.coroutines.launch
 
 @Composable
 fun MapScreen(
     location: LocationDetails,
-    focusManager: FocusManager
+    focusManager: FocusManager,
+    navController: NavHostController
 ) {
 
     val context = LocalContext.current
@@ -47,39 +49,67 @@ fun MapScreen(
     val openDialog = remember { mutableStateOf(false) }
     val editMessage = remember { mutableStateOf("") }
     val scaffoldState = rememberScaffoldState()
+
     Scaffold(
-        scaffoldState = scaffoldState,
         floatingActionButton = {
             FloatingActionButton(onClick = {
                 cameraPositionState.move(
-                CameraUpdateFactory.newLatLngZoom(
-                    LatLng(
-                        location.latitude,
-                        location.longitude
-                    ), 15f
+                    CameraUpdateFactory.newLatLngZoom(
+                        LatLng(
+                            location.latitude,
+                            location.longitude
+                        ), 15f
+                    )
                 )
-            ) }) {
+            }) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_baseline_my_location_24),
                     contentDescription = "My Location"
                 )
             }
+        },
+        bottomBar = {
+            BottomNavigation {
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentDestination = navBackStackEntry?.destination
+                items.forEach { screen ->
+                    BottomNavigationItem(
+                        icon = { Icon(screen.vector, contentDescription = null) },
+                        label = { Text(screen.label) },
+                        selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                        onClick = {
+                            navController.navigate(screen.route) {
+                                // Pop up to the start destination of the graph to
+                                // avoid building up a large stack of destinations
+                                // on the back stack as users select items
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                // Avoid multiple copies of the same destination when
+                                // reselecting the same item
+                                launchSingleTop = true
+                                // Restore state when reselecting a previously selected item
+                                restoreState = true
+                            }
+                        }
+                    )
+                }
+            }
         }
-    ) {
-
+    ) { innerPadding ->
         GoogleMap(
-            modifier = Modifier,
+            modifier = Modifier.padding(innerPadding),
             cameraPositionState = cameraPositionState,
             uiSettings = uiSettings,
             onMapLongClick = {
                 viewModel.newMarkerPositionLat.value = it.latitude
                 viewModel.newMarkerPositionLng.value = it.longitude
                 viewModel.newMarkerState.value = true
-                Toast.makeText(
+                /*Toast.makeText(
                     context,
                     "Here is the current Lat Lng: ${it.latitude} and ${it.longitude}",
                     Toast.LENGTH_LONG
-                ).show()
+                ).show()*/
             }
         ) {
             Marker(position = LatLng(location.latitude, location.longitude), flat = true)
@@ -93,56 +123,10 @@ fun MapScreen(
                     viewModel.newMarkerPositionLng.value
                 ),
                 onInfoWindowClick = { marker ->
-                    openDialog.value = true
-                    Toast.makeText(
-                        context,
-                        "Here is the current Lat Lng: ${marker.id} and $marker",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    navController.navigate(Screen.AddReview.route)
 
                 }
             )
-
-
-        }
-
-    }
-
-    if (openDialog.value) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    color = contentColorFor(MaterialTheme.colors.background)
-                        .copy(alpha = 0.6f)
-                )
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = {
-                        openDialog.value = false
-                    }
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .padding(MaterialTheme.spacing.medium)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {
-                            openDialog.value = true
-                        })
-            ) {
-                ReviewDialog(
-                    openDialog = openDialog, context = context,
-                    storedPlaceViewModel = storedPlaceViewModel,
-                    mapViewModel = viewModel,
-                    focusManager = focusManager
-                )
-            }
-
         }
     }
 }
