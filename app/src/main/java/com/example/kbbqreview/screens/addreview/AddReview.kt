@@ -2,8 +2,10 @@ package com.example.kbbqreview.screens.story
 
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,21 +24,18 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.example.kbbqreview.CameraView
+import coil.compose.rememberAsyncImagePainter
+import coil.compose.rememberImagePainter
+import com.example.kbbqreview.*
 import com.example.kbbqreview.R
-import com.example.kbbqreview.Screen
 import com.example.kbbqreview.camera.CameraViewModel
 import com.example.kbbqreview.data.roomplaces.StoredPlace
 import com.example.kbbqreview.data.roomplaces.StoredPlaceViewModel
-import com.example.kbbqreview.items
 import com.example.kbbqreview.screens.map.MapViewModel
 import com.example.kbbqreview.ui.theme.spacing
-import kotlinx.coroutines.launch
 
 @Composable
-fun AddReview(focusManager: FocusManager, navController: NavHostController) {
-    val cameraViewModel = CameraViewModel()
-    val showCamera = cameraViewModel.shouldShowCamera
+fun AddReview(focusManager: FocusManager, navController: NavHostController, cameraViewModel: CameraViewModel) {
     val scope = rememberCoroutineScope()
     val focusRequester = FocusRequester()
 
@@ -44,6 +43,8 @@ fun AddReview(focusManager: FocusManager, navController: NavHostController) {
     val application = context.applicationContext as Application
     val storedPlaceViewModel = StoredPlaceViewModel(application)
     val mapViewModel = MapViewModel()
+    val TAG = "CAMERA TAG"
+    Log.d(TAG, "Current value from AddReview of showRow is: ${cameraViewModel.showPhotoRow.value}")
 
     Scaffold(
         bottomBar = {
@@ -95,6 +96,9 @@ fun AddReview(focusManager: FocusManager, navController: NavHostController) {
             fun onTextFieldChange(query: String) {
                 textFieldState.value = query
             }
+
+            val intent = (context as MainActivity).intent
+            val photoUri = intent.getStringExtra("image")
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = Color.White
@@ -138,6 +142,18 @@ fun AddReview(focusManager: FocusManager, navController: NavHostController) {
                             title = "Atmosphere",
                             focusManager = focusManager
                         )
+                        Text("${cameraViewModel.showPhotoRow.value}")
+                        if (cameraViewModel.showPhotoRow.value) {
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                Text("It's true! It's all true, m'lord!")
+                                Image(
+                                    modifier = Modifier.size(100.dp),
+                                    painter = rememberAsyncImagePainter(cameraViewModel.photoUri),
+                                    contentDescription = "Captured image"
+                                )
+                            }
+                        }
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
@@ -164,31 +180,18 @@ fun AddReview(focusManager: FocusManager, navController: NavHostController) {
                                 modifier = Modifier
                                     .weight(1f)
                                     .padding(MaterialTheme.spacing.small),
-                                showCamera = showCamera,
-                                navController = navController
+                                navController = navController,
+                                context = context
                             )
                         }
 
                     }
-                }
-                if (showCamera.value) {
-                    CameraView(onImageCaptured = { uri, fromGallery ->
-                        Log.d("TAG", "Image Uri Captured from Camera View")
-//Todo : use the uri as needed
-
-                    }, onError = { imageCaptureException ->
-                        scope.launch {
-                            Toast.makeText(context, "An error has occurred.", Toast.LENGTH_LONG).show()
-                        }
-                    })
                 }
             }
 
 
         }
     }
-
-
 }
 
 
@@ -247,12 +250,12 @@ fun radioGroups(value: MutableState<Int>, title: String, focusManager: FocusMana
 
 @Composable
 fun CameraButton(
-    showCamera: MutableState<Boolean>,
-    modifier: Modifier,
-    navController: NavHostController
+    navController: NavHostController,
+    context: Context,
+    modifier: Modifier
 ) {
-
-    IconButton(onClick = { /*showCamera.value = true */ navController.navigate(Screen.CameraContainer.route)}) {
+    val context = LocalContext.current
+    IconButton(onClick = { /*showCamera.value = true */ navController.navigate(Screen.MainContentCamera.route)}) {
         Icon(
             painter = painterResource(id = R.drawable.ic_outline_camera),
             contentDescription = "Open camera"
@@ -309,3 +312,4 @@ fun submitButton(
         Text("Submit Review")
     }
 }
+

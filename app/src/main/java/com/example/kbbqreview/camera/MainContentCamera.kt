@@ -1,0 +1,88 @@
+package com.example.kbbqreview.camera
+
+import android.content.Intent
+import android.net.Uri
+import android.util.Log
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.Button
+import androidx.compose.material.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import androidx.navigation.NavController
+import coil.compose.rememberImagePainter
+import com.example.kbbqreview.MainActivity
+import com.example.kbbqreview.Screen
+import com.example.kbbqreview.camera.gallery.GallerySelect
+
+@Composable
+fun MainContentCamera(
+    modifier: Modifier = Modifier,
+    cameraViewModel: CameraViewModel,
+    navController: NavController
+) {
+    val TAG = "CAMERA TAG"
+    var imageUri by remember { mutableStateOf(cameraViewModel.EMPTY_IMAGE_URI) }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    Log.d(TAG, "The camera has opened.")
+    if (imageUri != cameraViewModel.EMPTY_IMAGE_URI) {
+        Box(modifier = modifier) {
+            Log.d(TAG, "This area has loaded.")
+            Image(
+                modifier = Modifier.fillMaxSize(),
+                painter = rememberImagePainter(imageUri),
+                contentDescription = "Captured image"
+            )
+            //this deletes the URI and sets it back to empty URI
+            Button(
+                modifier = Modifier.align(Alignment.BottomCenter),
+                onClick = {
+                    cameraViewModel.photoUri = imageUri
+                    cameraViewModel.showPhotoRow.value = true
+                    navController.navigate(Screen.AddReview.route)
+                    imageUri = cameraViewModel.EMPTY_IMAGE_URI
+                }
+            ) {
+                Text("Select image")
+            }
+        }
+    } else {
+        var showGallerySelect by remember { mutableStateOf(false) }
+        if (showGallerySelect) {
+            GallerySelect(
+                modifier = modifier,
+                cameraViewModel = cameraViewModel,
+                onImageUri = { uri ->
+                    showGallerySelect = false
+                    imageUri = uri
+                }
+            )
+        } else {
+            Box(modifier = modifier) {
+                CameraCapture(
+                    modifier = modifier,
+                    onImageFile = { file ->
+                        imageUri = file.toUri()
+                    }
+                )
+                Button(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(4.dp),
+                    onClick = {
+                        showGallerySelect = true
+                    }
+                ) {
+                    Text("Select from Gallery")
+                }
+            }
+        }
+    }
+}

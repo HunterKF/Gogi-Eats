@@ -6,4 +6,7 @@
     <string name="profile">profile</string>
     <string name="map">map</string>
     <string name="story">story</string>
+    <string name="icn_photo_view_backhand_description">go back</string>
+    <string name="icn_photo_view_check_description">select photo</string>
+    <string name="title_activity_camera">CameraActivity</string>
 </resources>

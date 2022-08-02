@@ -16,15 +16,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
-import com.example.kbbqreview.CameraView
 import com.example.kbbqreview.R
-import com.example.kbbqreview.Screen
-import com.example.kbbqreview.camera.CameraViewModel
 import com.example.kbbqreview.data.roomplaces.StoredPlace
 import com.example.kbbqreview.data.roomplaces.StoredPlaceViewModel
 import com.example.kbbqreview.ui.theme.spacing
@@ -38,9 +31,6 @@ fun ReviewDialog(
     mapViewModel: MapViewModel,
     focusManager: FocusManager
 ) {
-    val cameraViewModel = CameraViewModel()
-    val showCamera = cameraViewModel.shouldShowCamera
-    val scope = rememberCoroutineScope()
     val focusRequester = FocusRequester()
 
 
@@ -132,29 +122,15 @@ fun ReviewDialog(
                         CameraButton(
                             modifier = Modifier
                                 .weight(1f)
-                                .padding(MaterialTheme.spacing.small),
-                            showCamera = showCamera
+                                .padding(MaterialTheme.spacing.small)
                         )
                     }
 
                 }
             }
-            if (showCamera.value) {
-                CameraView(onImageCaptured = { uri, fromGallery ->
-                    Log.d("TAG", "Image Uri Captured from Camera View")
-//Todo : use the uri as needed
 
-                }, onError = { imageCaptureException ->
-                    scope.launch {
-                        Toast.makeText(context, "An error has occurred.", Toast.LENGTH_LONG).show()
-                    }
-                })
-            }
         }
-
-
     }
-
 }
 
 
@@ -212,9 +188,9 @@ fun radioGroups(value: MutableState<Int>, title: String, focusManager: FocusMana
 }
 
 @Composable
-fun CameraButton(showCamera: MutableState<Boolean>, modifier: Modifier) {
+fun CameraButton(modifier: Modifier) {
 
-    IconButton(onClick = { showCamera.value = true }) {
+    IconButton(onClick = { /*showCamera.value = true*/ }) {
         Icon(
             painter = painterResource(id = R.drawable.ic_outline_camera),
             contentDescription = "Open camera"
@@ -273,8 +249,10 @@ fun submitButton(
     }
 }
 
-@Preview
 @Composable
+
+
+
 fun preview() {
     val value = remember {
         mutableStateOf(0)
