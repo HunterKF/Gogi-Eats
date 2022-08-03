@@ -26,11 +26,10 @@ fun GallerySelect(
 ) {
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-        onResult = { uri: Uri? ->
-            onImageUri(uri ?: cameraViewModel.EMPTY_IMAGE_URI)
-        }
-    )
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) {
+        it.forEach(onImageUri)
+    }
 
     @Composable
     fun LaunchGallery() {

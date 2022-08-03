@@ -2,12 +2,17 @@ package com.example.kbbqreview.screens.story
 
 import android.app.Application
 import android.content.Context
-import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
+import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -17,6 +22,7 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -25,7 +31,6 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.rememberAsyncImagePainter
-import coil.compose.rememberImagePainter
 import com.example.kbbqreview.*
 import com.example.kbbqreview.R
 import com.example.kbbqreview.camera.CameraViewModel
@@ -35,7 +40,11 @@ import com.example.kbbqreview.screens.map.MapViewModel
 import com.example.kbbqreview.ui.theme.spacing
 
 @Composable
-fun AddReview(focusManager: FocusManager, navController: NavHostController, cameraViewModel: CameraViewModel) {
+fun AddReview(
+    focusManager: FocusManager,
+    navController: NavHostController,
+    cameraViewModel: CameraViewModel
+) {
     val scope = rememberCoroutineScope()
     val focusRequester = FocusRequester()
 
@@ -99,21 +108,28 @@ fun AddReview(focusManager: FocusManager, navController: NavHostController, came
 
             val intent = (context as MainActivity).intent
             val photoUri = intent.getStringExtra("image")
+            val lazyState = rememberLazyListState()
+            val columnState = rememberScrollState()
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = Color.White
             ) {
 
-                Box(
-                    contentAlignment = Alignment.Center
-                ) {
 
-                    Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
+                LazyColumn(
+                    modifier = Modifier
+                        .padding(MaterialTheme.spacing.medium)
+                        .scrollable(state = columnState, orientation = Orientation.Horizontal)
+                ) {
+                    item {
                         Text(
                             modifier = Modifier.padding(MaterialTheme.spacing.small),
                             text = "Review",
                             style = MaterialTheme.typography.h4
                         )
+                    }
+
+                    item {
                         TextField(
                             modifier = Modifier
                                 .focusRequester(focusRequester)
@@ -122,7 +138,10 @@ fun AddReview(focusManager: FocusManager, navController: NavHostController, came
                             singleLine = true,
                             onValueChange = { newValue ->
                                 onTextFieldChange(newValue)
-                            })
+                            }
+                        )
+                    }
+                    item {
                         radioGroups(
                             value = valueMeat, title = "Meat",
                             focusManager = focusManager
@@ -142,18 +161,19 @@ fun AddReview(focusManager: FocusManager, navController: NavHostController, came
                             title = "Atmosphere",
                             focusManager = focusManager
                         )
-                        Text("${cameraViewModel.showPhotoRow.value}")
-                        if (cameraViewModel.showPhotoRow.value) {
-                            Row(modifier = Modifier.fillMaxWidth()) {
-                                Text("It's true! It's all true, m'lord!")
-                                Image(
-                                    modifier = Modifier.size(100.dp),
-                                    painter = rememberAsyncImagePainter(cameraViewModel.photoUri),
-                                    contentDescription = "Captured image"
-                                )
+                    }
+                    if (cameraViewModel.showPhotoRow.value) {
+                        item {
+                            LazyRow(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+                                items(cameraViewModel.selectImages) { uri ->
+                                    ImageCard(uri = uri, cameraViewModel = cameraViewModel, modifier = Modifier.padding(12.dp))
+                                }
+
                             }
                         }
 
+                    }
+                    item {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
@@ -184,13 +204,14 @@ fun AddReview(focusManager: FocusManager, navController: NavHostController, came
                                 context = context
                             )
                         }
-
                     }
+
+
                 }
             }
-
-
         }
+
+
     }
 }
 
@@ -255,7 +276,7 @@ fun CameraButton(
     modifier: Modifier
 ) {
     val context = LocalContext.current
-    IconButton(onClick = { /*showCamera.value = true */ navController.navigate(Screen.MainContentCamera.route)}) {
+    IconButton(onClick = { /*showCamera.value = true */ navController.navigate(Screen.MainContentCamera.route) }) {
         Icon(
             painter = painterResource(id = R.drawable.ic_outline_camera),
             contentDescription = "Open camera"
@@ -312,4 +333,41 @@ fun submitButton(
         Text("Submit Review")
     }
 }
+
+@Composable
+fun ImageCard(uri: Uri, cameraViewModel: CameraViewModel, modifier: Modifier) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(12.dp),
+        shape = RoundedCornerShape(15.dp),
+        elevation = 5.dp
+    ) {
+        Box(
+            modifier = Modifier
+                .height(150.dp)
+                .width(100.dp)
+        ) {
+            Image(
+                contentScale = ContentScale.Crop,
+                painter = rememberAsyncImagePainter(uri),
+                contentDescription = "Captured image",
+                modifier = Modifier.fillMaxSize()
+            )
+            IconButton(
+                modifier = Modifier.align(Alignment.TopEnd),
+                onClick = {
+                    Log.d("LazyRow TAG", "List of selectImages before: ${cameraViewModel.selectImages}")
+                    cameraViewModel.selectImages.remove(uri)
+                    Log.d("LazyRow TAG", "List of selectImages after: ${cameraViewModel.selectImages}")
+
+                }
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_outline_add),
+                    contentDescription = "Image"
+                )
+            }
+        }
+    }
+}
+
 

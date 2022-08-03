@@ -1,7 +1,5 @@
 package com.example.kbbqreview.camera
 
-import android.content.Intent
-import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -17,7 +15,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
-import com.example.kbbqreview.MainActivity
 import com.example.kbbqreview.Screen
 import com.example.kbbqreview.camera.gallery.GallerySelect
 
@@ -29,8 +26,8 @@ fun MainContentCamera(
 ) {
     val TAG = "CAMERA TAG"
     var imageUri by remember { mutableStateOf(cameraViewModel.EMPTY_IMAGE_URI) }
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
+    var imageUri2 = remember { mutableListOf(cameraViewModel.EMPTY_IMAGE_URI) }
+
     Log.d(TAG, "The camera has opened.")
     if (imageUri != cameraViewModel.EMPTY_IMAGE_URI) {
         Box(modifier = modifier) {
@@ -44,7 +41,7 @@ fun MainContentCamera(
             Button(
                 modifier = Modifier.align(Alignment.BottomCenter),
                 onClick = {
-                    cameraViewModel.photoUri = imageUri
+                    cameraViewModel.selectImages.add(imageUri)
                     cameraViewModel.showPhotoRow.value = true
                     navController.navigate(Screen.AddReview.route)
                     imageUri = cameraViewModel.EMPTY_IMAGE_URI
@@ -60,16 +57,24 @@ fun MainContentCamera(
                 modifier = modifier,
                 cameraViewModel = cameraViewModel,
                 onImageUri = { uri ->
+                    cameraViewModel.selectImages.add(uri)
+                    Log.d(TAG, "It has fired. Current value of imageUri: $imageUri")
+                    Log.d(TAG, "It has fired. Current value of imageUri: $imageUri2")
+                    Log.d(TAG, "It has fired. Current value of imageUri: ${cameraViewModel.selectImages}")
                     showGallerySelect = false
-                    imageUri = uri
+
+                    cameraViewModel.showPhotoRow.value = true
+                    navController.navigate(Screen.AddReview.route)
                 }
             )
         } else {
             Box(modifier = modifier) {
+                //This is the camera function
                 CameraCapture(
                     modifier = modifier,
                     onImageFile = { file ->
                         imageUri = file.toUri()
+
                     }
                 )
                 Button(
