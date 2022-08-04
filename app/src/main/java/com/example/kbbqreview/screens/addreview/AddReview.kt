@@ -332,7 +332,7 @@ fun submitButton(
                     valueAtmosphere.value
                 )
             )
-
+            Toast.makeText(context, "Saved!", Toast.LENGTH_LONG).show()
         } else {
             Toast.makeText(context, "Add location!", Toast.LENGTH_LONG).show()
         }
