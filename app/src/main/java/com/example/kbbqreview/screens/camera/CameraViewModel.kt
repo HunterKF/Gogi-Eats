@@ -15,8 +15,6 @@ class CameraViewModel : ViewModel() {
     val EMPTY_IMAGE_URI: Uri = Uri.parse("file://dev/null")
 
 
-    var imageUri = { mutableStateOf(EMPTY_IMAGE_URI) }
-
     var selectImages =  mutableStateListOf<Uri>()
 
     fun getAllPhotos(): List<Uri> {

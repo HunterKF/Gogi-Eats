@@ -1,8 +1,11 @@
 package com.example.kbbqreview.screens.addreview
 
+import android.net.Uri
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
+import com.example.kbbqreview.data.photos.Photo
 import com.google.android.gms.maps.model.LatLng
 
 class ReviewViewModel : ViewModel() {
@@ -28,6 +31,10 @@ class ReviewViewModel : ViewModel() {
         stateLng.value = longitude.toString()
         stateLat.value = latitude.toString()
     }
+
+
+
+
 
 
 

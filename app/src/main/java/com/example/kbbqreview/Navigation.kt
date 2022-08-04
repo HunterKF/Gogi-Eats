@@ -17,6 +17,7 @@ import com.example.kbbqreview.screens.camera.MainContentCamera
 import com.example.kbbqreview.screens.map.currentLocation.ChooseLocationMap
 import com.example.kbbqreview.screens.story.AddReview
 import com.example.kbbqreview.screens.story.Story
+import com.example.kbbqreview.screens.story.StoryViewModel
 
 @Composable
 fun Navigation(
@@ -33,6 +34,7 @@ fun Navigation(
 
     val cameraViewModel = CameraViewModel()
     val reviewViewModel = ReviewViewModel()
+    val storyViewModel = StoryViewModel()
 
 
     NavHost(
@@ -50,7 +52,7 @@ fun Navigation(
             }
         }
         composable(Screen.Story.route) {
-            Story(navController)
+            Story(navController, storyViewModel = storyViewModel)
         }
         composable(Screen.AddReview.route) {
             AddReview(

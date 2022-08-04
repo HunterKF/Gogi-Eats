@@ -318,7 +318,10 @@ fun submitButton(
                     valueAmenities.value,
                     valueAtmosphere.value
                 )
-            )*/
+            )*//*
+            if (reviewViewModel.photoList.isNotEmpty()) {
+                reviewViewModel.uploadPhotos()
+            }*/
             storedPlaceViewModel.save(
                 storedPlace = StoredPlace(
                     0L,

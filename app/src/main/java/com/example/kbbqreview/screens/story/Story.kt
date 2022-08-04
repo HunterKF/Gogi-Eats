@@ -1,13 +1,13 @@
 package com.example.kbbqreview.screens.story
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -15,7 +15,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.kbbqreview.items
 
 @Composable
-fun Story(navController: NavHostController) {
+fun Story(navController: NavHostController, storyViewModel: StoryViewModel) {
     Scaffold(
         bottomBar = {
             BottomNavigation {
@@ -46,12 +46,22 @@ fun Story(navController: NavHostController) {
             }
         }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(innerPadding)
         ) {
-            Text("story")
+            item {
+                StoryItem(storyViewModel = storyViewModel)
+                Spacer(modifier = Modifier.size(12.dp))
+                StoryItem(storyViewModel)
+                Spacer(modifier = Modifier.size(12.dp))
+                StoryItem(storyViewModel)
+                Spacer(modifier = Modifier.size(12.dp))
+                StoryItem(storyViewModel)
+                Spacer(modifier = Modifier.size(12.dp))
+                StoryItem(storyViewModel)
+            }
         }
     }
 
