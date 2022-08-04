@@ -14,6 +14,7 @@ import androidx.navigation.compose.composable
 import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.screens.camera.MainContentCamera
+import com.example.kbbqreview.screens.map.currentLocation.ChooseLocationMap
 import com.example.kbbqreview.screens.story.AddReview
 import com.example.kbbqreview.screens.story.Story
 
@@ -56,7 +57,9 @@ fun Navigation(
                 focusManager = focusManager,
                 navController = navController,
                 cameraViewModel = cameraViewModel,
-                reviewViewModel = reviewViewModel
+                reviewViewModel = reviewViewModel,
+                location = location,
+                applicationViewModel = applicationViewModel
             )
             startDestination.value = Screen.AddReview.route
         }
@@ -66,6 +69,15 @@ fun Navigation(
                 cameraViewModel = cameraViewModel,
                 navController = navController
             )
+        }
+        composable(Screen.ChooseLocationMap.route) {
+            location?.let { location ->
+                ChooseLocationMap(
+                    location = location,
+                    reviewViewModel = reviewViewModel,
+                    navController = navController
+                )
+            }
         }
 
     }

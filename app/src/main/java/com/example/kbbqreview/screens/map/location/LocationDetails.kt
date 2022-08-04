@@ -1,4 +1,4 @@
-package com.example.kbbqreview.data.location
+package com.example.kbbqreview.screens.map.location
 
 data class LocationDetails(
     val latitude: Double,

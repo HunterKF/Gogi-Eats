@@ -2,6 +2,7 @@ package com.example.kbbqreview.screens.story
 
 import android.app.Application
 import android.content.Context
+import android.graphics.Paint
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -18,15 +19,14 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -41,6 +41,7 @@ import com.example.kbbqreview.data.roomplaces.StoredPlace
 import com.example.kbbqreview.data.roomplaces.StoredPlaceViewModel
 import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.example.kbbqreview.screens.map.MapViewModel
+import com.example.kbbqreview.screens.map.location.LocationDetails
 import com.example.kbbqreview.ui.theme.spacing
 
 @Composable
@@ -48,7 +49,9 @@ fun AddReview(
     focusManager: FocusManager,
     navController: NavHostController,
     cameraViewModel: CameraViewModel,
-    reviewViewModel: ReviewViewModel
+    reviewViewModel: ReviewViewModel,
+    location: LocationDetails?,
+    applicationViewModel: ApplicationViewModel
 ) {
     val focusRequester = FocusRequester()
 
@@ -106,8 +109,6 @@ fun AddReview(
                 shape = RoundedCornerShape(16.dp),
                 color = Color.White
             ) {
-
-
                 LazyColumn(
                     modifier = Modifier
                         .padding(MaterialTheme.spacing.medium)
@@ -134,21 +135,29 @@ fun AddReview(
                         )
                     }
                     item {
-                        radioGroups(
+                        LocationBar(
+                            applicationViewModel = applicationViewModel,
+                            reviewViewModel = reviewViewModel,
+                            location = location,
+                            navController = navController
+                        )
+                    }
+                    item {
+                        reviewBar(
                             value = reviewViewModel.valueMeat, title = "Meat",
                             focusManager = focusManager
                         )
-                        radioGroups(
+                        reviewBar(
                             value = reviewViewModel.valueBanchan,
                             title = "Banchan",
                             focusManager = focusManager
                         )
-                        radioGroups(
+                        reviewBar(
                             value = reviewViewModel.valueAmenities,
                             title = "Amenities",
                             focusManager = focusManager
                         )
-                        radioGroups(
+                        reviewBar(
                             value = reviewViewModel.valueAtmosphere,
                             title = "Atmosphere",
                             focusManager = focusManager
@@ -156,9 +165,11 @@ fun AddReview(
                     }
                     if (cameraViewModel.showPhotoRow.value) {
                         item {
-                            LazyRow(modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp)) {
+                            LazyRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp)
+                            ) {
                                 items(allPhotos) { uri ->
                                     ImageCard(
                                         uri = uri,
@@ -191,7 +202,7 @@ fun AddReview(
                                 valueAmenities = reviewViewModel.valueAmenities,
                                 valueAtmosphere = reviewViewModel.valueAtmosphere,
                                 textFieldState = reviewViewModel.textFieldState,
-                                mapViewModel = mapViewModel,
+                                reviewViewModel = reviewViewModel,
                                 context = context
                             )
                             CameraButton(
@@ -225,7 +236,7 @@ fun CancelButton(modifier: Modifier, onClick: () -> Unit) {
 }
 
 @Composable
-fun radioGroups(value: MutableState<Int>, title: String, focusManager: FocusManager) {
+fun reviewBar(value: MutableState<Int>, title: String, focusManager: FocusManager) {
     Column(
         modifier = Modifier.padding(
             horizontal = MaterialTheme.spacing.large,
@@ -244,10 +255,11 @@ fun radioGroups(value: MutableState<Int>, title: String, focusManager: FocusMana
             var sliderPosition by remember { mutableStateOf(0f) }
             Slider(
                 value = sliderPosition,
-                onValueChange = { sliderPosition = it
-                                value.value = it.toInt()
-                                println(value.value)
-                                },
+                onValueChange = {
+                    sliderPosition = it
+                    value.value = it.toInt()
+                    println(value.value)
+                },
                 valueRange = 1f..3f,
                 onValueChangeFinished = {
                     // launch some business logic update with the state you hold
@@ -263,29 +275,6 @@ fun radioGroups(value: MutableState<Int>, title: String, focusManager: FocusMana
             Text("3", modifier = Modifier.padding(end = MaterialTheme.spacing.small))
         }
     }
-    @Composable
-    fun VerticalLines(dates: List<String>) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(10.dp)
-        ) {
-            val drawPadding: Float = with(LocalDensity.current) { 10.dp.toPx() }
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val yStart = 0f
-                val yEnd = size.height
-                val distance: Float = (size.width.minus(2 * drawPadding)).div(dates.size.minus(1))
-                dates.forEachIndexed { index, step ->
-                    drawLine(
-                        color = Color.Red,
-                        start = Offset(x = drawPadding + index.times(distance), y = yStart),
-                        end = Offset(x = drawPadding + index.times(distance), y = yEnd)
-                    )
-                }
-            }
-        }
-    }
-
 }
 
 @Composable
@@ -312,12 +301,12 @@ fun submitButton(
     valueAmenities: MutableState<Int>,
     valueAtmosphere: MutableState<Int>,
     textFieldState: MutableState<String>,
-    mapViewModel: MapViewModel,
+    reviewViewModel: ReviewViewModel,
     context: Context
 
 ) {
     Button(modifier = Modifier, onClick = {
-        if (valueMeat.value != 0 && valueBanchan.value != 0 && valueAmenities.value != 0 && valueAtmosphere.value != 0 && textFieldState.value != "") {
+        if (reviewViewModel.newMarkerPositionLngReview.value != 0.0 && reviewViewModel.newMarkerPositionLatReview.value != 0.0) {
             /*storedPlaceViewModel.addStoredPlace(
                 StoredPlace(
                     "",
@@ -335,8 +324,8 @@ fun submitButton(
                     0L,
                     "",
                     textFieldState.value,
-                    mapViewModel.newMarkerPositionLat.value,
-                    mapViewModel.newMarkerPositionLat.value,
+                    reviewViewModel.newMarkerPositionLatReview.value,
+                    reviewViewModel.newMarkerPositionLatReview.value,
                     valueMeat.value,
                     valueBanchan.value,
                     valueAmenities.value,
@@ -345,7 +334,7 @@ fun submitButton(
             )
 
         } else {
-            Toast.makeText(context, "Submit all the fields!", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "Add location!", Toast.LENGTH_LONG).show()
         }
 
     }) {
@@ -391,6 +380,54 @@ fun ImageCard(uri: Uri, cameraViewModel: CameraViewModel, modifier: Modifier) {
             }
         }
     }
+}
+
+@Composable
+fun LocationBar(
+    applicationViewModel: ApplicationViewModel,
+    reviewViewModel: ReviewViewModel,
+    location: LocationDetails?,
+    navController: NavHostController
+) {
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(
+                RoundedCornerShape(5.dp)
+            )
+            .border(1.dp, Color.Cyan),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(
+            modifier = Modifier.weight(3f),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(text = reviewViewModel.stateLat.value)
+            Text(text = reviewViewModel.stateLng.value)
+        }
+        IconButton(
+            modifier = Modifier.weight(1f),
+            onClick = {
+                applicationViewModel.startLocationUpdates()
+                reviewViewModel.changeLocation(location!!.longitude, location!!.latitude)
+
+            }) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_baseline_my_location_24),
+                contentDescription = "My location"
+            )
+        }
+        IconButton(
+            modifier = Modifier.weight(1f),
+            onClick = { navController.navigate(Screen.ChooseLocationMap.route) }) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_outline_map),
+                contentDescription = "Open map"
+            )
+        }
+    }
+
 }
 
 

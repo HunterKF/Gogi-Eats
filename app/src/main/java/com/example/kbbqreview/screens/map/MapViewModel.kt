@@ -1,7 +1,7 @@
 package com.example.kbbqreview.screens.map
 
 import androidx.compose.runtime.mutableStateOf
-import com.example.kbbqreview.data.location.LocationDetails
+import com.example.kbbqreview.screens.map.location.LocationDetails
 import com.google.android.gms.maps.model.LatLng
 
 class MapViewModel {
