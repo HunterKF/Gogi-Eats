@@ -18,6 +18,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.kbbqreview.data.location.LocationDetails
 import com.example.kbbqreview.data.roomplaces.StoredPlaceViewModel
+import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.example.kbbqreview.screens.map.MapViewModel
 import com.example.kbbqreview.screens.map.ReviewDialog
 import com.example.kbbqreview.ui.theme.spacing
@@ -32,7 +33,8 @@ import com.google.maps.android.compose.rememberCameraPositionState
 fun MapScreen(
     location: LocationDetails,
     focusManager: FocusManager,
-    navController: NavHostController
+    navController: NavHostController,
+    reviewViewModel: ReviewViewModel
 ) {
 
     val context = LocalContext.current
@@ -123,6 +125,8 @@ fun MapScreen(
                     viewModel.newMarkerPositionLng.value
                 ),
                 onInfoWindowClick = { marker ->
+                    reviewViewModel.newMarkerPositionLatReview.value = marker.position.latitude
+                    reviewViewModel.newMarkerPositionLngReview.value = marker.position.longitude
                     navController.navigate(Screen.AddReview.route)
 
                 }

@@ -1,17 +1,12 @@
-package com.example.kbbqreview.camera
+package com.example.kbbqreview.screens.camera
 
-import android.util.Log
 import android.view.ViewGroup
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.camera.view.PreviewView
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
-import kotlinx.coroutines.launch
 
 @Composable
 fun CameraPreview(

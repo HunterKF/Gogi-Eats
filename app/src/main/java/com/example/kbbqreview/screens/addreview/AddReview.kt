@@ -18,12 +18,15 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -33,9 +36,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.rememberAsyncImagePainter
 import com.example.kbbqreview.*
 import com.example.kbbqreview.R
-import com.example.kbbqreview.camera.CameraViewModel
+import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.data.roomplaces.StoredPlace
 import com.example.kbbqreview.data.roomplaces.StoredPlaceViewModel
+import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.example.kbbqreview.screens.map.MapViewModel
 import com.example.kbbqreview.ui.theme.spacing
 
@@ -43,9 +47,9 @@ import com.example.kbbqreview.ui.theme.spacing
 fun AddReview(
     focusManager: FocusManager,
     navController: NavHostController,
-    cameraViewModel: CameraViewModel
+    cameraViewModel: CameraViewModel,
+    reviewViewModel: ReviewViewModel
 ) {
-    val scope = rememberCoroutineScope()
     val focusRequester = FocusRequester()
 
     val context = LocalContext.current
@@ -53,6 +57,8 @@ fun AddReview(
     val storedPlaceViewModel = StoredPlaceViewModel(application)
     val mapViewModel = MapViewModel()
     val TAG = "CAMERA TAG"
+    val allPhotos = cameraViewModel.getAllPhotos()
+
     Log.d(TAG, "Current value from AddReview of showRow is: ${cameraViewModel.showPhotoRow.value}")
 
     Scaffold(
@@ -86,28 +92,14 @@ fun AddReview(
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
-            val textFieldState = remember {
-                mutableStateOf("")
-            }
-            val valueMeat = remember {
-                mutableStateOf(0)
-            }
-            val valueBanchan = remember {
-                mutableStateOf(0)
-            }
-            val valueAmenities = remember {
-                mutableStateOf(0)
-            }
-            val valueAtmosphere = remember {
-                mutableStateOf(0)
-            }
 
             fun onTextFieldChange(query: String) {
-                textFieldState.value = query
+                reviewViewModel.textFieldState.value = query
             }
 
             val intent = (context as MainActivity).intent
             val photoUri = intent.getStringExtra("image")
+
             val lazyState = rememberLazyListState()
             val columnState = rememberScrollState()
             Surface(
@@ -134,7 +126,7 @@ fun AddReview(
                             modifier = Modifier
                                 .focusRequester(focusRequester)
                                 .fillMaxWidth(),
-                            value = textFieldState.value,
+                            value = reviewViewModel.textFieldState.value,
                             singleLine = true,
                             onValueChange = { newValue ->
                                 onTextFieldChange(newValue)
@@ -143,30 +135,36 @@ fun AddReview(
                     }
                     item {
                         radioGroups(
-                            value = valueMeat, title = "Meat",
+                            value = reviewViewModel.valueMeat, title = "Meat",
                             focusManager = focusManager
                         )
                         radioGroups(
-                            value = valueBanchan,
+                            value = reviewViewModel.valueBanchan,
                             title = "Banchan",
                             focusManager = focusManager
                         )
                         radioGroups(
-                            value = valueAmenities,
+                            value = reviewViewModel.valueAmenities,
                             title = "Amenities",
                             focusManager = focusManager
                         )
                         radioGroups(
-                            value = valueAtmosphere,
+                            value = reviewViewModel.valueAtmosphere,
                             title = "Atmosphere",
                             focusManager = focusManager
                         )
                     }
                     if (cameraViewModel.showPhotoRow.value) {
                         item {
-                            LazyRow(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
-                                items(cameraViewModel.selectImages) { uri ->
-                                    ImageCard(uri = uri, cameraViewModel = cameraViewModel, modifier = Modifier.padding(12.dp))
+                            LazyRow(modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp)) {
+                                items(allPhotos) { uri ->
+                                    ImageCard(
+                                        uri = uri,
+                                        cameraViewModel = cameraViewModel,
+                                        modifier = Modifier.padding(12.dp)
+                                    )
                                 }
 
                             }
@@ -188,11 +186,11 @@ fun AddReview(
                                     .weight(2f)
                                     .padding(MaterialTheme.spacing.small),
                                 storedPlaceViewModel = storedPlaceViewModel,
-                                valueMeat = valueMeat,
-                                valueBanchan = valueBanchan,
-                                valueAmenities = valueAmenities,
-                                valueAtmosphere = valueAtmosphere,
-                                textFieldState = textFieldState,
+                                valueMeat = reviewViewModel.valueMeat,
+                                valueBanchan = reviewViewModel.valueBanchan,
+                                valueAmenities = reviewViewModel.valueAmenities,
+                                valueAtmosphere = reviewViewModel.valueAtmosphere,
+                                textFieldState = reviewViewModel.textFieldState,
                                 mapViewModel = mapViewModel,
                                 context = context
                             )
@@ -243,27 +241,48 @@ fun radioGroups(value: MutableState<Int>, title: String, focusManager: FocusMana
                 .padding(horizontal = MaterialTheme.spacing.small)
                 .fillMaxWidth()
         ) {
-            RadioButton(
-                selected = value.value == 1,
-                onClick = {
-                    value.value = 1
-                    focusManager.clearFocus()
-                })
-            Text("1", modifier = Modifier.padding(end = MaterialTheme.spacing.small))
-            RadioButton(
-                selected = value.value == 2,
-                onClick = {
-                    value.value = 2
-                    focusManager.clearFocus()
-                })
-            Text("2", modifier = Modifier.padding(end = MaterialTheme.spacing.small))
-            RadioButton(
-                selected = value.value == 3,
-                onClick = {
-                    value.value = 3
-                    focusManager.clearFocus()
-                })
+            var sliderPosition by remember { mutableStateOf(0f) }
+            Slider(
+                value = sliderPosition,
+                onValueChange = { sliderPosition = it
+                                value.value = it.toInt()
+                                println(value.value)
+                                },
+                valueRange = 1f..3f,
+                onValueChangeFinished = {
+                    // launch some business logic update with the state you hold
+                    // viewModel.updateSelectedSliderValue(sliderPosition)
+                },
+                steps = 1,
+                colors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colors.secondary,
+                    activeTrackColor = MaterialTheme.colors.secondary
+                )
+            )
+
             Text("3", modifier = Modifier.padding(end = MaterialTheme.spacing.small))
+        }
+    }
+    @Composable
+    fun VerticalLines(dates: List<String>) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(10.dp)
+        ) {
+            val drawPadding: Float = with(LocalDensity.current) { 10.dp.toPx() }
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val yStart = 0f
+                val yEnd = size.height
+                val distance: Float = (size.width.minus(2 * drawPadding)).div(dates.size.minus(1))
+                dates.forEachIndexed { index, step ->
+                    drawLine(
+                        color = Color.Red,
+                        start = Offset(x = drawPadding + index.times(distance), y = yStart),
+                        end = Offset(x = drawPadding + index.times(distance), y = yEnd)
+                    )
+                }
+            }
         }
     }
 
@@ -337,7 +356,9 @@ fun submitButton(
 @Composable
 fun ImageCard(uri: Uri, cameraViewModel: CameraViewModel, modifier: Modifier) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(12.dp),
         shape = RoundedCornerShape(15.dp),
         elevation = 5.dp
     ) {
@@ -355,13 +376,15 @@ fun ImageCard(uri: Uri, cameraViewModel: CameraViewModel, modifier: Modifier) {
             IconButton(
                 modifier = Modifier.align(Alignment.TopEnd),
                 onClick = {
-                    Log.d("LazyRow TAG", "List of selectImages before: ${cameraViewModel.selectImages}")
-                    cameraViewModel.selectImages.remove(uri)
-                    Log.d("LazyRow TAG", "List of selectImages after: ${cameraViewModel.selectImages}")
+                    cameraViewModel.removeOnePhoto(uri)
+                    if (cameraViewModel.selectImages.isEmpty()) {
+                        cameraViewModel.showPhotoRow.value = false
+                    }
 
                 }
             ) {
                 Icon(
+                    modifier = Modifier.rotate(45f),
                     painter = painterResource(id = R.drawable.ic_outline_add),
                     contentDescription = "Image"
                 )

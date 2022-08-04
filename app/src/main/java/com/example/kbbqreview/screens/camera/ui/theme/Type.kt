@@ -1,4 +1,4 @@
-package com.example.kbbqreview.camera.ui.theme
+package com.example.kbbqreview.screens.camera.ui.theme
 
 import androidx.compose.material.Typography
 import androidx.compose.ui.text.TextStyle

@@ -1,4 +1,4 @@
-package com.example.kbbqreview.camera
+package com.example.kbbqreview.screens.camera
 
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button

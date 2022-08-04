@@ -1,4 +1,4 @@
-package com.example.kbbqreview.camera
+package com.example.kbbqreview.screens.camera
 
 import android.net.Uri
 import androidx.compose.runtime.*
@@ -17,7 +17,14 @@ class CameraViewModel : ViewModel() {
 
     var imageUri = { mutableStateOf(EMPTY_IMAGE_URI) }
 
-    var selectImages =  mutableListOf<Uri>()
+    var selectImages =  mutableStateListOf<Uri>()
+
+    fun getAllPhotos(): List<Uri> {
+        return  selectImages
+    }
+    fun removeOnePhoto(uri: Uri) {
+        selectImages.remove(uri)
+    }
     var selectImagesLiveData =  MutableLiveData<List<Uri>>()
     private val list = mutableListOf<Uri>()
     private val _photoList = MutableLiveData<List<Uri>>()

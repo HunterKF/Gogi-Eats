@@ -1,4 +1,4 @@
-package com.example.kbbqreview.camera.gallery
+package com.example.kbbqreview.screens.camera.gallery
 
 import android.Manifest
 import android.content.Intent
@@ -15,8 +15,8 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.kbbqreview.camera.CameraViewModel
-import com.example.kbbqreview.camera.Permission
+import com.example.kbbqreview.screens.camera.CameraViewModel
+import com.example.kbbqreview.screens.camera.Permission
 
 @Composable
 fun GallerySelect(

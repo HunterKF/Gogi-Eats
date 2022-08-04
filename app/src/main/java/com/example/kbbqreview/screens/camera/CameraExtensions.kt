@@ -1,4 +1,4 @@
-package com.example.kbbqreview.camera
+package com.example.kbbqreview.screens.camera
 
 import android.content.Context
 import android.util.Log

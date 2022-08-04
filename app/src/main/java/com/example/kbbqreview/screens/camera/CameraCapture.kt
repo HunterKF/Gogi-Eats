@@ -1,4 +1,4 @@
-package com.example.kbbqreview.camera
+package com.example.kbbqreview.screens.camera
 
 import android.Manifest
 import android.content.Intent

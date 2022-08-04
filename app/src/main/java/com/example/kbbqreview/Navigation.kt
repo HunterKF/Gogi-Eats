@@ -11,9 +11,9 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.kbbqreview.camera.CameraPreview
-import com.example.kbbqreview.camera.CameraViewModel
-import com.example.kbbqreview.camera.MainContentCamera
+import com.example.kbbqreview.screens.addreview.ReviewViewModel
+import com.example.kbbqreview.screens.camera.CameraViewModel
+import com.example.kbbqreview.screens.camera.MainContentCamera
 import com.example.kbbqreview.screens.story.AddReview
 import com.example.kbbqreview.screens.story.Story
 
@@ -31,6 +31,7 @@ fun Navigation(
     }
 
     val cameraViewModel = CameraViewModel()
+    val reviewViewModel = ReviewViewModel()
 
 
     NavHost(
@@ -42,7 +43,8 @@ fun Navigation(
                 MapScreen(
                     location = location,
                     focusManager = focusManager,
-                    navController = navController
+                    navController = navController,
+                    reviewViewModel = reviewViewModel
                 )
             }
         }
@@ -53,7 +55,8 @@ fun Navigation(
             AddReview(
                 focusManager = focusManager,
                 navController = navController,
-                cameraViewModel = cameraViewModel
+                cameraViewModel = cameraViewModel,
+                reviewViewModel = reviewViewModel
             )
             startDestination.value = Screen.AddReview.route
         }

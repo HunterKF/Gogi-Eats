@@ -1,4 +1,4 @@
-package com.example.kbbqreview.camera.ui.theme
+package com.example.kbbqreview.screens.camera.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.MaterialTheme

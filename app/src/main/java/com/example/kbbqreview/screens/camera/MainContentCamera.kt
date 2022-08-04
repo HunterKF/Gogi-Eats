@@ -1,4 +1,4 @@
-package com.example.kbbqreview.camera
+package com.example.kbbqreview.screens.camera
 
 import android.util.Log
 import androidx.compose.foundation.Image
@@ -10,13 +10,12 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
 import com.example.kbbqreview.Screen
-import com.example.kbbqreview.camera.gallery.GallerySelect
+import com.example.kbbqreview.screens.camera.gallery.GallerySelect
 
 @Composable
 fun MainContentCamera(
