@@ -13,10 +13,10 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.example.kbbqreview.screens.map.location.LocationDetails
 import com.example.kbbqreview.data.roomplaces.StoredPlaceViewModel
 import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.example.kbbqreview.screens.map.MapViewModel
+import com.example.kbbqreview.screens.map.location.LocationDetails
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.*
 import com.google.maps.android.compose.GoogleMap
@@ -122,7 +122,7 @@ fun MapScreen(
                 onInfoWindowClick = { marker ->
                     reviewViewModel.newMarkerPositionLatReview.value = marker.position.latitude
                     reviewViewModel.newMarkerPositionLngReview.value = marker.position.longitude
-                    navController.navigate(Screen.Story.route)
+                    navController.navigate(Screen.AddReview.route)
                     println("It changed the values.")
                 }
             )

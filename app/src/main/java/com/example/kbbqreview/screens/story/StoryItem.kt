@@ -42,16 +42,6 @@ fun StoryItem(storyViewModel: StoryViewModel) {
         Column {
             SliderView(state, storyViewModel)
             Spacer(modifier = Modifier.padding(4.dp))
-            DotsIndicator(
-                totalDots = storyViewModel.imageList.size,
-                selectedIndex = state.currentPage
-            )
-
-//            LazyColumn() {
-//                items(mainViewModel.movieListResponse) { item ->
-//                    MovieCard(movie = item)
-//                }
-//            }
         }
     }
 }
@@ -81,49 +71,53 @@ fun SliderView(state: PagerState, storyViewModel: StoryViewModel) {
             }
         }
 
+
+        val imageUrl =
+            remember { mutableStateOf(0) }
         HorizontalPager(
             state = state,
-            count = 3
+            count = storyViewModel.imageList.size, modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
         ) { page ->
-            val imageUrl =
-                remember { mutableStateOf(0) }
-            HorizontalPager(
-                state = state,
-                count = storyViewModel.imageList.size, modifier = Modifier
-                    .height(200.dp)
-                    .fillMaxWidth()
-            ) { page ->
-                imageUrl.value = storyViewModel.imageList[page]
+            imageUrl.value = storyViewModel.imageList[page]
 
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Box(contentAlignment = Alignment.BottomCenter) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(contentAlignment = Alignment.BottomCenter) {
 
-                        val painter = rememberImagePainter(data = imageUrl.value, builder = {
+                    val painter =
+                        rememberImagePainter(data = storyViewModel.imageList[page], builder = {
                             placeholder(R.drawable.ic_circle)
                             scale(coil.size.Scale.FILL)
                         })
-                        Image(
-                            painter = painter, contentDescription = "", Modifier
-                                .padding(8.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .fillMaxSize(), contentScale = ContentScale.Crop
-                        )
-                    }
+                    Image(
+                        painter = painter, contentDescription = "", Modifier
+                            .padding(8.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .fillMaxSize(), contentScale = ContentScale.Crop
+                    )
                 }
+
             }
-            
         }
 
-        Row() {
+        DotsIndicator(
+            totalDots = storyViewModel.imageList.size,
+            selectedIndex = state.currentPage
+        )
+        Row(modifier = Modifier.fillMaxWidth()) {
             Text("To be made...")
         }
     }
 
+
 }
+
+
 @Composable
 fun DotsIndicator(
     totalDots: Int,
