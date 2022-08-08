@@ -29,6 +29,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageMetadata
 import kotlinx.coroutines.Dispatchers
@@ -38,39 +39,67 @@ import java.io.ByteArrayOutputStream
 
 class ApplicationViewModel(application: Application) : AndroidViewModel(application) {
     private val locationLiveData = LocationLiveData(application)
+
+    var readAllData: LiveData<List<StoredPlace>>
+    private var repository: StoredPlaceRepository
+
+    private val searchResults: MutableLiveData<List<StoredPlace>>
+
+    private lateinit var firestore: FirebaseFirestore
+    private var storageReference = FirebaseStorage.getInstance().getReference()
+
+    internal val NEW_NAME = "New restaurant"
+    var user: User? = null
+    var firebaseUser: FirebaseUser? = FirebaseAuth.getInstance().currentUser
+
+    var reviews: MutableLiveData<List<StoredPlace>> = MutableLiveData<List<StoredPlace>>()
+    val eventPhotos: MutableLiveData<List<Photo>> = MutableLiveData<List<Photo>>()
+
+
+    init {
+        val storedPlaceDatabase = StoredPlaceDatabase.getDatabase(application)
+        val storedPlaceDao = storedPlaceDatabase.userDao()
+        repository = StoredPlaceRepository(storedPlaceDao)
+
+        readAllData = repository.readAllData
+        searchResults = repository.searchResults
+
+        firestore = FirebaseFirestore.getInstance()
+        firestore.firestoreSettings = FirebaseFirestoreSettings.Builder().build()
+        listenToReviews()
+    }
+
+    //Location functions
     fun getLocationLiveData() = locationLiveData
 
     fun startLocationUpdates() {
         locationLiveData.startLocationUpdates()
     }
 
-    internal val NEW_NAME = "New restaurant"
-
-    var reviews: MutableLiveData<List<StoredPlace>> = MutableLiveData<List<StoredPlace>>()
     fun listenToReviews() {
-        user?.let {
-            user ->
-            firestore.collection("users").document(user.uid).collection("reviews").addSnapshotListener {
-                snapshot, e ->
-                if (e != null) {
-                    Log.w("Listen failed", e)
-                    return@addSnapshotListener
-                }
-                snapshot?.let {
-                    val allReviews = ArrayList<StoredPlace>()
-                    allReviews.add(StoredPlace(name = NEW_NAME))
-                    val documents = snapshot.documents
-                    documents.forEach {
-                        val review = it.toObject(StoredPlace::class.java)
-                        review?.let {
-                            allReviews.add(it)
-                        }
+        user?.let { user ->
+            firestore.collection("users").document(user.uid).collection("reviews")
+                .addSnapshotListener { snapshot, e ->
+                    if (e != null) {
+                        Log.w("Listen failed", e)
+                        return@addSnapshotListener
                     }
-
+                    snapshot?.let {
+                        val allReviews = ArrayList<StoredPlace>()
+                        allReviews.add(StoredPlace(name = NEW_NAME))
+                        val documents = snapshot.documents
+                        documents.forEach {
+                            val review = it.toObject(StoredPlace::class.java)
+                            review?.let {
+                                allReviews.add(it)
+                            }
+                        }
+                        reviews.value = allReviews
+                    }
                 }
-            }
         }
     }
+
 
     fun signOn(signInLauncher: ManagedActivityResultLauncher<Intent, FirebaseAuthUIAuthenticationResult>) {
         val providers = arrayListOf(
@@ -84,10 +113,6 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
             .build()
         signInLauncher.launch(signinIntent)
     }
-
-
-    var user : User? = null
-    var firebaseUser: FirebaseUser? = FirebaseAuth.getInstance().currentUser
 
 
     fun signInResult(result: FirebaseAuthUIAuthenticationResult) {
@@ -110,25 +135,6 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
         handle.addOnFailureListener { Log.e("Firebase", "Saved failed $it") }
     }
 
-    var readAllData: LiveData<List<StoredPlace>>
-    private var repository: StoredPlaceRepository
-
-    private val searchResults: MutableLiveData<List<StoredPlace>>
-
-    private lateinit var firestore: FirebaseFirestore
-    private var storageReference = FirebaseStorage.getInstance().getReference()
-
-    init {
-        val storedPlaceDatabase = StoredPlaceDatabase.getDatabase(application)
-        val storedPlaceDao = storedPlaceDatabase.userDao()
-        repository = StoredPlaceRepository(storedPlaceDao)
-
-        readAllData = repository.readAllData
-        searchResults = repository.searchResults
-
-        firestore = FirebaseFirestore.getInstance()
-        firestore.firestoreSettings = FirebaseFirestoreSettings.Builder().build()
-    }
 
     fun addStoredPlace(storedPlace: StoredPlace) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -148,22 +154,25 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
 
 
     fun saveReview(storedPlace: StoredPlace, selectImages: SnapshotStateList<Photo>) {
-        user?.let {
-            user ->
+        user?.let { user ->
             val document =
                 if (storedPlace.firebaseId == null || storedPlace.firebaseId.isEmpty()) {
                     //create new review
-                    firestore.collection("users").document(user.uid).collection("reviews").document()
+                    firestore.collection("users").document(user.uid).collection("reviews")
+                        .document()
                 } else {
                     //update review
-                    firestore.collection("reviews").document(user.uid).collection("reviews").document(storedPlace.firebaseId)
+                    firestore.collection("reviews").document(user.uid).collection("reviews")
+                        .document(storedPlace.firebaseId)
                 }
             storedPlace.firebaseId = document.id
             val handle = document.set(storedPlace)
-            handle.addOnSuccessListener { Log.d("Firebase", "Document saved")
-                if (selectImages.isNotEmpty()){
+            handle.addOnSuccessListener {
+                Log.d("Firebase", "Document saved")
+                if (selectImages.isNotEmpty()) {
                     uploadPhotos(selectImages, storedPlace)
-                }}
+                }
+            }
             handle.addOnFailureListener { Log.e("Firebase", "Saved failed $it") }
         }
 
@@ -191,18 +200,66 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
 
     private fun updatePhotoData(photo: Photo, storedPlace: StoredPlace) {
         user?.let { user ->
-            var photoCollection = firestore.collection("users").document(user.uid).collection("reviews").document(storedPlace.firebaseId).collection("photos")
-            var handle = photoCollection.add(photo)
+            val photoCollection =
+                firestore.collection("users").document(user.uid).collection("reviews")
+                    .document(storedPlace.firebaseId).collection("photos")
+            val handle = photoCollection.add(photo)
             handle.addOnSuccessListener {
                 Log.d("Firebase Image", "Successfully updated photo metadata")
                 photo.id = it.id
-                firestore.collection("users").document(user.uid).collection("reviews").document(storedPlace.firebaseId).collection("photos").document(photo.id).set(photo)
+                firestore.collection("users").document(user.uid).collection("reviews")
+                    .document(storedPlace.firebaseId).collection("photos").document(photo.id)
+                    .set(photo)
             }
             handle.addOnFailureListener {
                 Log.e("Firebase Image", "Error updating photo data: ${it.message}")
             }
         }
 
+    }
+
+    fun fetchPhotos(selectImages: SnapshotStateList<Photo>, storedPlace: StoredPlace) {
+        selectImages.clear()
+        user?.let { user ->
+            val photoCollection =
+                firestore.collection("users").document(user.uid).collection("reviews")
+                    .document(storedPlace.firebaseId).collection("photos")
+            val photoListener =
+                photoCollection.addSnapshotListener { querySnapshot, firebaseFirestoreException ->
+                    querySnapshot?.let { querySnapshot ->
+                        val documents = querySnapshot.documents
+                        var inPhotos = ArrayList<Photo>()
+                        documents?.forEach {
+                            val photo = it.toObject(Photo::class.java)
+                            photo?.let { photo ->
+                                inPhotos.add(photo)
+                            }
+                        }
+                        eventPhotos.value = inPhotos
+                    }
+                }
+        }
+    }
+
+    fun fetchReview(selectImages: SnapshotStateList<Photo>, storedPlace: StoredPlace) {
+        selectImages.clear()
+        user?.let { user ->
+            val photoCollection =
+                firestore.collection("users").document(user.uid).collection("reviews")
+                    .document(storedPlace.firebaseId).collection("photos")
+            val photoListener =
+                photoCollection.addSnapshotListener { querySnapshot, firebaseFirestoreException ->
+                    querySnapshot?.let { querySnapshot ->
+                        val documents = querySnapshot.documents
+                        documents?.forEach {
+                            val photo = it.toObject(Photo::class.java)
+                            photo?.let { photo ->
+                                selectImages.add(photo)
+                            }
+                        }
+                    }
+                }
+        }
     }
 
     fun compressImage(context: ComponentActivity, photo: Photo): Uri? {

@@ -21,6 +21,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberImagePainter
 import com.example.kbbqreview.R
+import com.example.kbbqreview.data.roomplaces.StoredPlace
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.PagerState
@@ -29,7 +30,7 @@ import com.google.accompanist.pager.rememberPagerState
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun StoryItem(storyViewModel: StoryViewModel) {
+fun StoryItem(storyViewModel: StoryViewModel, review: StoredPlace) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colors.background
@@ -40,7 +41,7 @@ fun StoryItem(storyViewModel: StoryViewModel) {
 
         val state = rememberPagerState()
         Column {
-            SliderView(state, storyViewModel)
+            SliderView(state, storyViewModel, review)
             Spacer(modifier = Modifier.padding(4.dp))
         }
     }
@@ -48,7 +49,7 @@ fun StoryItem(storyViewModel: StoryViewModel) {
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun SliderView(state: PagerState, storyViewModel: StoryViewModel) {
+fun SliderView(state: PagerState, storyViewModel: StoryViewModel, review: StoredPlace) {
 
 
     Column(
@@ -60,7 +61,7 @@ fun SliderView(state: PagerState, storyViewModel: StoryViewModel) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "UserName",
+                text = review.name,
                 style = MaterialTheme.typography.h6
             )
             IconButton(onClick = { /*TODO*/ }) {

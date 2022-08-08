@@ -2,9 +2,11 @@ package com.example.kbbqreview.screens.story
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -12,10 +14,15 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.kbbqreview.ApplicationViewModel
+import com.example.kbbqreview.data.roomplaces.StoredPlace
 import com.example.kbbqreview.items
 
 @Composable
-fun Story(navController: NavHostController, storyViewModel: StoryViewModel) {
+fun Story(navController: NavHostController, storyViewModel: StoryViewModel, applicationViewModel: ApplicationViewModel) {
+    applicationViewModel.listenToReviews()
+    val reviews by applicationViewModel.reviews.observeAsState(initial = emptyList())
+
     Scaffold(
         bottomBar = {
             BottomNavigation {
@@ -52,17 +59,18 @@ fun Story(navController: NavHostController, storyViewModel: StoryViewModel) {
             modifier = Modifier.padding(innerPadding)
         ) {
             item {
-                StoryItem(storyViewModel = storyViewModel)
-                Spacer(modifier = Modifier.size(12.dp))
-                StoryItem(storyViewModel)
-                Spacer(modifier = Modifier.size(12.dp))
-                StoryItem(storyViewModel)
-                Spacer(modifier = Modifier.size(12.dp))
-                StoryItem(storyViewModel)
-                Spacer(modifier = Modifier.size(12.dp))
-                StoryItem(storyViewModel)
+
+            }
+            items(reviews) { review ->
+                StoryItem(storyViewModel = storyViewModel, review = review)
+                Review(review)
             }
         }
     }
 
+}
+
+@Composable
+fun Review(review: StoredPlace) {
+    Text(review.name)
 }
