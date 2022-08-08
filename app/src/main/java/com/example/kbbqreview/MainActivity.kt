@@ -15,6 +15,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
+import com.example.kbbqreview.data.user.User
 import com.example.kbbqreview.ui.theme.KBBQReviewTheme
 import com.google.android.libraries.places.api.net.PlacesClient
 
@@ -28,7 +29,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-
+            applicationViewModel.firebaseUser?.let {
+                val user = User(it.uid, "")
+                applicationViewModel.user = user
+            }
             window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             KBBQReviewTheme {
                 val navController = rememberNavController()

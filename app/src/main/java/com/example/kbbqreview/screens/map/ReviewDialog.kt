@@ -2,7 +2,6 @@ package com.example.kbbqreview.screens.map
 
 
 import android.content.Context
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -21,7 +20,6 @@ import com.example.kbbqreview.R
 import com.example.kbbqreview.data.roomplaces.StoredPlace
 import com.example.kbbqreview.data.roomplaces.StoredPlaceViewModel
 import com.example.kbbqreview.ui.theme.spacing
-import kotlinx.coroutines.launch
 
 @Composable
 fun ReviewDialog(
@@ -109,7 +107,6 @@ fun ReviewDialog(
                             modifier = Modifier
                                 .weight(2f)
                                 .padding(MaterialTheme.spacing.small),
-                            storedPlaceViewModel = storedPlaceViewModel,
                             mapViewModel = mapViewModel,
                             valueMeat = valueMeat,
                             valueBanchan = valueBanchan,
@@ -201,7 +198,6 @@ fun CameraButton(modifier: Modifier) {
 @Composable
 fun submitButton(
     modifier: Modifier,
-    storedPlaceViewModel: StoredPlaceViewModel,
     mapViewModel: MapViewModel,
     valueMeat: MutableState<Int>,
     valueBanchan: MutableState<Int>,
@@ -226,7 +222,7 @@ fun submitButton(
                     valueAtmosphere.value
                 )
             )*/
-            storedPlaceViewModel.save(
+           /* applicationViewModel.save(
                 storedPlace = StoredPlace(
                     0L,
                     "",
@@ -238,7 +234,7 @@ fun submitButton(
                     valueAmenities.value,
                     valueAtmosphere.value
                 )
-            )
+            )*/
             openDialog.value = false
         } else {
             Toast.makeText(context, "Submit all the fields!", Toast.LENGTH_LONG).show()

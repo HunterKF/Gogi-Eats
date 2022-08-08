@@ -15,6 +15,7 @@ import androidx.core.net.toUri
 import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
 import com.example.kbbqreview.Screen
+import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.camera.gallery.GallerySelect
 
 @Composable
@@ -30,7 +31,6 @@ fun MainContentCamera(
     Log.d(TAG, "The camera has opened.")
     if (imageUri != cameraViewModel.EMPTY_IMAGE_URI) {
         Box(modifier = modifier) {
-            Log.d(TAG, "This area has loaded.")
             Image(
                 modifier = Modifier.fillMaxSize(),
                 painter = rememberImagePainter(imageUri),
@@ -40,7 +40,7 @@ fun MainContentCamera(
             Button(
                 modifier = Modifier.align(Alignment.BottomCenter),
                 onClick = {
-                    cameraViewModel.selectImages.add(imageUri)
+                    cameraViewModel.selectImages.add(Photo(localUri = imageUri.toString()))
                     cameraViewModel.showPhotoRow.value = true
                     navController.navigate(Screen.AddReview.route)
                     imageUri = cameraViewModel.EMPTY_IMAGE_URI
@@ -56,7 +56,7 @@ fun MainContentCamera(
                 modifier = modifier,
                 cameraViewModel = cameraViewModel,
                 onImageUri = { uri ->
-                    cameraViewModel.selectImages.add(uri)
+                    cameraViewModel.selectImages.add(Photo(localUri = uri.toString()))
                     Log.d(TAG, "It has fired. Current value of imageUri: $imageUri")
                     Log.d(TAG, "It has fired. Current value of imageUri: $imageUri2")
                     Log.d(TAG, "It has fired. Current value of imageUri: ${cameraViewModel.selectImages}")

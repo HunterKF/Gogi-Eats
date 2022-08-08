@@ -2,10 +2,9 @@ package com.example.kbbqreview.screens.story
 
 import android.app.Application
 import android.content.Context
-import android.graphics.Paint
-import android.net.Uri
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
@@ -17,6 +16,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,6 +36,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.rememberAsyncImagePainter
 import com.example.kbbqreview.*
 import com.example.kbbqreview.R
+import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.data.roomplaces.StoredPlace
 import com.example.kbbqreview.data.roomplaces.StoredPlaceViewModel
@@ -43,6 +44,7 @@ import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.example.kbbqreview.screens.map.MapViewModel
 import com.example.kbbqreview.screens.map.location.LocationDetails
 import com.example.kbbqreview.ui.theme.spacing
+import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 
 @Composable
 fun AddReview(
@@ -62,9 +64,23 @@ fun AddReview(
     val TAG = "CAMERA TAG"
     val allPhotos = cameraViewModel.getAllPhotos()
 
+    val signInLauncher = rememberLauncherForActivityResult(
+        FirebaseAuthUIActivityResultContract()
+    ) { res -> applicationViewModel.signInResult(res) }
+
     Log.d(TAG, "Current value from AddReview of showRow is: ${cameraViewModel.showPhotoRow.value}")
 
     Scaffold(
+        topBar = {
+            TopAppBar() {
+                IconButton(onClick = { applicationViewModel.signOn(signInLauncher) }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_round_person),
+                        contentDescription = null
+                    )
+                }
+            }
+        },
         bottomBar = {
             BottomNavigation {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -170,9 +186,9 @@ fun AddReview(
                                     .fillMaxWidth()
                                     .padding(12.dp)
                             ) {
-                                items(allPhotos) { uri ->
+                                items(allPhotos) { photo ->
                                     ImageCard(
-                                        uri = uri,
+                                        photo = photo,
                                         cameraViewModel = cameraViewModel,
                                         modifier = Modifier.padding(12.dp)
                                     )
@@ -190,20 +206,32 @@ fun AddReview(
                             CancelButton(
                                 modifier = Modifier.weight(1f)
                             ) {
-                                navController.navigate(Screen.MapScreen.route)
+
                             }
-                            submitButton(
+                            Button(onClick = {
+                                println(applicationViewModel.firebaseUser)
+                                Log.d(
+                                    "Firebase Auth",
+                                    "The value is now: ${applicationViewModel.firebaseUser}"
+                                )
+                                Toast.makeText(context, "The value for user is: ${applicationViewModel.user}", Toast.LENGTH_LONG).show()
+                            }) {
+                                Text("test")
+                            }
+                            SubmitButton(
                                 modifier = Modifier
                                     .weight(2f)
                                     .padding(MaterialTheme.spacing.small),
-                                storedPlaceViewModel = storedPlaceViewModel,
+                                applicationViewModel = applicationViewModel,
+                                cameraViewModel = cameraViewModel,
                                 valueMeat = reviewViewModel.valueMeat,
                                 valueBanchan = reviewViewModel.valueBanchan,
                                 valueAmenities = reviewViewModel.valueAmenities,
                                 valueAtmosphere = reviewViewModel.valueAtmosphere,
                                 textFieldState = reviewViewModel.textFieldState,
                                 reviewViewModel = reviewViewModel,
-                                context = context
+                                context = context,
+                                allPhotos = allPhotos
                             )
                             CameraButton(
                                 modifier = Modifier
@@ -293,16 +321,18 @@ fun CameraButton(
 }
 
 @Composable
-fun submitButton(
+fun SubmitButton(
     modifier: Modifier,
-    storedPlaceViewModel: StoredPlaceViewModel,
+    cameraViewModel: CameraViewModel,
     valueMeat: MutableState<Int>,
     valueBanchan: MutableState<Int>,
     valueAmenities: MutableState<Int>,
     valueAtmosphere: MutableState<Int>,
     textFieldState: MutableState<String>,
     reviewViewModel: ReviewViewModel,
-    context: Context
+    context: Context,
+    allPhotos: SnapshotStateList<Photo>,
+    applicationViewModel: ApplicationViewModel
 
 ) {
     Button(modifier = Modifier, onClick = {
@@ -322,7 +352,8 @@ fun submitButton(
             if (reviewViewModel.photoList.isNotEmpty()) {
                 reviewViewModel.uploadPhotos()
             }*/
-            storedPlaceViewModel.save(
+            applicationViewModel.saveReview(
+                selectImages = cameraViewModel.selectImages ,
                 storedPlace = StoredPlace(
                     0L,
                     "",
@@ -334,7 +365,27 @@ fun submitButton(
                     valueAmenities.value,
                     valueAtmosphere.value
                 )
-            )
+            )/*
+            applicationViewModel.uploadPhotos(
+                cameraViewModel.selectImages,
+                storedPlace = StoredPlace()
+            )*/
+
+            /*GlobalScope.launch {
+                val compressedImage = storedPlaceViewModel.compressImage(
+                    context as ComponentActivity,
+                    allPhotos[0]
+                )
+                storedPlaceViewModel.uploadPhoto(
+                    compressedImage!!,
+                    "image.jpg",
+                    "image/jpg"
+                ) {
+                    GlobalScope.launch(Dispatchers.Main) {
+                        Toast.makeText(context, "Filed uploaded!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }*/
             Toast.makeText(context, "Saved!", Toast.LENGTH_LONG).show()
         } else {
             Toast.makeText(context, "Add location!", Toast.LENGTH_LONG).show()
@@ -346,7 +397,7 @@ fun submitButton(
 }
 
 @Composable
-fun ImageCard(uri: Uri, cameraViewModel: CameraViewModel, modifier: Modifier) {
+fun ImageCard(photo: Photo, cameraViewModel: CameraViewModel, modifier: Modifier) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -361,14 +412,14 @@ fun ImageCard(uri: Uri, cameraViewModel: CameraViewModel, modifier: Modifier) {
         ) {
             Image(
                 contentScale = ContentScale.Crop,
-                painter = rememberAsyncImagePainter(uri),
+                painter = rememberAsyncImagePainter(photo.localUri),
                 contentDescription = "Captured image",
                 modifier = Modifier.fillMaxSize()
             )
             IconButton(
                 modifier = Modifier.align(Alignment.TopEnd),
                 onClick = {
-                    cameraViewModel.removeOnePhoto(uri)
+                    cameraViewModel.removeOnePhoto(photo)
                     if (cameraViewModel.selectImages.isEmpty()) {
                         cameraViewModel.showPhotoRow.value = false
                     }
@@ -432,5 +483,6 @@ fun LocationBar(
     }
 
 }
+
 
 

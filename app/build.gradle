@@ -127,5 +127,11 @@ dependencies {
     //Accompanist - Pager
     implementation "com.google.accompanist:accompanist-pager:0.24.2-alpha"
 
+    //Coroutines
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.3"
+
+    //Authentication
+    implementation 'com.firebaseui:firebase-ui-auth:7.2.0'
+    implementation 'com.google.android.gms:play-services-auth:20.2.0'
 
 }
