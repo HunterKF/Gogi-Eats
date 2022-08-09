@@ -32,6 +32,7 @@ class MainActivity : ComponentActivity() {
             applicationViewModel.firebaseUser?.let {
                 val user = User(it.uid, "")
                 applicationViewModel.user = user
+                applicationViewModel.listenToReviews()
             }
             window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             KBBQReviewTheme {

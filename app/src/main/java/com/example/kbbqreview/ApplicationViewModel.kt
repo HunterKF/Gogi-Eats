@@ -29,7 +29,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
-import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageMetadata
 import kotlinx.coroutines.Dispatchers
@@ -77,6 +76,7 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     fun listenToReviews() {
+        //this fetches the reviews
         user?.let { user ->
             firestore.collection("users").document(user.uid).collection("reviews")
                 .addSnapshotListener { snapshot, e ->
@@ -89,12 +89,57 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
                         allReviews.add(StoredPlace(name = NEW_NAME))
                         val documents = snapshot.documents
                         documents.forEach {
+                            firestore.collection("users").document(user.uid).collection("reviews")
+                                .document(it.id).collection("photos")
+                                .addSnapshotListener { snapshot, e ->
+                                    if (e != null) {
+                                        Log.w("Listen failed", e)
+                                        return@addSnapshotListener
+                                    }
+                                    snapshot?.let {
+                                        val inPhotos = ArrayList<Photo>()
+                                        inPhotos.add(Photo())
+                                        val photoDocument = snapshot.documents
+                                        photoDocument.forEach {
+                                            val photo = it.toObject(Photo::class.java)
+                                            photo?.let {
+                                                inPhotos.add(it)
+                                            }
+                                        }
+                                        eventPhotos.value = inPhotos
+                                    }
+                                }
                             val review = it.toObject(StoredPlace::class.java)
                             review?.let {
                                 allReviews.add(it)
                             }
                         }
                         reviews.value = allReviews
+                    }
+                }
+        }
+    }
+
+    fun listenToPhotos() {
+        //this fetches the photos
+        user?.let { user ->
+            firestore.collection("users").document(user.uid).collection("reviews")
+                .addSnapshotListener { snapshot, e ->
+                    if (e != null) {
+                        Log.w("Listen failed", e)
+                        return@addSnapshotListener
+                    }
+                    snapshot?.let {
+                        val allPhotos = ArrayList<Photo>()
+                        allPhotos.add(Photo())
+                        val documents = snapshot.documents
+                        documents.forEach {
+                            val review = it.toObject(Photo::class.java)
+                            review?.let { photo ->
+                                allPhotos.add(photo)
+                            }
+                        }
+                        eventPhotos.value = allPhotos
                     }
                 }
         }
@@ -218,8 +263,7 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
 
     }
 
-    fun fetchPhotos(selectImages: SnapshotStateList<Photo>, storedPlace: StoredPlace) {
-        selectImages.clear()
+    fun fetchPhotos(storedPlace: StoredPlace) {
         user?.let { user ->
             val photoCollection =
                 firestore.collection("users").document(user.uid).collection("reviews")

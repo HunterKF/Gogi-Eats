@@ -1,27 +1,36 @@
 package com.example.kbbqreview.screens.story
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import coil.compose.rememberImagePainter
+import coil.size.Scale
 import com.example.kbbqreview.ApplicationViewModel
+import com.example.kbbqreview.R
+import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.data.roomplaces.StoredPlace
 import com.example.kbbqreview.items
 
 @Composable
 fun Story(navController: NavHostController, storyViewModel: StoryViewModel, applicationViewModel: ApplicationViewModel) {
-    applicationViewModel.listenToReviews()
+
     val reviews by applicationViewModel.reviews.observeAsState(initial = emptyList())
+    val photos by applicationViewModel.eventPhotos.observeAsState(initial = emptyList())
 
     Scaffold(
         bottomBar = {
@@ -61,9 +70,11 @@ fun Story(navController: NavHostController, storyViewModel: StoryViewModel, appl
             item {
 
             }
+            items(photos) { photo ->
+                Review(photo)
+            }
             items(reviews) { review ->
-                StoryItem(storyViewModel = storyViewModel, review = review)
-                Review(review)
+                Text(review.name)
             }
         }
     }
@@ -71,6 +82,17 @@ fun Story(navController: NavHostController, storyViewModel: StoryViewModel, appl
 }
 
 @Composable
-fun Review(review: StoredPlace) {
-    Text(review.name)
+fun Review(photo: Photo) {
+        val painter =
+            rememberImagePainter(data = photo.remoteUri, builder = {
+                placeholder(R.drawable.ic_circle)
+                scale(Scale.FILL)
+            })
+        Image(
+            painter = painter, contentDescription = "", Modifier
+                .padding(8.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .fillMaxSize(), contentScale = ContentScale.Crop
+        )
+
 }

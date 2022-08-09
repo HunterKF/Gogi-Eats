@@ -214,7 +214,11 @@ fun AddReview(
                                     "Firebase Auth",
                                     "The value is now: ${applicationViewModel.firebaseUser}"
                                 )
-                                Toast.makeText(context, "The value for user is: ${applicationViewModel.user}", Toast.LENGTH_LONG).show()
+                                Toast.makeText(
+                                    context,
+                                    "The value for user is: ${applicationViewModel.user}",
+                                    Toast.LENGTH_LONG
+                                ).show()
                             }) {
                                 Text("test")
                             }
@@ -336,42 +340,55 @@ fun SubmitButton(
 
 ) {
     Button(modifier = Modifier, onClick = {
-        if (reviewViewModel.newMarkerPositionLngReview.value != 0.0 && reviewViewModel.newMarkerPositionLatReview.value != 0.0) {
-            /*storedPlaceViewModel.addStoredPlace(
-                StoredPlace(
-                    "",
-                    textFieldState.value,
-                    mapViewModel.newMarkerPositionLat.value,
-                    mapViewModel.newMarkerPositionLat.value,
-                    valueMeat.value,
-                    valueBanchan.value,
-                    valueAmenities.value,
-                    valueAtmosphere.value
-                )
-            )*//*
+
+        when {
+            reviewViewModel.newMarkerPositionLngReview.value == 0.0 && reviewViewModel.newMarkerPositionLatReview.value == 0.0 -> {
+                Toast.makeText(context, "Add location!", Toast.LENGTH_SHORT).show()
+            }
+            cameraViewModel.selectImages.isEmpty() -> {
+                Toast.makeText(context, "Add a photo!", Toast.LENGTH_SHORT).show()
+            }
+            textFieldState.value == "" -> {
+                Toast.makeText(context, "Add a name!", Toast.LENGTH_SHORT).show()
+            }
+            else -> {
+                /*storedPlaceViewModel.addStoredPlace(
+            StoredPlace(
+                "",
+                textFieldState.value,
+                mapViewModel.newMarkerPositionLat.value,
+                mapViewModel.newMarkerPositionLat.value,
+                valueMeat.value,
+                valueBanchan.value,
+                valueAmenities.value,
+                valueAtmosphere.value
+            )
+        )*//*
             if (reviewViewModel.photoList.isNotEmpty()) {
                 reviewViewModel.uploadPhotos()
             }*/
-            applicationViewModel.saveReview(
-                selectImages = cameraViewModel.selectImages ,
-                storedPlace = StoredPlace(
-                    0L,
-                    "",
-                    textFieldState.value,
-                    reviewViewModel.newMarkerPositionLatReview.value,
-                    reviewViewModel.newMarkerPositionLatReview.value,
-                    valueMeat.value,
-                    valueBanchan.value,
-                    valueAmenities.value,
-                    valueAtmosphere.value
+                applicationViewModel.saveReview(
+                    selectImages = cameraViewModel.selectImages,
+                    storedPlace = StoredPlace(
+                        0L,
+                        "",
+                        textFieldState.value,
+                        reviewViewModel.newMarkerPositionLatReview.value,
+                        reviewViewModel.newMarkerPositionLatReview.value,
+                        valueMeat.value,
+                        valueBanchan.value,
+                        valueAmenities.value,
+                        valueAtmosphere.value
+                    )
                 )
-            )/*
+                Toast.makeText(context, "Review saved!", Toast.LENGTH_SHORT).show()
+            /*
             applicationViewModel.uploadPhotos(
                 cameraViewModel.selectImages,
                 storedPlace = StoredPlace()
             )*/
 
-            /*GlobalScope.launch {
+                /*GlobalScope.launch {
                 val compressedImage = storedPlaceViewModel.compressImage(
                     context as ComponentActivity,
                     allPhotos[0]
@@ -386,13 +403,11 @@ fun SubmitButton(
                     }
                 }
             }*/
-            Toast.makeText(context, "Saved!", Toast.LENGTH_LONG).show()
-        } else {
-            Toast.makeText(context, "Add location!", Toast.LENGTH_LONG).show()
+            }
         }
-
-    }) {
-        Text("Submit Review")
+    }
+    ) {
+        Text("Submit")
     }
 }
 
@@ -435,6 +450,7 @@ fun ImageCard(photo: Photo, cameraViewModel: CameraViewModel, modifier: Modifier
         }
     }
 }
+
 
 @Composable
 fun LocationBar(
