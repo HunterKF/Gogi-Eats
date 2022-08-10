@@ -3,13 +3,11 @@ package com.example.kbbqreview.screens.story
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -21,7 +19,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberImagePainter
 import com.example.kbbqreview.R
+import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.data.roomplaces.StoredPlace
+import com.example.kbbqreview.data.storyfeed.StoryItem
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.PagerState
@@ -30,18 +30,15 @@ import com.google.accompanist.pager.rememberPagerState
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun StoryItem(storyViewModel: StoryViewModel, review: StoredPlace) {
+fun StoryItem(storyItem: StoryItem) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colors.background
     ) {
-        /*LaunchedEffect(key1 = storyViewModel.imageList) {
-            storyViewModel.addImage()
-        }*/
 
         val state = rememberPagerState()
         Column {
-            SliderView(state, storyViewModel, review)
+            SliderView(state, storyItem.reviews, storyItem.photos)
             Spacer(modifier = Modifier.padding(4.dp))
         }
     }
@@ -49,7 +46,8 @@ fun StoryItem(storyViewModel: StoryViewModel, review: StoredPlace) {
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun SliderView(state: PagerState, storyViewModel: StoryViewModel, review: StoredPlace) {
+fun SliderView(state: PagerState, review: StoredPlace, photos: List<Photo>) {
+
 
 
     Column(
@@ -73,15 +71,16 @@ fun SliderView(state: PagerState, storyViewModel: StoryViewModel, review: Stored
         }
 
 
-        val imageUrl =
-            remember { mutableStateOf(0) }
+        val imageUrl = remember {
+            mutableStateOf(Photo())
+        }
         HorizontalPager(
             state = state,
-            count = storyViewModel.imageList.size, modifier = Modifier
+            count = photos.size, modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
         ) { page ->
-            imageUrl.value = storyViewModel.imageList[page]
+            imageUrl.value = photos[page]
 
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -91,7 +90,7 @@ fun SliderView(state: PagerState, storyViewModel: StoryViewModel, review: Stored
                 Box(contentAlignment = Alignment.BottomCenter) {
 
                     val painter =
-                        rememberImagePainter(data = storyViewModel.imageList[page], builder = {
+                        rememberImagePainter(data = imageUrl, builder = {
                             placeholder(R.drawable.ic_circle)
                             scale(coil.size.Scale.FILL)
                         })
@@ -107,7 +106,7 @@ fun SliderView(state: PagerState, storyViewModel: StoryViewModel, review: Stored
         }
 
         DotsIndicator(
-            totalDots = storyViewModel.imageList.size,
+            totalDots = photos.size,
             selectedIndex = state.currentPage
         )
         Row(modifier = Modifier.fillMaxWidth()) {

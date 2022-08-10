@@ -23,7 +23,6 @@ import coil.size.Scale
 import com.example.kbbqreview.ApplicationViewModel
 import com.example.kbbqreview.R
 import com.example.kbbqreview.data.photos.Photo
-import com.example.kbbqreview.data.roomplaces.StoredPlace
 import com.example.kbbqreview.items
 
 @Composable
@@ -31,6 +30,8 @@ fun Story(navController: NavHostController, storyViewModel: StoryViewModel, appl
 
     val reviews by applicationViewModel.reviews.observeAsState(initial = emptyList())
     val photos by applicationViewModel.eventPhotos.observeAsState(initial = emptyList())
+    val userList by applicationViewModel.userList.observeAsState(initial = emptyList())
+    val storyFeed by applicationViewModel.storyFeed.observeAsState()
 
     Scaffold(
         bottomBar = {
@@ -67,14 +68,25 @@ fun Story(navController: NavHostController, storyViewModel: StoryViewModel, appl
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(innerPadding)
         ) {
-            item {
+            storyFeed?.let {
+                items(storyFeed!!.storyList) { storyItem ->
+                    StoryItem(storyItem)
 
+
+                }
+            }
+
+            items(userList) { user ->
+                Text(user.uid)
             }
             items(photos) { photo ->
                 Review(photo)
+                Text(photo.id)
+                Text(photo.dateTaken.toString())
             }
             items(reviews) { review ->
                 Text(review.name)
+                Text(review.firebaseId)
             }
         }
     }

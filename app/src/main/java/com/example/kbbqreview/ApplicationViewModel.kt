@@ -21,12 +21,15 @@ import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.data.roomplaces.StoredPlace
 import com.example.kbbqreview.data.roomplaces.StoredPlaceDatabase
 import com.example.kbbqreview.data.roomplaces.StoredPlaceRepository
+import com.example.kbbqreview.data.storyfeed.StoryItem
+import com.example.kbbqreview.data.storyfeed.StoryItemList
 import com.example.kbbqreview.data.user.User
 import com.example.kbbqreview.screens.map.location.LocationLiveData
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.storage.FirebaseStorage
@@ -51,9 +54,14 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
     var user: User? = null
     var firebaseUser: FirebaseUser? = FirebaseAuth.getInstance().currentUser
 
+    val fetchedReviews = ArrayList<StoredPlace>()
     var reviews: MutableLiveData<List<StoredPlace>> = MutableLiveData<List<StoredPlace>>()
+    val fetchedPhotos = ArrayList<Photo>()
     val eventPhotos: MutableLiveData<List<Photo>> = MutableLiveData<List<Photo>>()
+    val userList: MutableLiveData<List<User>> = MutableLiveData<List<User>>()
 
+    val listOfStoryItem = mutableListOf<StoryItem>()
+    val storyFeed = MutableLiveData<StoryItemList>()
 
     init {
         val storedPlaceDatabase = StoredPlaceDatabase.getDatabase(application)
@@ -65,7 +73,7 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
 
         firestore = FirebaseFirestore.getInstance()
         firestore.firestoreSettings = FirebaseFirestoreSettings.Builder().build()
-        listenToReviews()
+//        listenToReviews()
     }
 
     //Location functions
@@ -78,45 +86,58 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
     fun listenToReviews() {
         //this fetches the reviews
         user?.let { user ->
-            firestore.collection("users").document(user.uid).collection("reviews")
-                .addSnapshotListener { snapshot, e ->
-                    if (e != null) {
-                        Log.w("Listen failed", e)
-                        return@addSnapshotListener
-                    }
-                    snapshot?.let {
-                        val allReviews = ArrayList<StoredPlace>()
-                        allReviews.add(StoredPlace(name = NEW_NAME))
-                        val documents = snapshot.documents
-                        documents.forEach {
-                            firestore.collection("users").document(user.uid).collection("reviews")
-                                .document(it.id).collection("photos")
-                                .addSnapshotListener { snapshot, e ->
-                                    if (e != null) {
-                                        Log.w("Listen failed", e)
-                                        return@addSnapshotListener
-                                    }
-                                    snapshot?.let {
-                                        val inPhotos = ArrayList<Photo>()
-                                        inPhotos.add(Photo())
-                                        val photoDocument = snapshot.documents
-                                        photoDocument.forEach {
-                                            val photo = it.toObject(Photo::class.java)
-                                            photo?.let {
-                                                inPhotos.add(it)
-                                            }
-                                        }
-                                        eventPhotos.value = inPhotos
-                                    }
+            val handle = firestore.collection("users").document(user.uid).collection("reviews")
+            handle.addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    Log.w("Listen failed", e)
+                    return@addSnapshotListener
+                }
+                snapshot?.let {
+
+                    val allReviews = ArrayList<StoredPlace>()
+                    allReviews.add(StoredPlace(name = NEW_NAME))
+                    val documents = snapshot.documents
+                    documents.forEach {
+                        handle.document(it.id).addSnapshotListener { snapshot, e ->
+                            if (e != null) {
+                                Log.w("Listen failed", e)
+                                return@addSnapshotListener
+                            }
+                            snapshot.let {
+                                val inPhotos = ArrayList<Photo>()
+                                it?.let {
+
                                 }
-                            val review = it.toObject(StoredPlace::class.java)
-                            review?.let {
-                                allReviews.add(it)
                             }
                         }
-                        reviews.value = allReviews
+                        firestore.collection("users").document(user.uid).collection("reviews")
+                            .document(it.id).collection("photos")
+                            .addSnapshotListener { snapshot, e ->
+                                if (e != null) {
+                                    Log.w("Listen failed", e)
+                                    return@addSnapshotListener
+                                }
+                                snapshot?.let {
+                                    val inPhotos = ArrayList<Photo>()
+                                    inPhotos.add(Photo())
+                                    val photoDocument = snapshot.documents
+                                    photoDocument.forEach {
+                                        val photo = it.toObject(Photo::class.java)
+                                        photo?.let {
+                                            inPhotos.add(it)
+                                        }
+                                    }
+                                    eventPhotos.value = inPhotos
+                                }
+                            }
+                        val review = it.toObject(StoredPlace::class.java)
+                        review?.let {
+                            allReviews.add(it)
+                        }
                     }
+                    reviews.value = allReviews
                 }
+            }
         }
     }
 
@@ -350,6 +371,139 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
 
         callback(fileRef.downloadUrl.await().toString())
     }
+//This is the good fun fun
+    fun listenToAllUsers() {
+        val handle = firestore.collection("users")
+        handle.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                Log.w("User listen failed", e)
+                return@addSnapshotListener
+            }
+            //Snapshot for users
+            snapshot?.let {
+                var listOfUsers = ArrayList<User>()
+                var storedPlace: StoredPlace
+                val listOfPhotos = ArrayList<Photo>()
+                var storyItemList: StoryItemList
+                val users = snapshot.documents
+                users.forEach {
+                    var user = it.toObject(User::class.java)
+                    user?.let {
+                        listOfUsers.add(user)
+                    }
+                    user?.let { user ->
+                        handle.document(user.uid).collection("reviews")
+                            .addSnapshotListener { snapshot, e ->
+                                if (e != null) {
+                                    Log.w("Review listen failed", e)
+                                    return@addSnapshotListener
+                                }
+                                snapshot?.let {
+                                    var reviews = snapshot.documents
+                                    reviews.forEach {
+                                        var review = it.toObject(StoredPlace::class.java)
+                                        review?.let {
+                                            storedPlace = it
+                                            handle.document(user.uid).collection("reviews")
+                                                .document(it.firebaseId).collection("photos")
+                                                .addSnapshotListener { snapshot, e ->
+                                                    if (e != null) {
+                                                        Log.w("Review listen failed", e)
+                                                        return@addSnapshotListener
+                                                    }
+                                                    snapshot?.let {
+                                                        var photoDocument = snapshot.documents
+                                                        photoDocument.forEach {
+                                                            var photo = it.toObject(Photo::class.java)
+                                                            photo?.let {
+                                                                listOfPhotos.add(it)
+                                                                val storyItem = StoryItem(storedPlace, listOfPhotos)
+                                                                listOfStoryItem.add(storyItem)
+                                                                listOfPhotos.clear()
+                                                            }
+                                                        }
+                                                        storyItemList = StoryItemList(listOfStoryItem)
+
+                                                        storyFeed.value = storyItemList
+                                                    }
+                                                }
+                                        }
+                                    }
+                                }
+                            }
+
+                    }
+                }
+                userList.value = listOfUsers
+            }
+        }
+
+    }
 
 
+    private fun getReviews(handle: CollectionReference, user1: User) {
+        handle.document(user1.uid).collection("reviews")
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    Log.w("Review listen failed", e)
+                    return@addSnapshotListener
+                }
+                snapshot?.let {
+                    var allReviews = ArrayList<StoredPlace>()
+                    var inPhotos = ArrayList<Photo>()
+                    val reviewDocument = snapshot.documents
+                    reviewDocument.forEach {
+                        val review = it.toObject(StoredPlace::class.java)
+                        review?.let {
+                            fetchedReviews.add(it)
+                            allReviews.add(it)
+                            getPhotos(handle, user1, it)
+                            handle.document(user1.uid).collection("reviews").document(it.firebaseId)
+                                .collection("photos")
+                                .addSnapshotListener { snapshot, e ->
+                                    if (e != null) {
+                                        Log.w("Photo listen failed", e)
+                                        return@addSnapshotListener
+                                    }
+                                    snapshot?.let {
+
+                                        val photoDocument = snapshot.documents
+                                        photoDocument.forEach {
+                                            val photo = it.toObject(Photo::class.java)
+                                            photo?.let {
+                                                inPhotos.add(it)
+                                                fetchedPhotos.add(it)
+                                            }
+                                        }
+                                        eventPhotos.value = fetchedPhotos
+                                    }
+                                }
+                        }
+
+                    }
+
+                    reviews.value = fetchedReviews
+                }
+            }
+    }
+
+    private fun getPhotos(handle: CollectionReference, user: User, id: StoredPlace) {
+        handle.document(user.uid).collection("reviews").document(id.firebaseId).collection("photos")
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    Log.w("Photo listen failed", e)
+                    return@addSnapshotListener
+                }
+                snapshot?.let {
+                    val photoDocument = snapshot.documents
+                    photoDocument.forEach {
+                        val photo = it.toObject(Photo::class.java)
+                        photo?.let {
+                            fetchedPhotos.add(it)
+                        }
+                    }
+                    eventPhotos.value = fetchedPhotos
+                }
+            }
+    }
 }

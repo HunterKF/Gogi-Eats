@@ -29,10 +29,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+
+            applicationViewModel.listenToAllUsers()
             applicationViewModel.firebaseUser?.let {
                 val user = User(it.uid, "")
                 applicationViewModel.user = user
-                applicationViewModel.listenToReviews()
             }
             window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             KBBQReviewTheme {
