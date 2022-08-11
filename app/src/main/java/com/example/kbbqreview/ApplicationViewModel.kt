@@ -37,6 +37,10 @@ import com.google.firebase.firestore.Query
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageMetadata
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.ByteArrayOutputStream
@@ -56,14 +60,26 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
     var user: User? = null
     var firebaseUser: FirebaseUser? = FirebaseAuth.getInstance().currentUser
 
-    val fetchedReviews = ArrayList<StoredPlace>()
-    var reviews: MutableLiveData<List<StoredPlace>> = MutableLiveData<List<StoredPlace>>()
     val fetchedPhotos = ArrayList<Photo>()
     val eventPhotos: MutableLiveData<List<Photo>> = MutableLiveData<List<Photo>>()
     val userList: MutableLiveData<List<User>> = MutableLiveData<List<User>>()
 
     val listOfStoryItem = mutableListOf<StoryItem>()
     val storyFeed = MutableLiveData<StoryItemList>()
+    private val _isRefreshing = MutableStateFlow(false)
+
+    val isRefreshing: StateFlow<Boolean>
+        get() = _isRefreshing.asStateFlow()
+    fun refresh() {
+        // This doesn't handle multiple 'refreshing' tasks, don't use this
+
+        viewModelScope.launch {
+            // A fake 2 second 'refresh'
+            _isRefreshing.emit(true)
+            delay(2000)
+            _isRefreshing.emit(false)
+        }
+    }
 
     init {
         val storedPlaceDatabase = StoredPlaceDatabase.getDatabase(application)
@@ -84,90 +100,6 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
     fun startLocationUpdates() {
         locationLiveData.startLocationUpdates()
     }
-
-    fun listenToReviews() {
-        //this fetches the reviews
-        user?.let { user ->
-            val handle = firestore.collection("users").document(user.uid).collection("reviews")
-            handle.addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    Log.w("Listen failed", e)
-                    return@addSnapshotListener
-                }
-                snapshot?.let {
-
-                    val allReviews = ArrayList<StoredPlace>()
-                    allReviews.add(StoredPlace(name = NEW_NAME))
-                    val documents = snapshot.documents
-                    documents.forEach {
-                        handle.document(it.id).addSnapshotListener { snapshot, e ->
-                            if (e != null) {
-                                Log.w("Listen failed", e)
-                                return@addSnapshotListener
-                            }
-                            snapshot.let {
-                                val inPhotos = ArrayList<Photo>()
-                                it?.let {
-
-                                }
-                            }
-                        }
-                        firestore.collection("users").document(user.uid).collection("reviews")
-                            .document(it.id).collection("photos")
-                            .addSnapshotListener { snapshot, e ->
-                                if (e != null) {
-                                    Log.w("Listen failed", e)
-                                    return@addSnapshotListener
-                                }
-                                snapshot?.let {
-                                    val inPhotos = ArrayList<Photo>()
-                                    inPhotos.add(Photo())
-                                    val photoDocument = snapshot.documents
-                                    photoDocument.forEach {
-                                        val photo = it.toObject(Photo::class.java)
-                                        photo?.let {
-                                            inPhotos.add(it)
-                                        }
-                                    }
-                                    eventPhotos.value = inPhotos
-                                }
-                            }
-                        val review = it.toObject(StoredPlace::class.java)
-                        review?.let {
-                            allReviews.add(it)
-                        }
-                    }
-                    reviews.value = allReviews
-                }
-            }
-        }
-    }
-
-    fun listenToPhotos() {
-        //this fetches the photos
-        user?.let { user ->
-            firestore.collection("users").document(user.uid).collection("reviews")
-                .addSnapshotListener { snapshot, e ->
-                    if (e != null) {
-                        Log.w("Listen failed", e)
-                        return@addSnapshotListener
-                    }
-                    snapshot?.let {
-                        val allPhotos = ArrayList<Photo>()
-                        allPhotos.add(Photo())
-                        val documents = snapshot.documents
-                        documents.forEach {
-                            val review = it.toObject(Photo::class.java)
-                            review?.let { photo ->
-                                allPhotos.add(photo)
-                            }
-                        }
-                        eventPhotos.value = allPhotos
-                    }
-                }
-        }
-    }
-
 
     fun signOn(signInLauncher: ManagedActivityResultLauncher<Intent, FirebaseAuthUIAuthenticationResult>) {
         val providers = arrayListOf(
@@ -201,23 +133,6 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
 
         handle.addOnSuccessListener { Log.d("Firebase", "Document saved") }
         handle.addOnFailureListener { Log.e("Firebase", "Saved failed $it") }
-    }
-
-
-    fun addStoredPlace(storedPlace: StoredPlace) {
-        viewModelScope.launch(Dispatchers.IO) {
-            repository.addStoredItem(storedPlace)
-        }
-    }
-
-    fun deleteStoredItem(storedPlace: StoredPlace) {
-        viewModelScope.launch(Dispatchers.IO) {
-            repository.deleteStoredItem(storedPlace)
-        }
-    }
-
-    fun searchStoredItem(id: Long) {
-        repository.searchStoredItem(id)
     }
 
 
@@ -314,29 +229,7 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
         return Uri.parse(path)
     }
 
-    suspend fun uploadPhoto(
-        uri: Uri,
-        name: String,
-        mimeType: String?,
-        callback: (url: String) -> Unit
-    ) {
-        val storage = FirebaseStorage.getInstance()
-        val storageRef = storage.reference
-        val fileRef = storageRef.child("images/$name")
 
-        val metadata = mimeType?.let {
-            StorageMetadata.Builder()
-                .setContentType(mimeType)
-                .build()
-        }
-        if (metadata != null) {
-            fileRef.putFile(uri, metadata).await()
-        } else {
-            fileRef.putFile(uri).await()
-        }
-
-        callback(fileRef.downloadUrl.await().toString())
-    }
 //This is the good fun fun
     fun listenToAllUsers() {
         val handle = firestore.collection("users")
@@ -425,4 +318,5 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
                 }
             }
     }
+
 }

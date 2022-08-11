@@ -120,7 +120,6 @@ fun AddReview(
             val photoUri = intent.getStringExtra("image")
 
             val lazyState = rememberLazyListState()
-            val columnState = rememberScrollState()
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = Color.White
@@ -128,7 +127,7 @@ fun AddReview(
                 LazyColumn(
                     modifier = Modifier
                         .padding(MaterialTheme.spacing.medium)
-                        .scrollable(state = columnState, orientation = Orientation.Horizontal)
+                        .scrollable(state = lazyState, orientation = Orientation.Horizontal)
                 ) {
                     item {
                         Text(
@@ -284,7 +283,8 @@ fun reviewBar(value: MutableState<Int>, title: String, focusManager: FocusManage
                 .padding(horizontal = MaterialTheme.spacing.small)
                 .fillMaxWidth()
         ) {
-            var sliderPosition by remember { mutableStateOf(0f) }
+
+            var sliderPosition by remember { mutableStateOf(value.value.toFloat()) }
             Slider(
                 value = sliderPosition,
                 onValueChange = {
@@ -366,6 +366,7 @@ fun SubmitButton(
                         valueAtmosphere.value
                     )
                 )
+                reviewViewModel.clearValues(cameraViewModel.selectImages)
                 Toast.makeText(context, "Review saved!", Toast.LENGTH_SHORT).show()
             /*
             applicationViewModel.uploadPhotos(
@@ -444,7 +445,7 @@ fun LocationBar(
     location: LocationDetails?,
     navController: NavHostController
 ) {
-
+    val context = LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -458,14 +459,13 @@ fun LocationBar(
             modifier = Modifier.weight(3f),
             horizontalAlignment = Alignment.Start
         ) {
-            Text(text = reviewViewModel.stateLat.value)
-            Text(text = reviewViewModel.stateLng.value)
+            Text(text = reviewViewModel.address.value)
         }
         IconButton(
             modifier = Modifier.weight(1f),
             onClick = {
                 applicationViewModel.startLocationUpdates()
-                reviewViewModel.changeLocation(location!!.longitude, location!!.latitude)
+                reviewViewModel.changeLocation(location!!.latitude, location!!.longitude, context = context)
 
             }) {
             Icon(

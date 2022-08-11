@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -24,11 +25,15 @@ import com.example.kbbqreview.ApplicationViewModel
 import com.example.kbbqreview.R
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.items
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 
 @Composable
 fun Story(navController: NavHostController, applicationViewModel: ApplicationViewModel) {
 
     val storyFeed by applicationViewModel.storyFeed.observeAsState()
+    val swipeRefreshState = rememberSwipeRefreshState(true)
+    val isRefreshing by applicationViewModel.isRefreshing.collectAsState()
 
     Scaffold(
         bottomBar = {
@@ -60,46 +65,23 @@ fun Story(navController: NavHostController, applicationViewModel: ApplicationVie
             }
         }
     ) { innerPadding ->
-        LazyColumn(
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            storyFeed?.let {
-                items(storyFeed!!.storyList) { storyItem ->
-                    StoryItem(storyItem)
+        SwipeRefresh(
+            state = rememberSwipeRefreshState(isRefreshing),
+            onRefresh = { applicationViewModel.refresh() }) {
+            LazyColumn(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                storyFeed?.let {
+                    items(storyFeed!!.storyList) { storyItem ->
+                        StoryItem(storyItem)
+                    }
                 }
             }
-/*
-            items(userList) { user ->
-                Text(user.uid)
-            }
-            items(photos) { photo ->
-                Review(photo)
-                Text(photo.id)
-                Text(photo.dateTaken.toString())
-            }
-            items(reviews) { review ->
-                Text(review.name)
-                Text(review.firebaseId)
-            }*/
         }
+
     }
 
 }
 
-@Composable
-fun Review(photo: Photo) {
-        val painter =
-            rememberImagePainter(data = photo.remoteUri, builder = {
-                placeholder(R.drawable.ic_circle)
-                scale(Scale.FILL)
-            })
-        Image(
-            painter = painter, contentDescription = "", Modifier
-                .padding(8.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .fillMaxSize(), contentScale = ContentScale.Crop
-        )
-
-}

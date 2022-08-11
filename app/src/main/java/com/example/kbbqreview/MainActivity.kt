@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
 
-            applicationViewModel.listenToAllUsers()
+//            applicationViewModel.listenToAllUsers()
             applicationViewModel.firebaseUser?.let {
                 val user = User(it.uid, "")
                 applicationViewModel.user = user

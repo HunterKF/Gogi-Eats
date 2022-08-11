@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,6 +32,7 @@ fun ChooseLocationMap(
     reviewViewModel: ReviewViewModel,
     navController: NavController
 ) {
+    val context = LocalContext.current
     val uiSettings = remember {
         MapUiSettings(zoomControlsEnabled = false)
     }
@@ -80,7 +82,8 @@ fun ChooseLocationMap(
                             IconButton(onClick = {
                                 reviewViewModel.changeLocation(
                                     cameraPositionState.position.target.latitude,
-                                    cameraPositionState.position.target.longitude
+                                    cameraPositionState.position.target.longitude,
+                                    context = context
                                 )
                                 navController.navigate(Screen.AddReview.route)
                             }) {

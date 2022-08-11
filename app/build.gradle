@@ -124,8 +124,9 @@ dependencies {
     //Retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
 
-    //Accompanist - Pager
+    //Accompanist
     implementation "com.google.accompanist:accompanist-pager:0.24.2-alpha"
+    implementation "com.google.accompanist:accompanist-swiperefresh:0.26.0-alpha"
 
     //Coroutines
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.3"
