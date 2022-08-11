@@ -154,7 +154,8 @@ fun AddReview(
                             applicationViewModel = applicationViewModel,
                             reviewViewModel = reviewViewModel,
                             location = location,
-                            navController = navController
+                            navController = navController,
+                            focusManager = focusManager
                         )
                     }
                     item {
@@ -288,6 +289,7 @@ fun reviewBar(value: MutableState<Int>, title: String, focusManager: FocusManage
             Slider(
                 value = sliderPosition,
                 onValueChange = {
+                    focusManager.clearFocus()
                     sliderPosition = it
                     value.value = it.toInt()
                     println(value.value)
@@ -368,11 +370,11 @@ fun SubmitButton(
                 )
                 reviewViewModel.clearValues(cameraViewModel.selectImages)
                 Toast.makeText(context, "Review saved!", Toast.LENGTH_SHORT).show()
-            /*
-            applicationViewModel.uploadPhotos(
-                cameraViewModel.selectImages,
-                storedPlace = StoredPlace()
-            )*/
+                /*
+                applicationViewModel.uploadPhotos(
+                    cameraViewModel.selectImages,
+                    storedPlace = StoredPlace()
+                )*/
 
                 /*GlobalScope.launch {
                 val compressedImage = storedPlaceViewModel.compressImage(
@@ -443,7 +445,8 @@ fun LocationBar(
     applicationViewModel: ApplicationViewModel,
     reviewViewModel: ReviewViewModel,
     location: LocationDetails?,
-    navController: NavHostController
+    navController: NavHostController,
+    focusManager: FocusManager
 ) {
     val context = LocalContext.current
     Row(
@@ -464,8 +467,13 @@ fun LocationBar(
         IconButton(
             modifier = Modifier.weight(1f),
             onClick = {
+                focusManager.clearFocus()
                 applicationViewModel.startLocationUpdates()
-                reviewViewModel.changeLocation(location!!.latitude, location!!.longitude, context = context)
+                reviewViewModel.changeLocation(
+                    location!!.latitude,
+                    location!!.longitude,
+                    context = context
+                )
 
             }) {
             Icon(
@@ -475,7 +483,10 @@ fun LocationBar(
         }
         IconButton(
             modifier = Modifier.weight(1f),
-            onClick = { navController.navigate(Screen.ChooseLocationMap.route) }) {
+            onClick = {
+                focusManager.clearFocus()
+                navController.navigate(Screen.ChooseLocationMap.route)
+            }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_outline_map),
                 contentDescription = "Open map"

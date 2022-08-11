@@ -33,7 +33,7 @@ class ReviewViewModel : ViewModel() {
         address.value = getAddressFromLocation(context)
     }
 
-    fun getAddressFromLocation(context: Context): String {
+    private fun getAddressFromLocation(context: Context): String {
         val geocoder = Geocoder(context, Locale.getDefault())
         var addresses: List<Address>? = null
         val address: Address?
