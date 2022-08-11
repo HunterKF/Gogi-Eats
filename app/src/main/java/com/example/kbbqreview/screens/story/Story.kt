@@ -73,10 +73,18 @@ fun Story(navController: NavHostController, applicationViewModel: ApplicationVie
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(innerPadding)
             ) {
+                item {
+                    StoryItem()
+                    StoryItem()
+                    StoryItem()
+                    StoryItem()
+                    StoryItem()
+                }
                 storyFeed?.let {
-                    items(storyFeed!!.storyList) { storyItem ->
+                    /*items(storyFeed!!.storyList) { storyItem ->
                         StoryItem(storyItem)
-                    }
+                    }*/
+
                 }
             }
         }
