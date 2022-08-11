@@ -26,11 +26,8 @@ import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.items
 
 @Composable
-fun Story(navController: NavHostController, storyViewModel: StoryViewModel, applicationViewModel: ApplicationViewModel) {
+fun Story(navController: NavHostController, applicationViewModel: ApplicationViewModel) {
 
-    val reviews by applicationViewModel.reviews.observeAsState(initial = emptyList())
-    val photos by applicationViewModel.eventPhotos.observeAsState(initial = emptyList())
-    val userList by applicationViewModel.userList.observeAsState(initial = emptyList())
     val storyFeed by applicationViewModel.storyFeed.observeAsState()
 
     Scaffold(
@@ -71,11 +68,9 @@ fun Story(navController: NavHostController, storyViewModel: StoryViewModel, appl
             storyFeed?.let {
                 items(storyFeed!!.storyList) { storyItem ->
                     StoryItem(storyItem)
-
-
                 }
             }
-
+/*
             items(userList) { user ->
                 Text(user.uid)
             }
@@ -87,7 +82,7 @@ fun Story(navController: NavHostController, storyViewModel: StoryViewModel, appl
             items(reviews) { review ->
                 Text(review.name)
                 Text(review.firebaseId)
-            }
+            }*/
         }
     }
 

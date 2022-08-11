@@ -52,7 +52,7 @@ fun Navigation(
             }
         }
         composable(Screen.Story.route) {
-            Story(navController, storyViewModel = storyViewModel, applicationViewModel = applicationViewModel)
+            Story(navController, applicationViewModel = applicationViewModel)
         }
         composable(Screen.AddReview.route) {
             AddReview(

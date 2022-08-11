@@ -15,9 +15,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import coil.compose.rememberAsyncImagePainter
 import coil.compose.rememberImagePainter
+import coil.request.ImageRequest
+import coil.size.Scale
 import com.example.kbbqreview.R
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.data.roomplaces.StoredPlace
@@ -90,16 +94,20 @@ fun SliderView(state: PagerState, review: StoredPlace, photos: List<Photo>) {
                 Box(contentAlignment = Alignment.BottomCenter) {
 
                     val painter =
-                        rememberImagePainter(data = imageUrl, builder = {
-                            placeholder(R.drawable.ic_circle)
-                            scale(coil.size.Scale.FILL)
-                        })
+                        rememberAsyncImagePainter(
+                            ImageRequest.Builder(LocalContext.current).data(data = imageUrl.value.remoteUri)
+                                .apply(block = fun ImageRequest.Builder.() {
+                                    placeholder(R.drawable.ic_circle)
+                                    scale(Scale.FILL)
+                                }).build()
+                        )
                     Image(
                         painter = painter, contentDescription = "", Modifier
                             .padding(8.dp)
                             .clip(RoundedCornerShape(10.dp))
                             .fillMaxSize(), contentScale = ContentScale.Crop
                     )
+                    Text(imageUrl.value.listIndex.toString())
                 }
 
             }

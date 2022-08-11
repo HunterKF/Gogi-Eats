@@ -352,21 +352,6 @@ fun SubmitButton(
                 Toast.makeText(context, "Add a name!", Toast.LENGTH_SHORT).show()
             }
             else -> {
-                /*storedPlaceViewModel.addStoredPlace(
-            StoredPlace(
-                "",
-                textFieldState.value,
-                mapViewModel.newMarkerPositionLat.value,
-                mapViewModel.newMarkerPositionLat.value,
-                valueMeat.value,
-                valueBanchan.value,
-                valueAmenities.value,
-                valueAtmosphere.value
-            )
-        )*//*
-            if (reviewViewModel.photoList.isNotEmpty()) {
-                reviewViewModel.uploadPhotos()
-            }*/
                 applicationViewModel.saveReview(
                     selectImages = cameraViewModel.selectImages,
                     storedPlace = StoredPlace(
