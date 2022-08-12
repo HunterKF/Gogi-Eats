@@ -70,6 +70,7 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
 
     val isRefreshing: StateFlow<Boolean>
         get() = _isRefreshing.asStateFlow()
+
     fun refresh() {
         // This doesn't handle multiple 'refreshing' tasks, don't use this
 
@@ -126,6 +127,11 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
         } else {
             Log.e("Authentication", "Error logging in" + response?.error?.errorCode)
         }
+    }
+
+    fun signOut() {
+        FirebaseAuth.getInstance().signOut()
+        user = null
     }
 
     private fun saveUser(user: User) {
@@ -207,7 +213,6 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
     }
 
 
-
     fun compressImage(context: ComponentActivity, photo: Photo): Uri? {
         val bitmap = if (Build.VERSION.SDK_INT < 28) {
             MediaStore.Images.Media.getBitmap(
@@ -230,7 +235,7 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
     }
 
 
-//This is the good fun fun
+    //This is the good fun fun
     fun listenToAllUsers() {
         val handle = firestore.collection("users")
         handle.addSnapshotListener { snapshot, e ->
@@ -290,33 +295,35 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
     private fun getPhotos(handle: CollectionReference, user: User, review: StoredPlace) {
 
         Log.d("listenToUsers", "Photos has started firing.")
-        val photoHandle = handle.document(user.uid).collection("reviews").document(review.firebaseId).collection("photos").orderBy("listIndex", Query.Direction.ASCENDING)
-            photoHandle.addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    Log.w("Photo listen failed", e)
-                    return@addSnapshotListener
-                }
-                snapshot?.let {
-                    val photoDocument = snapshot.documents
-                    var photoList = ArrayList<Photo>()
-                    photoDocument.forEach {
-                        Log.d("listenToUsers", "Photos for each has fired.")
-                        val photo = it.toObject(Photo::class.java)
-                        photoList.add(photo!!)
-                        photo?.let {
-                            fetchedPhotos.add(it)
-                            Log.d("listenToUsers", "The value for it.dataTaken is : ${it.dateTaken}")
-                            Log.d("listenToUsers", "The value for user.id is : ${review.name}")
-                        }
-                    }
-
-                    listOfStoryItem.add(StoryItem(review, photoList))
-
-                    updateStoryFeed()
-                    eventPhotos.value = fetchedPhotos
-                    Log.d("listenToUsers", "The value for storyFeed is : ${storyFeed.value}")
-                }
+        val photoHandle =
+            handle.document(user.uid).collection("reviews").document(review.firebaseId)
+                .collection("photos").orderBy("listIndex", Query.Direction.ASCENDING)
+        photoHandle.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                Log.w("Photo listen failed", e)
+                return@addSnapshotListener
             }
+            snapshot?.let {
+                val photoDocument = snapshot.documents
+                var photoList = ArrayList<Photo>()
+                photoDocument.forEach {
+                    Log.d("listenToUsers", "Photos for each has fired.")
+                    val photo = it.toObject(Photo::class.java)
+                    photoList.add(photo!!)
+                    photo?.let {
+                        fetchedPhotos.add(it)
+                        Log.d("listenToUsers", "The value for it.dataTaken is : ${it.dateTaken}")
+                        Log.d("listenToUsers", "The value for user.id is : ${review.name}")
+                    }
+                }
+
+                listOfStoryItem.add(StoryItem(review, photoList))
+
+                updateStoryFeed()
+                eventPhotos.value = fetchedPhotos
+                Log.d("listenToUsers", "The value for storyFeed is : ${storyFeed.value}")
+            }
+        }
     }
 
 }

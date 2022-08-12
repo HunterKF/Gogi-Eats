@@ -67,7 +67,7 @@ fun Navigation(
             startDestination.value = Screen.AddReview.route
         }
         composable(Screen.Profile.route) {
-            Profile(navController)
+            Profile(navController, applicationViewModel)
         }
         composable(Screen.MainContentCamera.route) {
             MainContentCamera(
