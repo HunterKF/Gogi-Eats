@@ -9,4 +9,5 @@
     <string name="icn_photo_view_backhand_description">go back</string>
     <string name="icn_photo_view_check_description">select photo</string>
     <string name="title_activity_camera">CameraActivity</string>
+    <string name="lorem_impsum">\"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque facilisis blandit felis. Etiam ultricies rutrum ligula, in malesuada quam interdum quis. Aenean vitae pellentesque neque, in maximus leo. Maecenas iaculis enim ut hendrerit commodo. Nullam ornare efficitur ex a pharetra. Ut scelerisque pretium convallis. \"</string>
 </resources>

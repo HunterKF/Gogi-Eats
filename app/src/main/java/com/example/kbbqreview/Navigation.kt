@@ -16,6 +16,7 @@ import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.screens.camera.MainContentCamera
 import com.example.kbbqreview.screens.map.currentLocation.ChooseLocationMap
 import com.example.kbbqreview.screens.story.AddReview
+import com.example.kbbqreview.screens.story.Profile
 import com.example.kbbqreview.screens.story.Story
 import com.example.kbbqreview.screens.story.StoryViewModel
 
@@ -64,6 +65,9 @@ fun Navigation(
                 applicationViewModel = applicationViewModel
             )
             startDestination.value = Screen.AddReview.route
+        }
+        composable(Screen.Profile.route) {
+            Profile(navController)
         }
         composable(Screen.MainContentCamera.route) {
             MainContentCamera(

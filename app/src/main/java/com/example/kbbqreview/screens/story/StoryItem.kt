@@ -1,5 +1,7 @@
 package com.example.kbbqreview.screens.story
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -19,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
@@ -136,7 +139,7 @@ fun SliderView(state: PagerState, review: StoredPlace, photos: List<Int>) {
         Column(modifier = Modifier.padding(horizontal = 12.dp)) {
             ReviewComment(
                 review = review,
-                text = ""
+                text = stringResource(R.string.lorem_impsum)
             )
         }
     }
@@ -144,6 +147,8 @@ fun SliderView(state: PagerState, review: StoredPlace, photos: List<Int>) {
 
 @Composable
 fun TopRow(review: StoredPlace) {
+    // Map point based on address
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -174,7 +179,9 @@ fun TopRow(review: StoredPlace) {
             text = review.name,
             style = MaterialTheme.typography.h6
         )
-        IconButton(onClick = { /*TODO*/ }) {
+        IconButton(onClick = {
+            /*TODO*/
+        }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_baseline_more),
                 contentDescription = "More"
@@ -240,6 +247,14 @@ fun ReviewComment(review: StoredPlace, text: String) {
 
 @Composable
 fun AddressBar(review: StoredPlace) {
+    val mapIntent: Intent = Uri.parse(
+        "geo:0,0?q=1600+Amphitheatre+Parkway,+Mountain+View,+California"
+    ).let { location ->
+        // Or map point based on latitude/longitude
+        // val location: Uri = Uri.parse("geo:37.422219,-122.08364?z=14") // z param is zoom level
+        Intent(Intent.ACTION_VIEW, location)
+    }
+    val context = LocalContext.current
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             modifier = Modifier.weight(6f),
@@ -252,10 +267,12 @@ fun AddressBar(review: StoredPlace) {
                 contentDescription = "Share"
             )
         }
-        IconButton(modifier = Modifier.weight(1f), onClick = { /*TODO*/ }) {
+        IconButton(modifier = Modifier.weight(1f), onClick = {
+            context.startActivity(mapIntent)
+        }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_baseline_map_marker_24),
-                contentDescription = "Share"
+                contentDescription = "Launch map"
             )
         }
     }
