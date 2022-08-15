@@ -3,6 +3,7 @@ package com.example.kbbqreview.screens.addreview
 import android.content.Context
 import android.location.Address
 import android.location.Geocoder
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
@@ -10,7 +11,11 @@ import com.example.kbbqreview.data.photos.Photo
 import java.util.*
 
 class ReviewViewModel : ViewModel() {
-    val textFieldState = mutableStateOf("")
+    val restaurantNameState = mutableStateOf("")
+    val reviewComment = mutableStateOf("")
+    fun onTextFieldChange(textValue: MutableState<String>, query: String) {
+        textValue.value = query
+    }
     val valueMeat = mutableStateOf(2)
 
     val valueBanchan = mutableStateOf(2)
@@ -18,6 +23,8 @@ class ReviewViewModel : ViewModel() {
     val valueAmenities = mutableStateOf(2)
 
     val valueAtmosphere = mutableStateOf(2)
+
+    val totalValue = mutableStateOf(0)
 
     val newMarkerPositionLatReview = mutableStateOf(0.0)
     val newMarkerPositionLngReview = mutableStateOf(0.0)
@@ -30,10 +37,13 @@ class ReviewViewModel : ViewModel() {
     fun changeLocation(latitude: Double, longitude: Double, context: Context) {
         newMarkerPositionLatReview.value = latitude
         newMarkerPositionLngReview.value = longitude
-        address.value = getAddressFromLocation(context)
+        address.value = getAddressFromLocation(context, latitude, longitude)
+    }
+    fun addValues() {
+        totalValue.value = valueMeat.value + valueAmenities.value + valueAtmosphere.value + valueBanchan.value
     }
 
-    private fun getAddressFromLocation(context: Context): String {
+    fun getAddressFromLocation(context: Context, lat: Double, long: Double): String {
         val geocoder = Geocoder(context, Locale.getDefault())
         var addresses: List<Address>? = null
         val address: Address?
@@ -41,8 +51,8 @@ class ReviewViewModel : ViewModel() {
 
         try {
             addresses = geocoder.getFromLocation(
-                newMarkerPositionLatReview.value,
-                newMarkerPositionLngReview.value,
+                lat,
+                long,
                 1
             )
         } catch (ex: Exception) {
@@ -59,7 +69,7 @@ class ReviewViewModel : ViewModel() {
     }
 
     fun clearValues(selectImages: SnapshotStateList<Photo>) {
-        textFieldState.value = ""
+        restaurantNameState.value = ""
         valueMeat.value = 2
         valueBanchan.value = 2
         valueAtmosphere.value = 2

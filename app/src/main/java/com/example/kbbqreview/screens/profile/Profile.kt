@@ -1,5 +1,6 @@
 package com.example.kbbqreview.screens.story
 
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,8 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -25,6 +26,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.kbbqreview.ApplicationViewModel
 import com.example.kbbqreview.R
+import com.example.kbbqreview.data.user.User
 import com.example.kbbqreview.items
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import kotlinx.coroutines.launch
@@ -35,6 +37,7 @@ fun Profile(navController: NavHostController, applicationViewModel: ApplicationV
         FirebaseAuthUIActivityResultContract()
     ) { res -> applicationViewModel.signInResult(res) }
 
+    val context = LocalContext.current
     Scaffold(
         bottomBar = {
             BottomNavigation {
@@ -70,11 +73,24 @@ fun Profile(navController: NavHostController, applicationViewModel: ApplicationV
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (applicationViewModel.user == null) {
-
-                Button(modifier = Modifier.fillMaxWidth(),
-                    onClick = { applicationViewModel.signOn(signInLauncher) }) {
-                    Text("Sing in")
+            if (applicationViewModel.activeUser.value == null) {
+                Column {
+                    Button(modifier = Modifier.fillMaxWidth(),
+                        onClick = { applicationViewModel.signOn(signInLauncher) }) {
+                        Text("Sing in")
+                    }
+                    Button(modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            Toast.makeText(context, "The value for activeUser is: ${applicationViewModel.activeUser.value}", Toast.LENGTH_LONG).show()
+                        }) {
+                        Text("activeUser")
+                    }
+                    Button(modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            Toast.makeText(context, "The value for user is: ${applicationViewModel.user}", Toast.LENGTH_LONG).show()
+                        }) {
+                        Text("user")
+                    }
                 }
 
             } else {
@@ -117,7 +133,9 @@ fun ProfileScreen(applicationViewModel: ApplicationViewModel) {
                 Column(modifier = Modifier.align(Alignment.Center)) {
                     Row() {
                         Text("Sign Out")
-                        IconButton(onClick = { applicationViewModel.signOut() }) {
+                        IconButton(onClick = {
+                            applicationViewModel.signOut()
+                        }) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_outline_cancel),
                                 tint = Color.Red,

@@ -21,7 +21,6 @@ import com.google.android.libraries.places.api.net.PlacesClient
 
 class MainActivity : ComponentActivity() {
 
-    //    val locationViewModel = ApplicationViewModel(application = this.application)
     private val applicationViewModel: ApplicationViewModel by viewModels<ApplicationViewModel>()
 
     val shouldShowCamera = mutableStateOf(false)
@@ -30,10 +29,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
 
-//            applicationViewModel.listenToAllUsers()
+            applicationViewModel.listenToAllUsers()
+            applicationViewModel.startLocationUpdates()
             applicationViewModel.firebaseUser?.let {
                 val user = User(it.uid, "")
                 applicationViewModel.user = user
+                applicationViewModel.activeUser.value = user
             }
             window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             KBBQReviewTheme {
@@ -51,7 +52,6 @@ class MainActivity : ComponentActivity() {
 
         }
     }
-
 
 
     private fun prepLocationUpdates() {
@@ -88,8 +88,10 @@ class MainActivity : ComponentActivity() {
             Log.i("Permission", "Permission denied")
         }
     }
+
     fun hasCameraPermission() = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-    fun hasExternalStoragePermission() = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+    fun hasExternalStoragePermission() =
+        ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
 
     private fun requestCameraPermission() {
         when {
@@ -108,21 +110,24 @@ class MainActivity : ComponentActivity() {
             else -> requestPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
+
     //This is done when the camera button is clicked.
     private fun takePhoto() {
         if (hasCameraPermission() == PERMISSION_GRANTED && hasExternalStoragePermission() == PERMISSION_GRANTED) {
 
         } else {
-            requestMultiplePermissions.launch(arrayOf(
-                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                Manifest.permission.CAMERA
-            ))
+            requestMultiplePermissions.launch(
+                arrayOf(
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.CAMERA
+                )
+            )
         }
     }
+
     private val requestMultiplePermissions = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) {
-        resultsMap ->
+    ) { resultsMap ->
         var permissionGranted = false
         resultsMap.forEach {
             if (it.value) {
@@ -134,19 +139,10 @@ class MainActivity : ComponentActivity() {
         if (permissionGranted) {
             shouldShowCamera.value = true
         } else {
-            Toast.makeText(this, "Unable to load camera without permission.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Unable to load camera without permission.", Toast.LENGTH_LONG)
+                .show()
         }
     }
-
-
-
-
-
-
-
-
-
-
 
 
 }

@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -112,9 +111,6 @@ fun AddReview(
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
 
-            fun onTextFieldChange(query: String) {
-                reviewViewModel.textFieldState.value = query
-            }
 
             val intent = (context as MainActivity).intent
             val photoUri = intent.getStringExtra("image")
@@ -138,18 +134,24 @@ fun AddReview(
                     }
 
                     item {
-                        TextField(
+
+                        //restaurant
+                        OutlinedTextField(
                             modifier = Modifier
                                 .focusRequester(focusRequester)
                                 .fillMaxWidth(),
-                            value = reviewViewModel.textFieldState.value,
+                            value = reviewViewModel.restaurantNameState.value,
                             singleLine = true,
                             onValueChange = { newValue ->
-                                onTextFieldChange(newValue)
+                                reviewViewModel.onTextFieldChange(
+                                    reviewViewModel.restaurantNameState,
+                                    newValue
+                                )
                             }
                         )
                     }
                     item {
+                        //address
                         LocationBar(
                             applicationViewModel = applicationViewModel,
                             reviewViewModel = reviewViewModel,
@@ -159,6 +161,7 @@ fun AddReview(
                         )
                     }
                     item {
+                        //review values
                         reviewBar(
                             value = reviewViewModel.valueMeat, title = "Meat",
                             focusManager = focusManager
@@ -179,7 +182,15 @@ fun AddReview(
                             focusManager = focusManager
                         )
                     }
+                    item {
+                        //written review
+                        ReviewTextfield(
+                            modifier = Modifier.fillMaxWidth(),
+                            reviewViewModel = reviewViewModel
+                        )
+                    }
                     if (cameraViewModel.showPhotoRow.value) {
+                        //photos
                         item {
                             LazyRow(
                                 modifier = Modifier
@@ -199,6 +210,7 @@ fun AddReview(
 
                     }
                     item {
+                        //Submit bar
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
@@ -232,10 +244,9 @@ fun AddReview(
                                 valueBanchan = reviewViewModel.valueBanchan,
                                 valueAmenities = reviewViewModel.valueAmenities,
                                 valueAtmosphere = reviewViewModel.valueAtmosphere,
-                                textFieldState = reviewViewModel.textFieldState,
+                                textFieldState = reviewViewModel.restaurantNameState,
                                 reviewViewModel = reviewViewModel,
-                                context = context,
-                                allPhotos = allPhotos
+                                context = context
                             )
                             CameraButton(
                                 modifier = Modifier
@@ -254,6 +265,43 @@ fun AddReview(
 
 
     }
+}
+
+@Composable
+fun ReviewTextfield(reviewViewModel: ReviewViewModel, modifier: Modifier) {
+    val context = LocalContext.current
+    val currentCharCount = remember { mutableStateOf(0) }
+    val maxChars = 1000
+
+    Text(text = "(Optional) Write about it", style = MaterialTheme.typography.subtitle1)
+    Box() {
+        OutlinedTextField(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.Center),
+            value = reviewViewModel.reviewComment.value,
+            onValueChange = { newValue ->
+                if (newValue.length <= maxChars) {
+                    currentCharCount.value = newValue.length
+                    reviewViewModel.onTextFieldChange(
+                        reviewViewModel.reviewComment,
+                        newValue
+                    )
+                } else {
+                    Toast.makeText(context, "Shorten review.", Toast.LENGTH_SHORT).show()
+                }
+
+            }
+
+        )
+        Text(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .offset(x = (-2).dp, y = (-4).dp),
+            text = "${currentCharCount.value} / 1000"
+        )
+    }
+
 }
 
 
@@ -305,8 +353,6 @@ fun reviewBar(value: MutableState<Int>, title: String, focusManager: FocusManage
                     activeTrackColor = MaterialTheme.colors.secondary
                 )
             )
-
-            Text("3", modifier = Modifier.padding(end = MaterialTheme.spacing.small))
         }
     }
 }
@@ -337,7 +383,6 @@ fun SubmitButton(
     textFieldState: MutableState<String>,
     reviewViewModel: ReviewViewModel,
     context: Context,
-    allPhotos: SnapshotStateList<Photo>,
     applicationViewModel: ApplicationViewModel
 
 ) {
@@ -354,21 +399,26 @@ fun SubmitButton(
                 Toast.makeText(context, "Add a name!", Toast.LENGTH_SHORT).show()
             }
             else -> {
+                reviewViewModel.addValues()
                 applicationViewModel.saveReview(
                     selectImages = cameraViewModel.selectImages,
                     storedPlace = StoredPlace(
                         0L,
                         "",
+                        applicationViewModel.user!!.displayName,
                         textFieldState.value,
                         reviewViewModel.newMarkerPositionLatReview.value,
-                        reviewViewModel.newMarkerPositionLatReview.value,
+                        reviewViewModel.newMarkerPositionLngReview.value,
+                        reviewViewModel.address.value,
                         valueMeat.value,
                         valueBanchan.value,
                         valueAmenities.value,
-                        valueAtmosphere.value
+                        valueAtmosphere.value,
+                        reviewViewModel.totalValue.value,
+                        reviewViewModel.reviewComment.value
+
                     )
                 )
-                reviewViewModel.clearValues(cameraViewModel.selectImages)
                 Toast.makeText(context, "Review saved!", Toast.LENGTH_SHORT).show()
                 /*
                 applicationViewModel.uploadPhotos(

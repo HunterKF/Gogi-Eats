@@ -28,11 +28,15 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Scale
 import com.example.kbbqreview.R
+import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.data.roomplaces.StoredPlace
+import com.example.kbbqreview.data.storyfeed.StoryItem
+import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.PagerState
@@ -41,7 +45,7 @@ import com.google.accompanist.pager.rememberPagerState
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun StoryItem() {
+fun StoryItem(storyItem: StoryItem) {
     var photos = listOf(
         R.drawable.meat,
         R.drawable.restaurant,
@@ -56,7 +60,8 @@ fun StoryItem() {
         meatQuality = 3,
         banchanQuality = 2,
         amenitiesQuality = 2,
-        atmosphereQuality = 2
+        atmosphereQuality = 2,
+        reviewComment = "reviewViewModel.totalValue.value"
     )
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -65,7 +70,7 @@ fun StoryItem() {
 
         val state = rememberPagerState()
         Column {
-            SliderView(state, review, photos)
+            SliderView(state, storyItem.reviews, storyItem.photos)
             Spacer(modifier = Modifier.padding(4.dp))
         }
     }
@@ -73,7 +78,7 @@ fun StoryItem() {
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun SliderView(state: PagerState, review: StoredPlace, photos: List<Int>) {
+fun SliderView(state: PagerState, review: StoredPlace, photos: List<Photo>) {
 
 
     Column(
@@ -87,44 +92,61 @@ fun SliderView(state: PagerState, review: StoredPlace, photos: List<Int>) {
             TopRow(review)
         }
         val imageUrl = remember {
-            mutableStateOf(0)
+            mutableStateOf(Photo())
         }
-        HorizontalPager(
-            state = state,
-            count = photos.size, modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-        ) { page ->
-            imageUrl.value = photos[page]
+        Box(
+            modifier = Modifier
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            HorizontalPager(
+                state = state,
+                count = photos.size, modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+            ) { page ->
+                imageUrl.value = photos[page]
 
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    val painter =
-                        rememberAsyncImagePainter(
-                            ImageRequest.Builder(LocalContext.current).data(data = imageUrl.value)
-                                .apply(block = fun ImageRequest.Builder.() {
-                                    placeholder(R.drawable.ic_circle)
-                                    scale(Scale.FILL)
-                                }).build()
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        val painter =
+                            rememberAsyncImagePainter(
+                                ImageRequest.Builder(LocalContext.current)
+                                    .data(data = imageUrl.value.remoteUri)
+                                    .apply(block = fun ImageRequest.Builder.() {
+                                        placeholder(R.drawable.ic_circle)
+                                        scale(Scale.FILL)
+                                    }).build()
+                            )
+                        Image(
+                            painter = painter, contentDescription = "", Modifier
+                                .padding(vertical = 8.dp)
+                                .fillMaxSize(), contentScale = ContentScale.Crop
                         )
-                    Image(
-                        painter = painter, contentDescription = "", Modifier
-                            .padding(vertical = 8.dp)
-                            .fillMaxSize(), contentScale = ContentScale.Crop
-                    )
-                }
+                    }
 
+                }
             }
+            Box(
+                modifier = Modifier
+                    .zIndex(1f)
+                    .align(Alignment.BottomCenter)
+                    .offset(y = (-20).dp),
+            ) {
+                DotsIndicator(
+                    totalDots = photos.size,
+                    selectedIndex = state.currentPage
+                )
+            }
+
         }
 
-        DotsIndicator(
-            totalDots = photos.size,
-            selectedIndex = state.currentPage
-        )
+
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -138,8 +160,7 @@ fun SliderView(state: PagerState, review: StoredPlace, photos: List<Int>) {
         }
         Column(modifier = Modifier.padding(horizontal = 12.dp)) {
             ReviewComment(
-                review = review,
-                text = stringResource(R.string.lorem_impsum)
+                review = review
             )
         }
     }
@@ -148,7 +169,6 @@ fun SliderView(state: PagerState, review: StoredPlace, photos: List<Int>) {
 @Composable
 fun TopRow(review: StoredPlace) {
     // Map point based on address
-
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -171,7 +191,7 @@ fun TopRow(review: StoredPlace) {
                     painter = painterResource(id = R.drawable.ic_baseline_star_rate_24),
                     contentDescription = null
                 )
-                Text("${review.amenitiesQuality}")
+                Text("${review.totalValues}")
             }
 
         }
@@ -192,14 +212,14 @@ fun TopRow(review: StoredPlace) {
 }
 
 @Composable
-fun ReviewComment(review: StoredPlace, text: String) {
+fun ReviewComment(review: StoredPlace) {
 
 
     val MINIMIZED_MAX_LINES = 3
     var isExpanded by remember { mutableStateOf(false) }
     val textLayoutResultState = remember { mutableStateOf<TextLayoutResult?>(null) }
     var isClickable by remember { mutableStateOf(false) }
-    var finalText by remember { mutableStateOf(text) }
+    var finalText by remember { mutableStateOf(review.reviewComment) }
     val textLayoutResult = textLayoutResultState.value
 
     LaunchedEffect(textLayoutResult) {
@@ -207,13 +227,13 @@ fun ReviewComment(review: StoredPlace, text: String) {
 
         when {
             isExpanded -> {
-                finalText = "$text Show Less"
+                finalText = "${review.reviewComment} Show Less"
 
             }
             !isExpanded && textLayoutResult.hasVisualOverflow -> {
                 val lastCharIndex = textLayoutResult.getLineEnd(MINIMIZED_MAX_LINES - 2)
                 val showMoreString = "... Show More"
-                val adjustedText = text
+                val adjustedText = review.reviewComment
                     .substring(startIndex = 0, endIndex = lastCharIndex)
                     .dropLast(showMoreString.length)
                     .dropLastWhile { it == ' ' || it == '.' }
@@ -231,7 +251,7 @@ fun ReviewComment(review: StoredPlace, text: String) {
                     fontWeight = FontWeight.Bold
                 )
             ) {
-                append(review.name)
+                append(review.userId)
                 append(" ")
             }
             append(finalText)
@@ -247,6 +267,8 @@ fun ReviewComment(review: StoredPlace, text: String) {
 
 @Composable
 fun AddressBar(review: StoredPlace) {
+    val reviewViewModel = ReviewViewModel()
+    val context = LocalContext.current
     val mapIntent: Intent = Uri.parse(
         "geo:0,0?q=1600+Amphitheatre+Parkway,+Mountain+View,+California"
     ).let { location ->
@@ -254,11 +276,10 @@ fun AddressBar(review: StoredPlace) {
         // val location: Uri = Uri.parse("geo:37.422219,-122.08364?z=14") // z param is zoom level
         Intent(Intent.ACTION_VIEW, location)
     }
-    val context = LocalContext.current
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             modifier = Modifier.weight(6f),
-            text = "4 Haeun-daero 594 beonga-gil, Busan",
+            text = reviewViewModel.getAddressFromLocation(context, review.latitude, review.longitude),
             fontWeight = FontWeight.SemiBold
         )
         IconButton(modifier = Modifier.weight(1f), onClick = { /*TODO*/ }) {

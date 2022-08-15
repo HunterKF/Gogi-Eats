@@ -13,6 +13,10 @@ class StoredPlace(
     @ColumnInfo(name = "firebase_id")
     var firebaseId: String = "",
 
+
+    @ColumnInfo(name = "user_id")
+    var userId: String = "",
+
     @ColumnInfo(name = "name")
     val name: String = "",
 
@@ -21,6 +25,9 @@ class StoredPlace(
 
     @ColumnInfo(name = "longitude")
     val longitude: Double = 0.0,
+
+    @ColumnInfo(name = "address")
+    val address: String = "",
 
     @ColumnInfo(name = "meat_quality")
     val meatQuality: Int = 0,
@@ -32,7 +39,12 @@ class StoredPlace(
     val amenitiesQuality: Int = 0,
 
     @ColumnInfo(name = "atmosphere_quality")
-    val atmosphereQuality: Int = 0
+    val atmosphereQuality: Int = 0,
 
+    @ColumnInfo(name = "total_values")
+    val totalValues: Int = 0,
+
+    @ColumnInfo(name = "review_comment")
+    val reviewComment: String = "",
 )
 

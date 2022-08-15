@@ -35,14 +35,11 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.Query
 import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageMetadata
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import java.io.ByteArrayOutputStream
 
 class ApplicationViewModel(application: Application) : AndroidViewModel(application) {
@@ -58,6 +55,8 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
 
     internal val NEW_NAME = "New restaurant"
     var user: User? = null
+    val activeUser = mutableStateOf(user)
+
     var firebaseUser: FirebaseUser? = FirebaseAuth.getInstance().currentUser
 
     val fetchedPhotos = ArrayList<Photo>()
@@ -116,6 +115,13 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
     }
 
 
+    fun setActiveUser() {
+        if (user != null) {
+            activeUser.value = user
+        } else {
+            activeUser.value = null
+        }
+    }
     fun signInResult(result: FirebaseAuthUIAuthenticationResult) {
         val response = result.idpResponse
         if (result.resultCode == Activity.RESULT_OK) {
@@ -132,17 +138,21 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
     fun signOut() {
         FirebaseAuth.getInstance().signOut()
         user = null
+        activeUser.value = null
     }
 
     private fun saveUser(user: User) {
         val handle = firestore.collection("users").document(user.uid).set(user)
-
+        activeUser.value = user
         handle.addOnSuccessListener { Log.d("Firebase", "Document saved") }
         handle.addOnFailureListener { Log.e("Firebase", "Saved failed $it") }
     }
 
 
-    fun saveReview(storedPlace: StoredPlace, selectImages: SnapshotStateList<Photo>) {
+    fun saveReview(
+        storedPlace: StoredPlace,
+        selectImages: SnapshotStateList<Photo>
+    ) {
         user?.let { user ->
             val document =
                 if (storedPlace.firebaseId == null || storedPlace.firebaseId.isEmpty()) {
@@ -167,7 +177,10 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
 
     }
 
-    fun uploadPhotos(selectImages: SnapshotStateList<Photo>, storedPlace: StoredPlace) {
+    fun uploadPhotos(
+        selectImages: SnapshotStateList<Photo>,
+        storedPlace: StoredPlace
+    ) {
 
         var indexInt = 0
         selectImages.forEach { photo ->
@@ -190,6 +203,7 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
                 Log.e("Firebase Image", it.message ?: "No message")
             }
         }
+        selectImages.clear()
     }
 
     private fun updatePhotoData(photo: Photo, storedPlace: StoredPlace) {
