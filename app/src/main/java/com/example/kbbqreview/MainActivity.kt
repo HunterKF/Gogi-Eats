@@ -17,7 +17,6 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import com.example.kbbqreview.data.user.User
 import com.example.kbbqreview.ui.theme.KBBQReviewTheme
-import com.google.android.libraries.places.api.net.PlacesClient
 
 class MainActivity : ComponentActivity() {
 
@@ -29,7 +28,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
 
-            applicationViewModel.listenToAllUsers()
+//            applicationViewModel.listenToAllUsers()
             applicationViewModel.startLocationUpdates()
             applicationViewModel.firebaseUser?.let {
                 val user = User(it.uid, "")
@@ -53,6 +52,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        applicationViewModel.listenToAllUsers()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        applicationViewModel.listenToAllUsers()
+    }
 
     private fun prepLocationUpdates() {
         if (ContextCompat.checkSelfPermission(

@@ -405,7 +405,7 @@ fun SubmitButton(
                     storedPlace = StoredPlace(
                         0L,
                         "",
-                        applicationViewModel.user!!.displayName,
+                        "Hunter",
                         textFieldState.value,
                         reviewViewModel.newMarkerPositionLatReview.value,
                         reviewViewModel.newMarkerPositionLngReview.value,
@@ -415,8 +415,8 @@ fun SubmitButton(
                         valueAmenities.value,
                         valueAtmosphere.value,
                         reviewViewModel.totalValue.value,
-                        reviewViewModel.reviewComment.value
-
+                        reviewViewModel.reviewComment.value,
+                        reviewViewModel.currentDate
                     )
                 )
                 Toast.makeText(context, "Review saved!", Toast.LENGTH_SHORT).show()

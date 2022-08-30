@@ -11,6 +11,7 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.compose.animation.core.snap
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.core.net.toUri
@@ -40,6 +41,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import okhttp3.internal.wait
 import java.io.ByteArrayOutputStream
 
 class ApplicationViewModel(application: Application) : AndroidViewModel(application) {
@@ -65,6 +67,8 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
 
     val listOfStoryItem = mutableListOf<StoryItem>()
     val storyFeed = MutableLiveData<StoryItemList>()
+    val listOfUserReviews = mutableListOf<StoryItem>()
+    val userReviews = MutableLiveData<StoryItemList>()
     private val _isRefreshing = MutableStateFlow(false)
 
     val isRefreshing: StateFlow<Boolean>
@@ -76,6 +80,7 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
         viewModelScope.launch {
             // A fake 2 second 'refresh'
             _isRefreshing.emit(true)
+            listenToAllUsers()
             delay(2000)
             _isRefreshing.emit(false)
         }
@@ -114,14 +119,6 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
         signInLauncher.launch(signinIntent)
     }
 
-
-    fun setActiveUser() {
-        if (user != null) {
-            activeUser.value = user
-        } else {
-            activeUser.value = null
-        }
-    }
     fun signInResult(result: FirebaseAuthUIAuthenticationResult) {
         val response = result.idpResponse
         if (result.resultCode == Activity.RESULT_OK) {
@@ -177,11 +174,10 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
 
     }
 
-    fun uploadPhotos(
+    private fun uploadPhotos(
         selectImages: SnapshotStateList<Photo>,
         storedPlace: StoredPlace
     ) {
-
         var indexInt = 0
         selectImages.forEach { photo ->
             photo.listIndex = indexInt
@@ -248,6 +244,49 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
         return Uri.parse(path)
     }
 
+    fun listenToUserReview() {
+        //this fetches the reviews
+        user?.let { user ->
+            firestore.collection("users").document(user.uid).collection("reviews")
+                .addSnapshotListener { snapshot, e ->
+                    if (e != null) {
+                        Log.w("Listen failed", e)
+                        return@addSnapshotListener
+                    }
+                    snapshot?.let {
+                        val allReviews = ArrayList<StoredPlace>()
+                        val inPhotos = ArrayList<Photo>()
+                        val documents = snapshot.documents
+                        documents.forEach {
+                            val review = it.toObject(StoredPlace::class.java)
+                            review?.let {
+                                allReviews.add(it)
+                            }
+                            firestore.collection("users").document(user.uid).collection("reviews")
+                                .document(it.id).collection("photos")
+                                .addSnapshotListener { snapshot, e ->
+                                    if (e != null) {
+                                        Log.w("Listen failed", e)
+                                        return@addSnapshotListener
+                                    }
+                                    snapshot?.let {
+                                        val photoDocument = snapshot.documents
+                                        photoDocument.forEach {
+                                            val photo = it.toObject(Photo::class.java)
+                                            photo?.let {
+                                                inPhotos.add(it)
+                                            }
+                                        }
+                                        listOfUserReviews.add(StoryItem(review!!, inPhotos))
+                                        eventPhotos.value = inPhotos
+                                    }
+                                }
+                        }
+                        userReviews.value = StoryItemList(listOfUserReviews)
+                    }
+                }
+        }
+    }
 
     //This is the good fun fun
     fun listenToAllUsers() {
@@ -271,7 +310,7 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
                         listOfUsers.add(user)
                     }
                     user?.let { user ->
-                        handle.document(user.uid).collection("reviews")
+                        handle.document(user.uid).collection("reviews").orderBy("date", Query.Direction.DESCENDING)
                             .addSnapshotListener { snapshot, e ->
 
                                 Log.d("listenToUsers", "Reviews has started firing.")
@@ -284,8 +323,28 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
                                     reviews.forEach {
                                         Log.d("listenToUsers", "Reviews has fired.")
                                         var review = it.toObject(StoredPlace::class.java)
-                                        getPhotos(handle, user, review!!)
-                                        review?.let {
+                                        val photoList = getPhotos(handle, user, review!!)
+                                        if (!_isRefreshing.value) {
+                                            //this is being called...? DEBUG DEBUG DEBUG
+                                            if (storyFeed.value?.storyList?.contains(StoryItem(review, photoList)) == true) {
+                                                //pass
+                                                Log.d("Submit", "The value is already in. Updating has been skipped.")
+                                            } else {
+                                                Log.d("Submit", "A new review was detected. Adding new review.")
+                                                if (listOfStoryItem.contains(StoryItem(review, photoList))){
+                                                    println("SCREAM AGAIN AND AGAIN TILL YOU'RE HAPPY")
+                                                    println("SCREAM AGAIN AND AGAIN TILL YOU'RE HAPPY")
+                                                    println("SCREAM AGAIN AND AGAIN TILL YOU'RE HAPPY")
+                                                }
+                                                listOfStoryItem.add(StoryItem(review, photoList))
+                                            }
+
+                                        }
+                                        //Hypothetically, I don't need a function to update the story feed
+//                                        updateStoryFeed()
+//                                        storyFeed.value = StoryItemList(listOfStoryItem)
+                                        //THIS IS BEING CALLLED DEBUG DEBUG
+                                        review.let {
                                             Log.d("listenToUsers", "Review has been stored.")
                                             storedPlace = it
                                         }
@@ -296,19 +355,59 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
                     }
                 }
                 userList.value = listOfUsers
+                if (storyFeed.value != null) {
+                    storyFeed.value!!.storyList.clear()
+                    storyFeed.value = StoryItemList(listOfStoryItem)
+                }
+                storyFeed.value = StoryItemList(listOfStoryItem)
+                listOfStoryItem.clear()
             }
         }
 
     }
 
+    //Working on adding the two lists together. Right now, it is just adding the same list twice, so the result is a list with the same thing being added.
+    //it is not filtering out anything right now.
     private fun updateStoryFeed() {
-        storyFeed.value = StoryItemList(listOfStoryItem)
+        if (_isRefreshing.value) {
+            Log.d("Submit", "Submit has triggered this function.")
+            val incomingList = StoryItemList(listOfStoryItem)
+            val originalList = storyFeed.value
+            originalList?.let {
+                val differences = originalList.storyList.minus(incomingList.storyList)
+                Log.d("Update story", "The size of differences is: ${differences.size}")
+                if (differences.isNotEmpty()) {
+                    differences.let {
+                        incomingList.storyList.clear()
+                        it.forEach {
+                            Log.d(
+                                "Update story",
+                                "Before story is updated. Current size of story feed is: ${storyFeed.value?.storyList?.size}"
+                            )
+                            storyFeed.value!!.storyList.add(it)
+                            Log.d(
+                                "Update story",
+                                "Story has been updated. Current size of story feed is: ${storyFeed.value?.storyList?.size}"
+                            )
+                        }
+                    }
+                }
+            }
+
+        } else {
+            storyFeed.value = StoryItemList(listOfStoryItem)
+        }
     }
 
 
-    private fun getPhotos(handle: CollectionReference, user: User, review: StoredPlace) {
+    private fun getPhotos(
+        handle: CollectionReference,
+        user: User,
+        review: StoredPlace
+    ): ArrayList<Photo> {
 
         Log.d("listenToUsers", "Photos has started firing.")
+        var photoList = ArrayList<Photo>()
         val photoHandle =
             handle.document(user.uid).collection("reviews").document(review.firebaseId)
                 .collection("photos").orderBy("listIndex", Query.Direction.ASCENDING)
@@ -319,25 +418,26 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
             }
             snapshot?.let {
                 val photoDocument = snapshot.documents
-                var photoList = ArrayList<Photo>()
                 photoDocument.forEach {
                     Log.d("listenToUsers", "Photos for each has fired.")
                     val photo = it.toObject(Photo::class.java)
                     photoList.add(photo!!)
-                    photo?.let {
+                    photo.let {
                         fetchedPhotos.add(it)
                         Log.d("listenToUsers", "The value for it.dataTaken is : ${it.dateTaken}")
                         Log.d("listenToUsers", "The value for user.id is : ${review.name}")
                     }
                 }
-
-                listOfStoryItem.add(StoryItem(review, photoList))
-
-                updateStoryFeed()
-                eventPhotos.value = fetchedPhotos
-                Log.d("listenToUsers", "The value for storyFeed is : ${storyFeed.value}")
             }
         }
+
+        return photoList
     }
+
+    fun getReviews() {
+         val db = FirebaseFirestore.getInstance()
+
+    }
+
 
 }

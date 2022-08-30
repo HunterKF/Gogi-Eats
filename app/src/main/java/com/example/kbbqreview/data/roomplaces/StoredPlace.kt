@@ -46,5 +46,9 @@ class StoredPlace(
 
     @ColumnInfo(name = "review_comment")
     val reviewComment: String = "",
-)
+
+    @ColumnInfo(name = "date")
+    val date: String = "",
+
+    )
 

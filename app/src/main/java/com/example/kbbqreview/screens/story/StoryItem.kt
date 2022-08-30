@@ -46,23 +46,7 @@ import com.google.accompanist.pager.rememberPagerState
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun StoryItem(storyItem: StoryItem) {
-    var photos = listOf(
-        R.drawable.meat,
-        R.drawable.restaurant,
-        R.drawable.side_dishes
-    )
-    var review = StoredPlace(
-        itemId = 0L,
-        firebaseId = "",
-        name = "Show Me the Gogi",
-        latitude = 35.169,
-        longitude = 129.130,
-        meatQuality = 3,
-        banchanQuality = 2,
-        amenitiesQuality = 2,
-        atmosphereQuality = 2,
-        reviewComment = "reviewViewModel.totalValue.value"
-    )
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colors.background
@@ -199,6 +183,7 @@ fun TopRow(review: StoredPlace) {
             text = review.name,
             style = MaterialTheme.typography.h6
         )
+        Text(review.date)
         IconButton(onClick = {
             /*TODO*/
         }) {

@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import com.example.kbbqreview.data.photos.Photo
+import java.text.SimpleDateFormat
 import java.util.*
 
 class ReviewViewModel : ViewModel() {
@@ -33,6 +34,9 @@ class ReviewViewModel : ViewModel() {
 
     val stateLng = mutableStateOf("")
     val address = mutableStateOf("")
+
+    val sdf = SimpleDateFormat("yyyy/MM/dd hh:mm:ss")
+    val currentDate = sdf.format(Date())
 
     fun changeLocation(latitude: Double, longitude: Double, context: Context) {
         newMarkerPositionLatReview.value = latitude

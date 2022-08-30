@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -24,16 +25,23 @@ import coil.size.Scale
 import com.example.kbbqreview.ApplicationViewModel
 import com.example.kbbqreview.R
 import com.example.kbbqreview.data.photos.Photo
+import com.example.kbbqreview.data.storyfeed.StoryItemList
 import com.example.kbbqreview.items
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 
 @Composable
-fun Story(navController: NavHostController, applicationViewModel: ApplicationViewModel) {
+fun Story(
+    navController: NavHostController,
+    applicationViewModel: ApplicationViewModel
+) {
+
 
     val storyFeed by applicationViewModel.storyFeed.observeAsState()
-    val swipeRefreshState = rememberSwipeRefreshState(true)
     val isRefreshing by applicationViewModel.isRefreshing.collectAsState()
+    /*LaunchedEffect(key1 = isRefreshing) {
+        applicationViewModel.getReviews()
+    }*/
 
     Scaffold(
         bottomBar = {

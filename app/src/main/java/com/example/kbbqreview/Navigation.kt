@@ -26,7 +26,6 @@ fun Navigation(
     applicationViewModel: ApplicationViewModel
 ) {
     val focusManager = LocalFocusManager.current
-
     val location by applicationViewModel.getLocationLiveData().observeAsState()
 
     val startDestination = remember {
@@ -35,7 +34,6 @@ fun Navigation(
 
     val cameraViewModel = CameraViewModel()
     val reviewViewModel = ReviewViewModel()
-    val storyViewModel = StoryViewModel()
 
 
     NavHost(

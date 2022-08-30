@@ -28,6 +28,7 @@ fun GallerySelect(
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) {
+        /*Consider using this instead... https://github.com/hi-manshu/Pluck*/
         it.forEach(onImageUri)
     }
 
