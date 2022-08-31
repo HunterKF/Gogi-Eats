@@ -1,4 +1,4 @@
-package com.example.kbbqreview.screens.story
+package com.example.kbbqreview.screens.HomeScreen
 
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -26,7 +26,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.kbbqreview.ApplicationViewModel
 import com.example.kbbqreview.R
-import com.example.kbbqreview.data.user.User
 import com.example.kbbqreview.items
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import kotlinx.coroutines.launch

@@ -1,4 +1,4 @@
-package com.example.kbbqreview.screens.story
+package com.example.kbbqreview.screens.HomeScreen
 
 import android.app.Application
 import android.content.Context
@@ -37,7 +37,6 @@ import com.example.kbbqreview.*
 import com.example.kbbqreview.R
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.camera.CameraViewModel
-import com.example.kbbqreview.data.roomplaces.StoredPlace
 import com.example.kbbqreview.data.roomplaces.StoredPlaceViewModel
 import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.example.kbbqreview.screens.map.MapViewModel
@@ -50,7 +49,6 @@ fun AddReview(
     focusManager: FocusManager,
     navController: NavHostController,
     cameraViewModel: CameraViewModel,
-    reviewViewModel: ReviewViewModel,
     location: LocationDetails?,
     applicationViewModel: ApplicationViewModel
 ) {
@@ -63,6 +61,8 @@ fun AddReview(
     val TAG = "CAMERA TAG"
     val allPhotos = cameraViewModel.getAllPhotos()
 
+    val addReviewViewModel = ReviewViewModel()
+
     val signInLauncher = rememberLauncherForActivityResult(
         FirebaseAuthUIActivityResultContract()
     ) { res -> applicationViewModel.signInResult(res) }
@@ -70,16 +70,6 @@ fun AddReview(
     Log.d(TAG, "Current value from AddReview of showRow is: ${cameraViewModel.showPhotoRow.value}")
 
     Scaffold(
-        topBar = {
-            TopAppBar() {
-                IconButton(onClick = { applicationViewModel.signOn(signInLauncher) }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_round_person),
-                        contentDescription = null
-                    )
-                }
-            }
-        },
         bottomBar = {
             BottomNavigation {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -109,163 +99,156 @@ fun AddReview(
             }
         }
     ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding)) {
+        val innerPadding = innerPadding
 
 
-            val intent = (context as MainActivity).intent
-            val photoUri = intent.getStringExtra("image")
+        val intent = (context as MainActivity).intent
+        val photoUri = intent.getStringExtra("image")
 
-            val lazyState = rememberLazyListState()
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = Color.White
+        val lazyState = rememberLazyListState()
+        Surface {
+            LazyColumn(
+                modifier = Modifier
+                    .padding(horizontal = MaterialTheme.spacing.medium)
+                    .scrollable(state = lazyState, orientation = Orientation.Horizontal),
+
+                contentPadding = PaddingValues(bottom = 100.dp)
             ) {
-                LazyColumn(
-                    modifier = Modifier
-                        .padding(MaterialTheme.spacing.medium)
-                        .scrollable(state = lazyState, orientation = Orientation.Horizontal)
-                ) {
-                    item {
-                        Text(
-                            modifier = Modifier.padding(MaterialTheme.spacing.small),
-                            text = "Review",
-                            style = MaterialTheme.typography.h4
-                        )
-                    }
+                item {
+                    Text(
+                        modifier = Modifier.padding(MaterialTheme.spacing.small),
+                        text = "Review",
+                        style = MaterialTheme.typography.h4
+                    )
+                }
 
-                    item {
+                item {
 
-                        //restaurant
-                        OutlinedTextField(
+                    //restaurant
+                    OutlinedTextField(
+                        modifier = Modifier
+                            .focusRequester(focusRequester)
+                            .fillMaxWidth(),
+                        value = addReviewViewModel.restaurantNameText.value,
+                        singleLine = true,
+                        onValueChange = { newValue ->
+                            addReviewViewModel.onTextFieldChange(
+                                addReviewViewModel.restaurantNameText,
+                                newValue
+                            )
+                        }
+                    )
+                }
+                item {
+                    //address
+                    LocationBar(
+                        applicationViewModel = applicationViewModel,
+                        reviewViewModel = addReviewViewModel,
+                        location = location,
+                        navController = navController,
+                        focusManager = focusManager
+                    )
+                }
+                item {
+                    //review values
+                    reviewBar(
+                        value = addReviewViewModel.valueMeat, title = "Meat",
+                        focusManager = focusManager
+                    )
+                    reviewBar(
+                        value = addReviewViewModel.sideDishes,
+                        title = "Banchan",
+                        focusManager = focusManager
+                    )
+                    reviewBar(
+                        value = addReviewViewModel.valueAmenities,
+                        title = "Amenities",
+                        focusManager = focusManager
+                    )
+                    reviewBar(
+                        value = addReviewViewModel.valueAtmosphere,
+                        title = "Atmosphere",
+                        focusManager = focusManager
+                    )
+                }
+                item {
+                    //written review
+                    ReviewTextfield(
+                        modifier = Modifier.fillMaxWidth(),
+                        reviewViewModel = addReviewViewModel
+                    )
+                }
+                if (cameraViewModel.showPhotoRow.value) {
+                    //photos
+                    item {
+                        LazyRow(
                             modifier = Modifier
-                                .focusRequester(focusRequester)
-                                .fillMaxWidth(),
-                            value = reviewViewModel.restaurantNameState.value,
-                            singleLine = true,
-                            onValueChange = { newValue ->
-                                reviewViewModel.onTextFieldChange(
-                                    reviewViewModel.restaurantNameState,
-                                    newValue
-                                )
-                            }
-                        )
-                    }
-                    item {
-                        //address
-                        LocationBar(
-                            applicationViewModel = applicationViewModel,
-                            reviewViewModel = reviewViewModel,
-                            location = location,
-                            navController = navController,
-                            focusManager = focusManager
-                        )
-                    }
-                    item {
-                        //review values
-                        reviewBar(
-                            value = reviewViewModel.valueMeat, title = "Meat",
-                            focusManager = focusManager
-                        )
-                        reviewBar(
-                            value = reviewViewModel.valueBanchan,
-                            title = "Banchan",
-                            focusManager = focusManager
-                        )
-                        reviewBar(
-                            value = reviewViewModel.valueAmenities,
-                            title = "Amenities",
-                            focusManager = focusManager
-                        )
-                        reviewBar(
-                            value = reviewViewModel.valueAtmosphere,
-                            title = "Atmosphere",
-                            focusManager = focusManager
-                        )
-                    }
-                    item {
-                        //written review
-                        ReviewTextfield(
-                            modifier = Modifier.fillMaxWidth(),
-                            reviewViewModel = reviewViewModel
-                        )
-                    }
-                    if (cameraViewModel.showPhotoRow.value) {
-                        //photos
-                        item {
-                            LazyRow(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp)
-                            ) {
-                                items(allPhotos) { photo ->
-                                    ImageCard(
-                                        photo = photo,
-                                        cameraViewModel = cameraViewModel,
-                                        modifier = Modifier.padding(12.dp)
-                                    )
-                                }
-
-                            }
-                        }
-
-                    }
-                    item {
-                        //Submit bar
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
+                                .fillMaxWidth()
+                                .padding(12.dp)
                         ) {
-                            CancelButton(
-                                modifier = Modifier.weight(1f)
-                            ) {
-
-                            }
-                            Button(onClick = {
-                                println(applicationViewModel.firebaseUser)
-                                Log.d(
-                                    "Firebase Auth",
-                                    "The value is now: ${applicationViewModel.firebaseUser}"
+                            items(allPhotos) { photo ->
+                                ImageCard(
+                                    photo = photo,
+                                    cameraViewModel = cameraViewModel,
+                                    modifier = Modifier.padding(12.dp)
                                 )
-                                Toast.makeText(
-                                    context,
-                                    "The value for user is: ${applicationViewModel.user}",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }) {
-                                Text("test")
                             }
-                            SubmitButton(
-                                modifier = Modifier
-                                    .weight(2f)
-                                    .padding(MaterialTheme.spacing.small),
-                                applicationViewModel = applicationViewModel,
-                                cameraViewModel = cameraViewModel,
-                                valueMeat = reviewViewModel.valueMeat,
-                                valueBanchan = reviewViewModel.valueBanchan,
-                                valueAmenities = reviewViewModel.valueAmenities,
-                                valueAtmosphere = reviewViewModel.valueAtmosphere,
-                                textFieldState = reviewViewModel.restaurantNameState,
-                                reviewViewModel = reviewViewModel,
-                                context = context
-                            )
-                            CameraButton(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(MaterialTheme.spacing.small),
-                                navController = navController,
-                                context = context
-                            )
+
                         }
                     }
-
 
                 }
+                item {
+                    //Submit bar
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        CancelButton(
+                            modifier = Modifier.weight(1f)
+                        ) {
+
+                        }
+                        Button(onClick = {
+                            println(applicationViewModel.firebaseUser)
+                            Log.d(
+                                "Firebase Auth",
+                                "The value is now: ${applicationViewModel.firebaseUser}"
+                            )
+                            Toast.makeText(
+                                context,
+                                "The value for user is: ${applicationViewModel.user}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }) {
+                            Text("test")
+                        }
+                        SubmitButton(
+                            modifier = Modifier
+                                .weight(2f)
+                                .padding(MaterialTheme.spacing.small),
+                            cameraViewModel = cameraViewModel,
+                            reviewViewModel = addReviewViewModel,
+                            context = context
+                        )
+                        CameraButton(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(MaterialTheme.spacing.small),
+                            navController = navController,
+                            context = context
+                        )
+                    }
+                }
+
+
             }
         }
-
-
     }
+
+
 }
+
 
 @Composable
 fun ReviewTextfield(reviewViewModel: ReviewViewModel, modifier: Modifier) {
@@ -279,12 +262,12 @@ fun ReviewTextfield(reviewViewModel: ReviewViewModel, modifier: Modifier) {
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.Center),
-            value = reviewViewModel.reviewComment.value,
+            value = reviewViewModel.restaurantReviewText.value,
             onValueChange = { newValue ->
                 if (newValue.length <= maxChars) {
                     currentCharCount.value = newValue.length
                     reviewViewModel.onTextFieldChange(
-                        reviewViewModel.reviewComment,
+                        reviewViewModel.restaurantReviewText,
                         newValue
                     )
                 } else {
@@ -376,49 +359,26 @@ fun CameraButton(
 fun SubmitButton(
     modifier: Modifier,
     cameraViewModel: CameraViewModel,
-    valueMeat: MutableState<Int>,
-    valueBanchan: MutableState<Int>,
-    valueAmenities: MutableState<Int>,
-    valueAtmosphere: MutableState<Int>,
-    textFieldState: MutableState<String>,
     reviewViewModel: ReviewViewModel,
     context: Context,
-    applicationViewModel: ApplicationViewModel
 
-) {
+    ) {
     Button(modifier = Modifier, onClick = {
 
         when {
-            reviewViewModel.newMarkerPositionLngReview.value == 0.0 && reviewViewModel.newMarkerPositionLatReview.value == 0.0 -> {
+            reviewViewModel.restaurantLng.value == 0.0 && reviewViewModel.restaurantLat.value == 0.0 -> {
                 Toast.makeText(context, "Add location!", Toast.LENGTH_SHORT).show()
             }
             cameraViewModel.selectImages.isEmpty() -> {
                 Toast.makeText(context, "Add a photo!", Toast.LENGTH_SHORT).show()
             }
-            textFieldState.value == "" -> {
+            reviewViewModel.restaurantNameText.value == "" -> {
                 Toast.makeText(context, "Add a name!", Toast.LENGTH_SHORT).show()
             }
             else -> {
-                reviewViewModel.addValues()
-                applicationViewModel.saveReview(
-                    selectImages = cameraViewModel.selectImages,
-                    storedPlace = StoredPlace(
-                        0L,
-                        "",
-                        "Hunter",
-                        textFieldState.value,
-                        reviewViewModel.newMarkerPositionLatReview.value,
-                        reviewViewModel.newMarkerPositionLngReview.value,
-                        reviewViewModel.address.value,
-                        valueMeat.value,
-                        valueBanchan.value,
-                        valueAmenities.value,
-                        valueAtmosphere.value,
-                        reviewViewModel.totalValue.value,
-                        reviewViewModel.reviewComment.value,
-                        reviewViewModel.currentDate
-                    )
-                )
+//                reviewViewModel.uploadPhotos(selectImages = cameraViewModel.selectImages)
+                reviewViewModel.onSubmitButton(selectImages = cameraViewModel.selectImages)
+
                 Toast.makeText(context, "Review saved!", Toast.LENGTH_SHORT).show()
                 /*
                 applicationViewModel.uploadPhotos(

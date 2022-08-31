@@ -15,10 +15,9 @@ import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.screens.camera.MainContentCamera
 import com.example.kbbqreview.screens.map.currentLocation.ChooseLocationMap
-import com.example.kbbqreview.screens.story.AddReview
-import com.example.kbbqreview.screens.story.Profile
-import com.example.kbbqreview.screens.story.Story
-import com.example.kbbqreview.screens.story.StoryViewModel
+import com.example.kbbqreview.screens.HomeScreen.AddReview
+import com.example.kbbqreview.screens.HomeScreen.Profile
+import com.example.kbbqreview.screens.HomeScreen.HomeScreen
 
 @Composable
 fun Navigation(
@@ -29,7 +28,7 @@ fun Navigation(
     val location by applicationViewModel.getLocationLiveData().observeAsState()
 
     val startDestination = remember {
-        mutableStateOf(Screen.Story.route)
+        mutableStateOf(Screen.HomeScreen.route)
     }
 
     val cameraViewModel = CameraViewModel()
@@ -50,15 +49,23 @@ fun Navigation(
                 )
             }
         }
-        composable(Screen.Story.route) {
-            Story(navController, applicationViewModel = applicationViewModel)
+        composable(Screen.HomeScreen.route) {
+            HomeScreen(
+                navController = navController,
+                applicationViewModel = applicationViewModel
+            ) {
+                navController.navigate("signin") {
+                    popUpTo("home") {
+                        inclusive = true
+                    }
+                }
+            }
         }
         composable(Screen.AddReview.route) {
             AddReview(
                 focusManager = focusManager,
                 navController = navController,
                 cameraViewModel = cameraViewModel,
-                reviewViewModel = reviewViewModel,
                 location = location,
                 applicationViewModel = applicationViewModel
             )

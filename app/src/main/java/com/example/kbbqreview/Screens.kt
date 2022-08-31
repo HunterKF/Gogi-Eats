@@ -9,7 +9,7 @@ sealed class Screen(val route: String, val label: String, val vector: ImageVecto
     object MainContentCamera : Screen("main_content_camera", "Camera", Icons.Sharp.Camera)
     object ChooseLocationMap : Screen("choose_location_map", "Choose Location", Icons.Sharp.LocalActivity)
     object Profile : Screen("profile", "profile", Icons.Sharp.Person)
-    object Story : Screen("screen", "Story", Icons.Sharp.Home)
+    object HomeScreen : Screen("screen", "Story", Icons.Sharp.Home)
     object AddReview : Screen("add_review", "Review", Icons.Sharp.Add)
     object CapturedPhotoView : Screen("captured_photo_view", "Photo", Icons.Sharp.PhotoLibrary)
 
@@ -25,7 +25,7 @@ sealed class Screen(val route: String, val label: String, val vector: ImageVecto
 }
 val items = listOf(
     Screen.MapScreen,
-    Screen.Story,
+    Screen.HomeScreen,
     Screen.AddReview,
     Screen.Profile
 )

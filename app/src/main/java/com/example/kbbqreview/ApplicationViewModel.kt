@@ -3,18 +3,11 @@ package com.example.kbbqreview
 import android.app.Activity
 import android.app.Application
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.ImageDecoder
 import android.net.Uri
-import android.os.Build
-import android.provider.MediaStore
 import android.util.Log
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.ManagedActivityResultLauncher
-import androidx.compose.animation.core.snap
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -41,8 +34,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import okhttp3.internal.wait
-import java.io.ByteArrayOutputStream
 
 class ApplicationViewModel(application: Application) : AndroidViewModel(application) {
     private val locationLiveData = LocationLiveData(application)
@@ -210,9 +201,9 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
             val handle = photoCollection.add(photo)
             handle.addOnSuccessListener {
                 Log.d("Firebase Image", "Successfully updated photo metadata")
-                photo.id = it.id
+                photo.firebaseId = it.id
                 firestore.collection("users").document(user.uid).collection("reviews")
-                    .document(storedPlace.firebaseId).collection("photos").document(photo.id)
+                    .document(storedPlace.firebaseId).collection("photos").document(photo.firebaseId)
                     .set(photo)
             }
             handle.addOnFailureListener {
@@ -223,7 +214,7 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
     }
 
 
-    fun compressImage(context: ComponentActivity, photo: Photo): Uri? {
+    /*fun compressImage(context: ComponentActivity, photo: Photo): Uri? {
         val bitmap = if (Build.VERSION.SDK_INT < 28) {
             MediaStore.Images.Media.getBitmap(
                 context.contentResolver,
@@ -242,7 +233,7 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
             null
         )
         return Uri.parse(path)
-    }
+    }*/
 
     fun listenToUserReview() {
         //this fetches the reviews
@@ -424,7 +415,6 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
                     photoList.add(photo!!)
                     photo.let {
                         fetchedPhotos.add(it)
-                        Log.d("listenToUsers", "The value for it.dataTaken is : ${it.dateTaken}")
                         Log.d("listenToUsers", "The value for user.id is : ${review.name}")
                     }
                 }
@@ -436,8 +426,5 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
 
     fun getReviews() {
          val db = FirebaseFirestore.getInstance()
-
     }
-
-
 }

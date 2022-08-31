@@ -1,7 +1,8 @@
-package com.example.kbbqreview.screens.story
+package com.example.kbbqreview.screens.HomeScreen
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -12,6 +13,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Image
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,7 +24,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
@@ -29,13 +31,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Scale
+import com.example.kbbqreview.Post
 import com.example.kbbqreview.R
 import com.example.kbbqreview.data.photos.Photo
-import com.example.kbbqreview.data.roomplaces.StoredPlace
-import com.example.kbbqreview.data.storyfeed.StoryItem
 import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
@@ -45,16 +47,15 @@ import com.google.accompanist.pager.rememberPagerState
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun StoryItem(storyItem: StoryItem) {
+fun HomeScreenItem(storyItem: Post) {
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colors.background
     ) {
-
         val state = rememberPagerState()
         Column {
-            SliderView(state, storyItem.reviews, storyItem.photos)
+            Post(state, storyItem)
             Spacer(modifier = Modifier.padding(4.dp))
         }
     }
@@ -62,9 +63,9 @@ fun StoryItem(storyItem: StoryItem) {
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun SliderView(state: PagerState, review: StoredPlace, photos: List<Photo>) {
+fun Post(state: PagerState, post: Post) {
 
-
+    val photoList = post.photoList
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -73,41 +74,44 @@ fun SliderView(state: PagerState, review: StoredPlace, photos: List<Photo>) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            TopRow(review)
+            TopRow(post)
         }
         val imageUrl = remember {
-            mutableStateOf(Photo())
+            mutableStateOf(
+                Photo(
+                    "",
+                    "",
+                    "",
+                    0
+                )
+            )
         }
         Box(
             modifier = Modifier
                 .fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
+
             HorizontalPager(
                 state = state,
-                count = photos.size, modifier = Modifier
+                count = photoList.size, modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
             ) { page ->
-                imageUrl.value = photos[page]
 
+                imageUrl.value = photoList[page]
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Top,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        val painter =
-                            rememberAsyncImagePainter(
-                                ImageRequest.Builder(LocalContext.current)
-                                    .data(data = imageUrl.value.remoteUri)
-                                    .apply(block = fun ImageRequest.Builder.() {
-                                        placeholder(R.drawable.ic_circle)
-                                        scale(Scale.FILL)
-                                    }).build()
-                            )
-                        Image(
-                            painter = painter, contentDescription = "", Modifier
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(data = imageUrl.value.remoteUri)
+                                .placeholder(R.drawable.ic_image_placeholder)
+                                .crossfade(true)
+                                .build(), contentDescription = "", Modifier
                                 .padding(vertical = 8.dp)
                                 .fillMaxSize(), contentScale = ContentScale.Crop
                         )
@@ -122,7 +126,7 @@ fun SliderView(state: PagerState, review: StoredPlace, photos: List<Photo>) {
                     .offset(y = (-20).dp),
             ) {
                 DotsIndicator(
-                    totalDots = photos.size,
+                    totalDots = photoList.size,
                     selectedIndex = state.currentPage
                 )
             }
@@ -137,22 +141,24 @@ fun SliderView(state: PagerState, review: StoredPlace, photos: List<Photo>) {
                 .padding(horizontal = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            PointIcon(R.drawable.meat_icon, review.meatQuality)
-            PointIcon(R.drawable.side_dishes_icon, review.banchanQuality)
-            PointIcon(R.drawable.amenities_icon, review.amenitiesQuality)
-            PointIcon(R.drawable.atmosphere_icon, review.atmosphereQuality)
+            PointIcon(R.drawable.meat_icon, post.valueMeat.toInt())
+            PointIcon(R.drawable.side_dishes_icon, post.valueSideDishes.toInt())
+            PointIcon(R.drawable.amenities_icon, post.valueAmenities.toInt())
+            PointIcon(R.drawable.atmosphere_icon, post.valueAtmosphere.toInt())
         }
         Column(modifier = Modifier.padding(horizontal = 12.dp)) {
             ReviewComment(
-                review = review
+                post = post
             )
         }
     }
 }
 
 @Composable
-fun TopRow(review: StoredPlace) {
+fun TopRow(post: Post) {
     // Map point based on address
+    val totalValue =
+        post.valueAmenities + post.valueMeat + post.valueAtmosphere + post.valueSideDishes
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -175,15 +181,15 @@ fun TopRow(review: StoredPlace) {
                     painter = painterResource(id = R.drawable.ic_baseline_star_rate_24),
                     contentDescription = null
                 )
-                Text("${review.totalValues}")
+                Text(totalValue.toString())
             }
 
         }
         Text(
-            text = review.name,
+            text = post.restaurantName,
             style = MaterialTheme.typography.h6
         )
-        Text(review.date)
+        Text(post.timestamp.toString())
         IconButton(onClick = {
             /*TODO*/
         }) {
@@ -197,14 +203,12 @@ fun TopRow(review: StoredPlace) {
 }
 
 @Composable
-fun ReviewComment(review: StoredPlace) {
-
-
+fun ReviewComment(post: Post) {
     val MINIMIZED_MAX_LINES = 3
     var isExpanded by remember { mutableStateOf(false) }
     val textLayoutResultState = remember { mutableStateOf<TextLayoutResult?>(null) }
     var isClickable by remember { mutableStateOf(false) }
-    var finalText by remember { mutableStateOf(review.reviewComment) }
+    var finalText by remember { mutableStateOf(post.authorText) }
     val textLayoutResult = textLayoutResultState.value
 
     LaunchedEffect(textLayoutResult) {
@@ -212,13 +216,13 @@ fun ReviewComment(review: StoredPlace) {
 
         when {
             isExpanded -> {
-                finalText = "${review.reviewComment} Show Less"
+                finalText = "${post.authorText} Show Less"
 
             }
             !isExpanded && textLayoutResult.hasVisualOverflow -> {
                 val lastCharIndex = textLayoutResult.getLineEnd(MINIMIZED_MAX_LINES - 2)
                 val showMoreString = "... Show More"
-                val adjustedText = review.reviewComment
+                val adjustedText = post.authorText
                     .substring(startIndex = 0, endIndex = lastCharIndex)
                     .dropLast(showMoreString.length)
                     .dropLastWhile { it == ' ' || it == '.' }
@@ -236,7 +240,7 @@ fun ReviewComment(review: StoredPlace) {
                     fontWeight = FontWeight.Bold
                 )
             ) {
-                append(review.userId)
+                append(post.authorName)
                 append(" ")
             }
             append(finalText)
@@ -247,11 +251,11 @@ fun ReviewComment(review: StoredPlace) {
             .clickable(enabled = isClickable) { isExpanded = !isExpanded }
             .animateContentSize(),
     )
-    AddressBar(review)
+    AddressBar(post)
 }
 
 @Composable
-fun AddressBar(review: StoredPlace) {
+fun AddressBar(review: Post) {
     val reviewViewModel = ReviewViewModel()
     val context = LocalContext.current
     val mapIntent: Intent = Uri.parse(
@@ -264,7 +268,11 @@ fun AddressBar(review: StoredPlace) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             modifier = Modifier.weight(6f),
-            text = reviewViewModel.getAddressFromLocation(context, review.latitude, review.longitude),
+            text = reviewViewModel.getAddressFromLocation(
+                context,
+                review.location!!.latitude,
+                review.location.longitude
+            ),
             fontWeight = FontWeight.SemiBold
         )
         IconButton(modifier = Modifier.weight(1f), onClick = { /*TODO*/ }) {

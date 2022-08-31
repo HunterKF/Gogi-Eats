@@ -120,8 +120,8 @@ fun MapScreen(
                     viewModel.newMarkerPositionLng.value
                 ),
                 onInfoWindowClick = { marker ->
-                    reviewViewModel.newMarkerPositionLatReview.value = marker.position.latitude
-                    reviewViewModel.newMarkerPositionLngReview.value = marker.position.longitude
+                    reviewViewModel.restaurantLat.value = marker.position.latitude
+                    reviewViewModel.restaurantLng.value = marker.position.longitude
                     navController.navigate(Screen.AddReview.route)
                     println("It changed the values.")
                 }
