@@ -4,10 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
@@ -19,6 +16,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.kbbqreview.*
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
@@ -28,12 +26,7 @@ fun HomeScreen(
 ) {
 
     val viewModel = viewModel<HomeScreenViewModel>()
-    val state by viewModel.state.collectAsState()
-    val storyFeed by applicationViewModel.storyFeed.observeAsState()
-    val isRefreshing by applicationViewModel.isRefreshing.collectAsState()
-    /*LaunchedEffect(key1 = isRefreshing) {
-        applicationViewModel.getReviews()
-    }*/
+    val posts = viewModel.observePosts().collectAsState(initial = emptyList())
 
     Scaffold(
         bottomBar = {
@@ -65,20 +58,11 @@ fun HomeScreen(
             }
         }
     ) { innerPadding ->
+        HomeScreenContents(
+            posts = posts.value
+        )
         val innerPadding = innerPadding
-        when (state) {
-            is HomeScreenState.Loaded -> {
-                val loaded = state as HomeScreenState.Loaded
-                HomeScreenContents(
-                    posts = loaded.posts
-                )
-            }
 
-            HomeScreenState.Loading -> LoadingScreen()
-            HomeScreenState.SignInRequired -> LaunchedEffect(key1 = Unit) {
-                navigationToSignIn()
-            }
-        }
 
 
     }
@@ -103,8 +87,5 @@ fun HomeScreenContents(posts: List<Post>) {
     }
 }
 
-@Composable
-fun LoadingScreen() {
-    Text("Hello")
-}
+
 

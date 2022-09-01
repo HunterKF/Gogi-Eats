@@ -11,12 +11,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.Color
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import com.example.kbbqreview.data.user.User
 import com.example.kbbqreview.ui.theme.KBBQReviewTheme
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 class MainActivity : ComponentActivity() {
 
@@ -37,6 +42,7 @@ class MainActivity : ComponentActivity() {
             }
             window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             KBBQReviewTheme {
+                TransparentSystemBars()
                 val navController = rememberNavController()
 
 
@@ -49,6 +55,26 @@ class MainActivity : ComponentActivity() {
             requestCameraPermission()
             prepLocationUpdates()
 
+        }
+    }
+
+    @Composable
+    fun TransparentSystemBars() {
+        // Remember a SystemUiController
+        val systemUiController = rememberSystemUiController()
+        val useDarkIcons = !isSystemInDarkTheme()
+
+        DisposableEffect(systemUiController, useDarkIcons) {
+            // Update all of the system bar colors to be transparent, and use
+            // dark icons if we're in light theme
+            systemUiController.setSystemBarsColor(
+                color = Color.Transparent,
+                darkIcons = useDarkIcons
+            )
+
+            // setStatusBarColor() and setNavigationBarColor() also exist
+
+            onDispose {}
         }
     }
 

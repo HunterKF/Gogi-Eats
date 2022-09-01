@@ -16,8 +16,9 @@ import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.screens.camera.MainContentCamera
 import com.example.kbbqreview.screens.map.currentLocation.ChooseLocationMap
 import com.example.kbbqreview.screens.HomeScreen.AddReview
-import com.example.kbbqreview.screens.HomeScreen.Profile
+import com.example.kbbqreview.screens.HomeScreen.ProfileScreen
 import com.example.kbbqreview.screens.HomeScreen.HomeScreen
+import com.example.kbbqreview.screens.login.LoginScreen
 
 @Composable
 fun Navigation(
@@ -72,7 +73,27 @@ fun Navigation(
             startDestination.value = Screen.AddReview.route
         }
         composable(Screen.Profile.route) {
-            Profile(navController, applicationViewModel)
+            ProfileScreen(
+                navController
+            ) {
+                navController.navigate(Screen.Login.route) {
+                    popUpTo(Screen.Profile.route) {
+                        inclusive = false
+                    }
+                }
+
+            }
+        }
+        composable(Screen.Login.route) {
+            LoginScreen(
+                navigateToHome = {
+                    navController.navigate(Screen.HomeScreen.route) {
+                        popUpTo(Screen.Login.route) {
+                            inclusive = true
+                        }
+                    }
+                }
+            )
         }
         composable(Screen.MainContentCamera.route) {
             MainContentCamera(

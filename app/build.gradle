@@ -47,6 +47,7 @@ android {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
     }
+
 }
 
 dependencies {
@@ -127,16 +128,20 @@ dependencies {
     //Accompanist
     implementation "com.google.accompanist:accompanist-pager:0.24.2-alpha"
     implementation "com.google.accompanist:accompanist-swiperefresh:0.26.0-alpha"
+    implementation "com.google.accompanist:accompanist-systemuicontroller:0.26.0-alpha"
 
     //Coroutines
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.3"
 
     //Authentication
-    implementation 'com.firebaseui:firebase-ui-auth:7.2.0'
+//    implementation 'com.firebaseui:firebase-ui-auth:7.2.0'
     implementation 'com.google.android.gms:play-services-auth:20.2.0'
     implementation 'com.google.firebase:firebase-auth-ktx'
 
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4'
+
+    //Facebook
+    implementation 'com.facebook.android:facebook-android-sdk:14.1.0'
 
 
 }

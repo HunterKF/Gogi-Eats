@@ -11,6 +11,7 @@ sealed class Screen(val route: String, val label: String, val vector: ImageVecto
     object Profile : Screen("profile", "profile", Icons.Sharp.Person)
     object HomeScreen : Screen("screen", "Story", Icons.Sharp.Home)
     object AddReview : Screen("add_review", "Review", Icons.Sharp.Add)
+    object Login : Screen("sign_in", "Sign in", Icons.Sharp.Login)
     object CapturedPhotoView : Screen("captured_photo_view", "Photo", Icons.Sharp.PhotoLibrary)
 
 

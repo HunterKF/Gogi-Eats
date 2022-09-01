@@ -20,8 +20,6 @@ import com.example.kbbqreview.data.storyfeed.StoryItem
 import com.example.kbbqreview.data.storyfeed.StoryItemList
 import com.example.kbbqreview.data.user.User
 import com.example.kbbqreview.screens.map.location.LocationLiveData
-import com.firebase.ui.auth.AuthUI
-import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.CollectionReference
@@ -97,7 +95,7 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
         locationLiveData.startLocationUpdates()
     }
 
-    fun signOn(signInLauncher: ManagedActivityResultLauncher<Intent, FirebaseAuthUIAuthenticationResult>) {
+    /*fun signOn(signInLauncher: ManagedActivityResultLauncher<Intent, FirebaseAuthUIAuthenticationResult>) {
         val providers = arrayListOf(
             AuthUI.IdpConfig.EmailBuilder().build()
         )
@@ -121,7 +119,7 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
         } else {
             Log.e("Authentication", "Error logging in" + response?.error?.errorCode)
         }
-    }
+    }*/
 
     fun signOut() {
         FirebaseAuth.getInstance().signOut()

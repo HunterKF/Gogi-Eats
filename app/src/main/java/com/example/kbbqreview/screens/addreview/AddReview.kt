@@ -42,7 +42,6 @@ import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.example.kbbqreview.screens.map.MapViewModel
 import com.example.kbbqreview.screens.map.location.LocationDetails
 import com.example.kbbqreview.ui.theme.spacing
-import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 
 @Composable
 fun AddReview(
@@ -63,9 +62,6 @@ fun AddReview(
 
     val addReviewViewModel = ReviewViewModel()
 
-    val signInLauncher = rememberLauncherForActivityResult(
-        FirebaseAuthUIActivityResultContract()
-    ) { res -> applicationViewModel.signInResult(res) }
 
     Log.d(TAG, "Current value from AddReview of showRow is: ${cameraViewModel.showPhotoRow.value}")
 

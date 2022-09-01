@@ -1,7 +1,5 @@
 package com.example.kbbqreview.screens.HomeScreen
 
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -17,26 +15,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.example.kbbqreview.ApplicationViewModel
+import com.example.kbbqreview.Post
 import com.example.kbbqreview.R
 import com.example.kbbqreview.items
-import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
+import com.example.kbbqreview.screens.login.LoadingScreen
+import com.example.kbbqreview.screens.profile.ProfileScreenState
+import com.example.kbbqreview.screens.profile.ProfileViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun Profile(navController: NavHostController, applicationViewModel: ApplicationViewModel) {
-    val signInLauncher = rememberLauncherForActivityResult(
-        FirebaseAuthUIActivityResultContract()
-    ) { res -> applicationViewModel.signInResult(res) }
+fun ProfileScreen(navController: NavHostController, navigationToSignIn: () -> Unit) {
 
-    val context = LocalContext.current
+
+    val profileViewModel = ProfileViewModel()
+    val state by profileViewModel.state.collectAsState()
     Scaffold(
         bottomBar = {
             BottomNavigation {
@@ -72,38 +70,30 @@ fun Profile(navController: NavHostController, applicationViewModel: ApplicationV
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (applicationViewModel.activeUser.value == null) {
-                Column {
-                    Button(modifier = Modifier.fillMaxWidth(),
-                        onClick = { applicationViewModel.signOn(signInLauncher) }) {
-                        Text("Sing in")
-                    }
-                    Button(modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            Toast.makeText(context, "The value for activeUser is: ${applicationViewModel.activeUser.value}", Toast.LENGTH_LONG).show()
-                        }) {
-                        Text("activeUser")
-                    }
-                    Button(modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            Toast.makeText(context, "The value for user is: ${applicationViewModel.user}", Toast.LENGTH_LONG).show()
-                        }) {
-                        Text("user")
-                    }
+            when (state) {
+                is ProfileScreenState.Loaded -> {
+                    val loaded = state as ProfileScreenState.Loaded
+                    ProfileContent(
+                        posts = loaded.posts,
+                        avatarUrl = loaded.avatarUrl,
+                        onSignOut = {
+                            profileViewModel.signOut()
+                        }
+                    )
                 }
 
-            } else {
-                ProfileScreen(applicationViewModel)
+                ProfileScreenState.Loading -> LoadingScreen()
+                ProfileScreenState.SignInRequired -> LaunchedEffect(key1 = Unit) {
+                    navigationToSignIn()
+                }
             }
-
-
         }
     }
 }
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun ProfileScreen(applicationViewModel: ApplicationViewModel) {
+fun ProfileContent(posts: List<Post>, avatarUrl: String, onSignOut: () -> Unit) {
     val sheetState = rememberBottomSheetState(initialValue = BottomSheetValue.Collapsed)
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = sheetState
@@ -133,7 +123,7 @@ fun ProfileScreen(applicationViewModel: ApplicationViewModel) {
                     Row() {
                         Text("Sign Out")
                         IconButton(onClick = {
-                            applicationViewModel.signOut()
+                            onSignOut()
                         }) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_outline_cancel),
