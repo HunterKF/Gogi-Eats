@@ -55,8 +55,6 @@ fun AddReview(
 
     val context = LocalContext.current
     val application = context.applicationContext as Application
-    val storedPlaceViewModel = StoredPlaceViewModel(application)
-    val mapViewModel = MapViewModel()
     val TAG = "CAMERA TAG"
     val allPhotos = cameraViewModel.getAllPhotos()
 

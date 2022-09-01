@@ -33,10 +33,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
 
-//            applicationViewModel.listenToAllUsers()
             applicationViewModel.startLocationUpdates()
             applicationViewModel.firebaseUser?.let {
-                val user = User(it.uid, "")
+                val user = User(it.uid)
                 applicationViewModel.user = user
                 applicationViewModel.activeUser.value = user
             }

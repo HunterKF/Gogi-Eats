@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
@@ -27,6 +29,7 @@ import com.example.kbbqreview.items
 import com.example.kbbqreview.screens.login.LoadingScreen
 import com.example.kbbqreview.screens.profile.ProfileScreenState
 import com.example.kbbqreview.screens.profile.ProfileViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
@@ -145,91 +148,13 @@ fun ProfileContent(posts: List<Post>, avatarUrl: String, onSignOut: () -> Unit) 
                 .fillMaxWidth()
                 .padding(4.dp)
         ) {
+            UserBar(scope, sheetState)
+            StatsBar()
 
-
-            Box(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                IconButton(onClick = { /*TODO*/ }) {
-                    Icon(
-                        modifier = Modifier
-                            .scale(0.5f)
-                            .align(Alignment.CenterStart)
-                            .border(4.dp, Color.LightGray, CircleShape),
-                        painter = painterResource(id = R.drawable.profile),
-                        contentDescription = "Profile picture"
-                    )
-                }
-
-                Text(
-                    modifier = Modifier.align(Alignment.Center),
-                    text = "User_ID",
-                    style = MaterialTheme.typography.h6
-                )
-                IconButton(
-                    modifier = Modifier.align(Alignment.TopEnd),
-                    onClick = { scope.launch { if (sheetState.isCollapsed) sheetState.expand() else sheetState.collapse() } }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_baseline_more),
-                        contentDescription = "Options"
-                    )
-                }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(
-                    modifier = Modifier,
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Reviews",
-                        style = MaterialTheme.typography.body1
-                    )
-                    Text(
-                        text = "7",
-                        style = MaterialTheme.typography.body1
-                    )
-                }
-                Column(
-                    modifier = Modifier,
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text("Locations")
-                    IconButton(onClick = { /*TODO*/ }) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_outline_map),
-                            contentDescription = "Open map of location"
-                        )
-                    }
-                }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = { gridLayout.value = true }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_baseline_grid_view_24),
-                        contentDescription = "Grid view"
-                    )
-                }
-                IconButton(onClick = { gridLayout.value = false }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_baseline_crop_din_24),
-                        contentDescription = "Single view"
-                    )
-                }
-            }
+            ViewSelector(gridLayout)
             if (gridLayout.value) {
                 LazyVerticalGrid(columns = GridCells.Fixed(2), content = {
-                    items(100) { i ->
+                    items(posts) { post ->
                         Box(
                             modifier = Modifier
                                 .padding(8.dp)
@@ -237,13 +162,13 @@ fun ProfileContent(posts: List<Post>, avatarUrl: String, onSignOut: () -> Unit) 
                                 .clip(RoundedCornerShape(5.dp))
                                 .background(Color.Green)
                         ) {
-                            Text(text = "Item $i")
+                            Text(text = "Item ${post.timestamp}")
                         }
                     }
                 })
             } else {
                 LazyColumn {
-                    items(100) { i ->
+                    items(posts) { post ->
                         Box(
                             modifier = Modifier
                                 .padding(8.dp)
@@ -251,7 +176,7 @@ fun ProfileContent(posts: List<Post>, avatarUrl: String, onSignOut: () -> Unit) 
                                 .clip(RoundedCornerShape(5.dp))
                                 .background(Color.Green)
                         ) {
-                            Text(text = "Item $i")
+                            Text(text = "Item ${post.timestamp}")
                         }
                     }
                 }
@@ -260,6 +185,101 @@ fun ProfileContent(posts: List<Post>, avatarUrl: String, onSignOut: () -> Unit) 
     }
 
 
+}
+
+@Composable
+private fun ViewSelector(gridLayout: MutableState<Boolean>) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = { gridLayout.value = true }) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_baseline_grid_view_24),
+                contentDescription = "Grid view"
+            )
+        }
+        IconButton(onClick = { gridLayout.value = false }) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_baseline_crop_din_24),
+                contentDescription = "Single view"
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatsBar() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            modifier = Modifier,
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Reviews",
+                style = MaterialTheme.typography.body1
+            )
+            Text(
+                text = "7",
+                style = MaterialTheme.typography.body1
+            )
+        }
+        Column(
+            modifier = Modifier,
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("Locations")
+            IconButton(onClick = { /*TODO*/ }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_outline_map),
+                    contentDescription = "Open map of location"
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+private fun UserBar(
+    scope: CoroutineScope,
+    sheetState: BottomSheetState
+) {
+    Box(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        IconButton(onClick = { /*TODO*/ }) {
+            Icon(
+                modifier = Modifier
+                    .scale(0.5f)
+                    .align(Alignment.CenterStart)
+                    .border(4.dp, Color.LightGray, CircleShape),
+                painter = painterResource(id = R.drawable.profile),
+                contentDescription = "Profile picture"
+            )
+        }
+
+        Text(
+            modifier = Modifier.align(Alignment.Center),
+            text = "User_ID",
+            style = MaterialTheme.typography.h6
+        )
+        IconButton(
+            modifier = Modifier.align(Alignment.TopEnd),
+            onClick = { scope.launch { if (sheetState.isCollapsed) sheetState.expand() else sheetState.collapse() } }) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_baseline_more),
+                contentDescription = "Options"
+            )
+        }
+    }
 }
 
 /*

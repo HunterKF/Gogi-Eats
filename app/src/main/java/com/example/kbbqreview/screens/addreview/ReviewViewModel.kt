@@ -11,6 +11,9 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kbbqreview.data.photos.Photo
+import com.example.kbbqreview.data.user.User
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.ktx.firestore
@@ -23,6 +26,17 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class ReviewViewModel : ViewModel() {
+
+    var firebaseUser: FirebaseUser? = FirebaseAuth.getInstance().currentUser
+
+    private fun setUser(): String {
+        var user = ""
+        firebaseUser?.let {
+             user = it.uid
+        }
+        return user
+    }
+
     val restaurantNameText = mutableStateOf("")
     val restaurantReviewText = mutableStateOf("")
     fun onTextFieldChange(textValue: MutableState<String>, query: String) {
@@ -114,11 +128,13 @@ class ReviewViewModel : ViewModel() {
             val postSideDishes = sideDishes.value
             val postAmenities = valueAmenities.value
             val postAtmosphere = valueAtmosphere.value
+            val userId = setUser()
 
             val handle = Firebase.firestore.collection("reviews")
                 .add(
                     hashMapOf(
                         "author_id" to currentUser.displayName.orEmpty(),
+                        "user_id" to userId,
                         "date_posted" to Date(),
                         "restaurant_name" to restaurantName,
                         "location" to GeoPoint(postLat, postLng),

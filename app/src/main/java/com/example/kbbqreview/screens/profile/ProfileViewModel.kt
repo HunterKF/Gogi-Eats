@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kbbqreview.Post
 import com.example.kbbqreview.data.photos.Photo
-import com.facebook.AccessToken
+import com.example.kbbqreview.data.user.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
@@ -26,9 +26,10 @@ sealed class ProfileScreenState {
 
     object SignInRequired : ProfileScreenState()
 }
+
 val TAG = "Profile"
 
-class ProfileViewModel: ViewModel() {
+class ProfileViewModel : ViewModel() {
     private val mutableState = MutableStateFlow<ProfileScreenState>(
         ProfileScreenState.Loading
     )
@@ -50,6 +51,16 @@ class ProfileViewModel: ViewModel() {
         }
     }
 
+    var firebaseUser: FirebaseUser? = FirebaseAuth.getInstance().currentUser
+
+    fun setUser(): String {
+        var user = ""
+        firebaseUser?.let {
+            user = it.uid
+        }
+        return user
+    }
+
     private suspend fun observePosts(currentUser: FirebaseUser) {
         //mapping it into the homescreenstate
         observePosts().map { posts ->
@@ -61,25 +72,25 @@ class ProfileViewModel: ViewModel() {
             mutableState.emit(it)
         }
     }
-    val photoList = listOf(
-        Photo(
-            remoteUri = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=987&q=80"
-        )
-    )
 
     private fun observePosts(): Flow<List<Post>> {
         return callbackFlow {
+            val userId = setUser()
             val listener = Firebase.firestore
-                .collection("reviews").addSnapshotListener { value, error ->
+                .collection("reviews").whereEqualTo("user_id", userId)
+                .addSnapshotListener { value, error ->
                     if (error != null) {
                         Log.d(TAG, "An error has occurred in profile screen: ${error.message}")
                         close(error)
                     } else if (value != null) {
                         val posts = value.map { documentSnapshot ->
                             val firebaseId = documentSnapshot.id
+                            val userId = Firebase.auth.currentUser.toString()
                             Post(
                                 timestamp = documentSnapshot.getDate("date_posted") ?: Date(),
-                                authorName = documentSnapshot.getString("author_id").orEmpty(),
+                                userId = userId,
+                                authorDisplayName = documentSnapshot.getString("author_id")
+                                    .orEmpty(),
                                 authorText = documentSnapshot.getString("author_comment").orEmpty(),
                                 restaurantName = documentSnapshot.getString("restaurant_name")
                                     .orEmpty(),
@@ -88,7 +99,7 @@ class ProfileViewModel: ViewModel() {
                                 valueSideDishes = documentSnapshot.getLong("value_side_dishes")!!,
                                 valueAtmosphere = documentSnapshot.getLong("value_atmosphere")!!,
                                 valueAmenities = documentSnapshot.getLong("value_amenities")!!,
-                                photoList = photoList
+                                photoList = getPhotos(firebaseId)
                             )
                         }.sortedByDescending { it.timestamp }
                         trySend(posts)
@@ -100,14 +111,20 @@ class ProfileViewModel: ViewModel() {
             }
         }
     }
-   /* private fun getAvatar(currentUser: FirebaseUser): String {
-        val accessToken = AccessToken.getCurrentAccessToken()?.token
-        return "${requireNotNull(currentUser.photoUrl)}?access_token=$accessToken&type=large"
-    }*/
+    /* private fun getAvatar(currentUser: FirebaseUser): String {
+         val accessToken = AccessToken.getCurrentAccessToken()?.token
+         return "${requireNotNull(currentUser.photoUrl)}?access_token=$accessToken&type=large"
+     }*/
 
     private fun getPhotos(firebaseId: String): List<Photo> {
-        Log.d(com.example.kbbqreview.TAG, "Captain, we who are about to start salute you! Onward, to the photos!")
-        Log.d(com.example.kbbqreview.TAG, "Before we depart, we would like to check our id... ID: $firebaseId")
+        Log.d(
+            com.example.kbbqreview.TAG,
+            "Captain, we who are about to start salute you! Onward, to the photos!"
+        )
+        Log.d(
+            com.example.kbbqreview.TAG,
+            "Before we depart, we would like to check our id... ID: $firebaseId"
+        )
 
         val photoList = mutableListOf<Photo>()
         val db = Firebase.firestore
@@ -116,7 +133,10 @@ class ProfileViewModel: ViewModel() {
             .get()
             .addOnSuccessListener { result ->
                 if (result.isEmpty) {
-                    Log.d(com.example.kbbqreview.TAG, "Sir, we arrived at the photo, but it's empty!")
+                    Log.d(
+                        com.example.kbbqreview.TAG,
+                        "Sir, we arrived at the photo, but it's empty!"
+                    )
                     Thread.sleep(1000)
                 }
                 result.forEach { documentSnapshot ->
@@ -130,7 +150,10 @@ class ProfileViewModel: ViewModel() {
                 }
             }
             .addOnFailureListener {
-                Log.d(com.example.kbbqreview.TAG, "We regret to inform you that it has failed. Printing out failure...")
+                Log.d(
+                    com.example.kbbqreview.TAG,
+                    "We regret to inform you that it has failed. Printing out failure..."
+                )
                 Log.d(com.example.kbbqreview.TAG, "${it.message}")
             }
         return photoList

@@ -7,7 +7,8 @@ import java.util.*
 
 class Post(
     val timestamp: Date,
-    val authorName: String,
+    val userId: String,
+    val authorDisplayName: String,
     val authorText: String,
     val restaurantName: String,
     val location: GeoPoint?,
