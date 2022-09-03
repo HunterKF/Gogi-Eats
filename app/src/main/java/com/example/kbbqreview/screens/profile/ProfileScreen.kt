@@ -84,9 +84,12 @@ fun ProfileScreen(navController: NavHostController, navigationToSignIn: () -> Un
             when (state) {
                 is ProfileScreenState.Loaded -> {
                     val loaded = state as ProfileScreenState.Loaded
+                    val displayName = profileViewModel.setDisplayName()
+                    val avatarUrl = profileViewModel.setAvatar()
                     ProfileContent(
                         posts = loaded.posts,
-                        avatarUrl = loaded.avatarUrl,
+                        avatarUrl = avatarUrl,
+                        displayName = displayName,
                         onSignOut = {
                             profileViewModel.signOut()
                         }
@@ -104,11 +107,17 @@ fun ProfileScreen(navController: NavHostController, navigationToSignIn: () -> Un
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun ProfileContent(posts: List<Post>, avatarUrl: String, onSignOut: () -> Unit) {
+fun ProfileContent(
+    posts: List<Post>,
+    avatarUrl: String,
+    onSignOut: () -> Unit,
+    displayName: String
+) {
     val sheetState = rememberBottomSheetState(initialValue = BottomSheetValue.Collapsed)
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = sheetState
     )
+
     val gridLayout = remember {
         mutableStateOf(true)
     }
@@ -157,7 +166,7 @@ fun ProfileContent(posts: List<Post>, avatarUrl: String, onSignOut: () -> Unit) 
                 .fillMaxWidth()
                 .padding(4.dp)
         ) {
-            UserBar(scope, sheetState)
+            UserBar(scope, sheetState, displayName, avatarUrl)
             StatsBar(size)
             ViewSelector(gridLayout)
             if (gridLayout.value) {
@@ -207,8 +216,10 @@ private fun GridViewCard(post: Post) {
                 .data(data = imageUrl.value.remoteUri)
                 .placeholder(R.drawable.ic_image_placeholder)
                 .crossfade(true)
-                .build(), contentDescription = "", Modifier
-                .fillMaxSize(), contentScale = ContentScale.Crop
+                .build(),
+            contentDescription = "",
+            Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
         )
         Scrim(
             modifier = Modifier
@@ -216,7 +227,13 @@ private fun GridViewCard(post: Post) {
                 .height(56.dp)
                 .align(Alignment.BottomCenter)
         )
-        Text(modifier = Modifier.align(Alignment.BottomStart), text = post.restaurantName)
+        Text(
+            modifier = Modifier
+                .padding(6.dp)
+                .align(Alignment.BottomStart),
+            text = post.restaurantName,
+            color = MaterialTheme.colors.onSurface
+        )
     }
 }
 
@@ -252,31 +269,29 @@ private fun ViewSelector(gridLayout: MutableState<Boolean>) {
 
 @Composable
 private fun StatsBar(size: Int) {
-    Row(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(
-            modifier = Modifier,
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+
+        ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Reviews",
                 style = MaterialTheme.typography.body1
             )
-            Text(
-                text = size.toString(),
-                style = MaterialTheme.typography.body1
-            )
-        }
-        Column(
-            modifier = Modifier,
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
             Text("Locations")
+
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(size.toString())
             IconButton(onClick = { /*TODO*/ }) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_outline_map),
@@ -291,12 +306,26 @@ private fun StatsBar(size: Int) {
 @Composable
 private fun UserBar(
     scope: CoroutineScope,
-    sheetState: BottomSheetState
+    sheetState: BottomSheetState,
+    userName: String,
+    avatarUrl: String,
 ) {
     Box(
         modifier = Modifier.fillMaxWidth()
     ) {
-        IconButton(onClick = { /*TODO*/ }) {
+        IconButton(modifier = Modifier.padding(8.dp), onClick = { /*TODO*/ }) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(avatarUrl)
+                    .placeholder(R.drawable.profile)
+                    .crossfade(true)
+                    .build(), contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .border(2.dp, Color.Blue, CircleShape)
+            )/*
             Icon(
                 modifier = Modifier
                     .scale(0.5f)
@@ -304,12 +333,12 @@ private fun UserBar(
                     .border(4.dp, Color.LightGray, CircleShape),
                 painter = painterResource(id = R.drawable.profile),
                 contentDescription = "Profile picture"
-            )
+            )*/
         }
 
         Text(
             modifier = Modifier.align(Alignment.Center),
-            text = "User_ID",
+            text = userName,
             style = MaterialTheme.typography.h6
         )
         IconButton(

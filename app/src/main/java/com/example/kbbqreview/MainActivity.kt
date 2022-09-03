@@ -77,15 +77,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        applicationViewModel.listenToAllUsers()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        applicationViewModel.listenToAllUsers()
-    }
 
     private fun prepLocationUpdates() {
         if (ContextCompat.checkSelfPermission(

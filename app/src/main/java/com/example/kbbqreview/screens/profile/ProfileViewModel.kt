@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.kbbqreview.Post
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.data.user.User
+import com.facebook.AccessToken
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
@@ -30,9 +31,11 @@ sealed class ProfileScreenState {
 val TAG = "Profile"
 
 class ProfileViewModel : ViewModel() {
+
     private val mutableState = MutableStateFlow<ProfileScreenState>(
         ProfileScreenState.Loading
     )
+
     val state = mutableState.asStateFlow()
 
     init {
@@ -40,10 +43,13 @@ class ProfileViewModel : ViewModel() {
 
             val currentUser = Firebase.auth.currentUser
             if (currentUser != null) {
-                Log.d(TAG, "If statement has been triggered.")
+                Log.d(TAG, "Trying a new place...")
+                Log.d(TAG, "Check user providerData... ${currentUser.providerData}")
+                Log.d(TAG, "Check user metadata... ${currentUser.metadata}")
+                Log.d(TAG, "Check user providerId... ${currentUser.providerId}")
+                Log.d(TAG, "Check user tenantId... ${currentUser.tenantId}")
                 observePosts(currentUser)
             } else {
-                Log.d(TAG, "Else statement has been triggered.")
                 mutableState.emit(
                     ProfileScreenState.SignInRequired
                 )
@@ -53,12 +59,59 @@ class ProfileViewModel : ViewModel() {
 
     var firebaseUser: FirebaseUser? = FirebaseAuth.getInstance().currentUser
 
+    val auth = Firebase.auth.currentUser
     fun setUser(): String {
         var user = ""
         firebaseUser?.let {
             user = it.uid
         }
         return user
+    }
+
+    fun setDisplayName(): String {
+        var displayName = ""
+        firebaseUser?.let {
+            displayName = it.displayName.toString()
+        }
+        return displayName
+    }
+
+    fun setAvatar(): String {
+        var avatarUrl = ""
+        firebaseUser?.let {
+            for (item in it.providerData) {
+                Log.d(TAG, "Testing a new method: ${item.providerId}")
+                when (item.providerId) {
+                    "facebook.com" -> {
+                        Log.d(TAG, "It's logged in with facebook")
+                        avatarUrl = getFBAvatar(firebaseUser!!)
+                    }
+                    "google.com" -> {
+                        Log.d(TAG, "It's logged in with gmail")
+                        avatarUrl = it.photoUrl.toString()
+                    }
+                    else -> {
+                        Log.d(TAG, "We failed")
+                    }
+                }
+                if (item.providerId == "facebook.com") {
+                    Log.d(TAG, "It's logged in with facebook")
+                } else if (item.providerId == ("google.com")) {
+                    Log.d(TAG, "It's logged in with gmail")
+                    avatarUrl = it.photoUrl.toString()
+                } else {
+                    Log.d(TAG, "We failed")
+                }
+            }
+
+        }
+
+        return avatarUrl
+    }
+
+    private fun getFBAvatar(currentUser: FirebaseUser): String {
+        val accessToken = AccessToken.getCurrentAccessToken()?.token
+        return "${requireNotNull(currentUser.photoUrl)}?access_token=$accessToken&type=large"
     }
 
     private suspend fun observePosts(currentUser: FirebaseUser) {
