@@ -2,6 +2,7 @@ package com.example.kbbqreview.screens.HomeScreen
 
 import android.content.Intent
 import android.net.Uri
+import android.provider.MediaStore
 import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
@@ -268,15 +269,35 @@ fun ReviewComment(post: Post) {
 @Composable
 fun AddressBar(review: Post) {
     val reviewViewModel = ReviewViewModel()
+
+    val photoList by remember {
+        mutableStateOf(review.photoList)
+    }
+    val emptyPhoto = Photo(
+        "",
+        "",
+        "",
+        0
+    )
     val context = LocalContext.current
-    val mapIntent: Intent = Uri.parse("geo:${review.location!!.latitude},${review.location!!.longitude}?z=14"
+    val mapIntent: Intent = Uri.parse(
+        "geo:${review.location!!.latitude},${review.location!!.longitude}?z=8"
     ).let { location ->
         // Or map point based on latitude/longitude
         // val location: Uri = Uri.parse("geo:37.422219,-122.08364?z=14") // z param is zoom level
-        Log.d("Address", "Map has launched. Value of location: ${location}")
-        println("Map has launched. Value of location: ${location}")
         Intent(Intent.ACTION_VIEW, location)
     }
+    val uri: Uri = Uri.parse(checkPhoto(photoList, emptyPhoto).toString())
+    val sendIntent: Intent = Intent().apply {
+        action = Intent.ACTION_SEND
+        putExtra(Intent.EXTRA_SUBJECT, "${review.restaurantName}")
+        putExtra(Intent.EXTRA_TEXT, "WORDS")
+        putExtra(Intent.EXTRA_STREAM, uri)
+        setType("image/*")
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    val shareIntent = Intent.createChooser(sendIntent, null)
+
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             modifier = Modifier.weight(6f),
@@ -287,7 +308,9 @@ fun AddressBar(review: Post) {
             ),
             fontWeight = FontWeight.SemiBold
         )
-        IconButton(modifier = Modifier.weight(1f), onClick = { /*TODO*/ }) {
+        IconButton(
+            modifier = Modifier.weight(1f),
+            onClick = { context.startActivity(shareIntent) }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_baseline_send_24),
                 contentDescription = "Share"
@@ -302,6 +325,16 @@ fun AddressBar(review: Post) {
             )
         }
     }
+}
+
+fun checkPhoto(photoList: List<Photo>, emptyPhoto: Photo): String? {
+    var uri = ""
+    if (photoList.isNotEmpty()) {
+        uri = photoList[0].remoteUri
+    } else {
+        uri = emptyPhoto.remoteUri
+    }
+    return uri
 }
 
 
