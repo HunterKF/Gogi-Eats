@@ -2,6 +2,7 @@ package com.example.kbbqreview.screens.HomeScreen
 
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -59,7 +59,6 @@ fun HomeScreenItem(storyItem: Post) {
 @Composable
 fun PostCard(state: PagerState, post: Post) {
 
-    val photoList = post.photoList
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -70,7 +69,7 @@ fun PostCard(state: PagerState, post: Post) {
         ) {
             TopRow(post)
         }
-        Photo(state, photoList)
+        PhotoHolder(state, post)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -92,20 +91,19 @@ fun PostCard(state: PagerState, post: Post) {
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-private fun Photo(
+private fun PhotoHolder(
     state: PagerState,
-    photoList: List<Photo>
+    post: Post,
 ) {
-    val imageUrl = remember {
-        mutableStateOf(
-            Photo(
-                "",
-                "",
-                "",
-                0
-            )
-        )
+    val photoList by remember {
+        mutableStateOf(post.photoList)
     }
+    val emptyPhoto = Photo(
+        "",
+        "",
+        "",
+        0
+    )
     Box(
         modifier = Modifier
             .fillMaxSize(),
@@ -119,7 +117,6 @@ private fun Photo(
                 .aspectRatio(1f)
         ) { page ->
 
-            imageUrl.value = photoList[page]
             Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.Top,
@@ -128,7 +125,7 @@ private fun Photo(
                 Box(contentAlignment = Alignment.Center) {
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
-                            .data(data = imageUrl.value.remoteUri)
+                            .data(data = if (photoList.isNotEmpty()) photoList[page].remoteUri else emptyPhoto)
                             .placeholder(R.drawable.ic_image_placeholder)
                             .crossfade(true)
                             .build(), contentDescription = "", Modifier
@@ -272,11 +269,12 @@ fun ReviewComment(post: Post) {
 fun AddressBar(review: Post) {
     val reviewViewModel = ReviewViewModel()
     val context = LocalContext.current
-    val mapIntent: Intent = Uri.parse(
-        "geo:0,0?q=1600+Amphitheatre+Parkway,+Mountain+View,+California"
+    val mapIntent: Intent = Uri.parse("geo:${review.location!!.latitude},${review.location!!.longitude}?z=14"
     ).let { location ->
         // Or map point based on latitude/longitude
         // val location: Uri = Uri.parse("geo:37.422219,-122.08364?z=14") // z param is zoom level
+        Log.d("Address", "Map has launched. Value of location: ${location}")
+        println("Map has launched. Value of location: ${location}")
         Intent(Intent.ACTION_VIEW, location)
     }
     Row(verticalAlignment = Alignment.CenterVertically) {

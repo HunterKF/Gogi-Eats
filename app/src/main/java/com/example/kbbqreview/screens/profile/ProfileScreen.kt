@@ -22,6 +22,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -44,7 +45,7 @@ import kotlinx.coroutines.launch
 fun ProfileScreen(navController: NavHostController, navigationToSignIn: () -> Unit) {
 
 
-    val profileViewModel = ProfileViewModel()
+    val profileViewModel = viewModel<ProfileViewModel>()
     val state by profileViewModel.state.collectAsState()
     Scaffold(
         bottomBar = {
@@ -196,24 +197,22 @@ private fun GridViewCard(post: Post) {
             .clip(RoundedCornerShape(5.dp))
             .aspectRatio(1f)
     ) {
-        val photoList = post.photoList
-        val imageUrl = remember {
-            mutableStateOf(
-                Photo(
-                    "",
-                    "",
-                    "",
-                    0
-                )
+        val photoList by remember {
+            mutableStateOf(post.photoList)
+        }
+        val emptyPhoto = Photo(
+            "",
+            "",
+            "",
+            0
+        )
 
-            )
-        }
-        if (post.photoList.isNotEmpty()) {
-            imageUrl.value = post.photoList[0]
-        }
+
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
-                .data(data = imageUrl.value.remoteUri)
+                .data(
+                    data = if (photoList.isNotEmpty()) photoList[0].remoteUri else emptyPhoto
+                )
                 .placeholder(R.drawable.ic_image_placeholder)
                 .crossfade(true)
                 .build(),

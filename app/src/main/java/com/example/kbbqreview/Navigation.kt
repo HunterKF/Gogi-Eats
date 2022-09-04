@@ -78,7 +78,7 @@ fun Navigation(
             ) {
                 navController.navigate(Screen.Login.route) {
                     popUpTo(Screen.Profile.route) {
-                        inclusive = false
+                        inclusive = true
                     }
                 }
 

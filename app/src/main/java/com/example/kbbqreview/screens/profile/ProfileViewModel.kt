@@ -43,11 +43,6 @@ class ProfileViewModel : ViewModel() {
 
             val currentUser = Firebase.auth.currentUser
             if (currentUser != null) {
-                Log.d(TAG, "Trying a new place...")
-                Log.d(TAG, "Check user providerData... ${currentUser.providerData}")
-                Log.d(TAG, "Check user metadata... ${currentUser.metadata}")
-                Log.d(TAG, "Check user providerId... ${currentUser.providerId}")
-                Log.d(TAG, "Check user tenantId... ${currentUser.tenantId}")
                 observePosts(currentUser)
             } else {
                 mutableState.emit(
@@ -59,7 +54,6 @@ class ProfileViewModel : ViewModel() {
 
     var firebaseUser: FirebaseUser? = FirebaseAuth.getInstance().currentUser
 
-    val auth = Firebase.auth.currentUser
     fun setUser(): String {
         var user = ""
         firebaseUser?.let {
@@ -80,7 +74,6 @@ class ProfileViewModel : ViewModel() {
         var avatarUrl = ""
         firebaseUser?.let {
             for (item in it.providerData) {
-                Log.d(TAG, "Testing a new method: ${item.providerId}")
                 when (item.providerId) {
                     "facebook.com" -> {
                         Log.d(TAG, "It's logged in with facebook")
@@ -94,18 +87,8 @@ class ProfileViewModel : ViewModel() {
                         Log.d(TAG, "We failed")
                     }
                 }
-                if (item.providerId == "facebook.com") {
-                    Log.d(TAG, "It's logged in with facebook")
-                } else if (item.providerId == ("google.com")) {
-                    Log.d(TAG, "It's logged in with gmail")
-                    avatarUrl = it.photoUrl.toString()
-                } else {
-                    Log.d(TAG, "We failed")
-                }
             }
-
         }
-
         return avatarUrl
     }
 

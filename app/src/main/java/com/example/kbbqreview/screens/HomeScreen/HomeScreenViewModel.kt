@@ -14,8 +14,6 @@ import java.util.*
 
 val TAG = "HomeScreenVM"
 class HomeScreenViewModel : ViewModel() {
-
-
     fun observePosts(): Flow<List<Post>> {
         return callbackFlow {
             val listener = Firebase.firestore
