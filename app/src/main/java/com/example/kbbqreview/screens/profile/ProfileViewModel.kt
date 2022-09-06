@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kbbqreview.Post
 import com.example.kbbqreview.data.photos.Photo
-import com.example.kbbqreview.data.user.User
 import com.facebook.AccessToken
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -135,7 +134,8 @@ class ProfileViewModel : ViewModel() {
                                 valueSideDishes = documentSnapshot.getLong("value_side_dishes")!!,
                                 valueAtmosphere = documentSnapshot.getLong("value_atmosphere")!!,
                                 valueAmenities = documentSnapshot.getLong("value_amenities")!!,
-                                photoList = getPhotos(firebaseId)
+                                photoList = getPhotos(firebaseId),
+                                distance = 0.0
                             )
                         }.sortedByDescending { it.timestamp }
                         trySend(posts)

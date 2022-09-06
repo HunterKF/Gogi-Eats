@@ -36,7 +36,8 @@ class HomeScreenViewModel : ViewModel() {
                                 valueSideDishes = documentSnapshot.getLong("value_side_dishes")!!,
                                 valueAtmosphere = documentSnapshot.getLong("value_atmosphere")!!,
                                 valueAmenities = documentSnapshot.getLong("value_amenities")!!,
-                                photoList = getPhotos(firebaseId)
+                                photoList = getPhotos(firebaseId),
+                                distance = 0.0
                             )
                         }.sortedByDescending { it.timestamp }
                         trySend(posts)

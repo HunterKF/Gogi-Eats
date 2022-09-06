@@ -16,7 +16,8 @@ class Post(
     val valueSideDishes: Long,
     val valueAtmosphere: Long,
     val valueAmenities: Long,
-    val photoList: List<Photo>
+    val photoList: List<Photo>,
+    var distance: Double
 ) {
 
 }

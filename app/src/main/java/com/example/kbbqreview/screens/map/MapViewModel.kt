@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.location.Address
 import android.location.Geocoder
-import android.location.Location
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
@@ -17,7 +16,6 @@ import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.InternalCoroutinesApi
@@ -27,9 +25,6 @@ import kotlinx.coroutines.flow.callbackFlow
 import java.math.RoundingMode
 import java.text.DecimalFormat
 import java.util.*
-import kotlin.math.ceil
-import kotlin.math.floor
-import kotlin.math.roundToInt
 
 class MapViewModel: ViewModel() {
 
@@ -69,7 +64,8 @@ class MapViewModel: ViewModel() {
                                 valueSideDishes = documentSnapshot.getLong("value_side_dishes")!!,
                                 valueAtmosphere = documentSnapshot.getLong("value_atmosphere")!!,
                                 valueAmenities = documentSnapshot.getLong("value_amenities")!!,
-                                photoList = getPhotos(firebaseId)
+                                photoList = getPhotos(firebaseId),
+                                distance = 0.0
                             )
                         }.sortedByDescending { it.timestamp }
                         trySend(posts)
@@ -153,43 +149,13 @@ class MapViewModel: ViewModel() {
         drawable.draw(canvas)
         return BitmapDescriptorFactory.fromBitmap(bm)
     }
-    fun distanceInKm(distInMeters: Float): String {
+    fun distanceInKm(distInMeters: Float): Double {
         val distInKilometers = distInMeters / 1000
         val df = DecimalFormat("#.#")
         df.roundingMode = RoundingMode.CEILING
-        return df.format(distInKilometers)
+        return df.format(distInKilometers).toDouble()
     }
 
-    private fun deg2rad(deg: Double): Double {
-        return deg * Math.PI / 180.0
-    }
 
-    private fun rad2deg(rad: Double): Double {
-        return rad * 180.0 / Math.PI
-    }
-    private fun roundOffDecimal(number: Double): Double? {
-        val df = DecimalFormat("#.##")
-        df.roundingMode = RoundingMode.FLOOR
-        return df.format(number).toDouble()
-    }
-
-    fun distanceText(distance: Float): String {
-        val distanceString: String
-
-        if (distance < 1000)
-            if (distance < 1)
-                distanceString = String.format(Locale.US, "%dm", 1)
-            else
-                distanceString = String.format(Locale.US, "%dm", Math.round(distance))
-        else if (distance > 10000)
-            if (distance < 1000000)
-                distanceString = String.format(Locale.US, "%dkm", Math.round(distance / 1000))
-            else
-                distanceString = "FAR"
-        else
-            distanceString = String.format(Locale.US, "%.2fkm", distance / 1000)
-
-        return distanceString
-    }
 
 }

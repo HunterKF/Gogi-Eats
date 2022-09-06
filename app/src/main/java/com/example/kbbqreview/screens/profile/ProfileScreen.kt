@@ -165,11 +165,14 @@ fun ProfileContent(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(4.dp)
         ) {
-            UserBar(scope, sheetState, displayName, avatarUrl)
-            StatsBar(size)
-            ViewSelector(gridLayout)
+            Column(
+                Modifier.padding(4.dp)) {
+                UserBar(scope, sheetState, displayName, avatarUrl)
+                StatsBar(size)
+                ViewSelector(gridLayout)
+            }
+
             if (gridLayout.value) {
                 LazyVerticalGrid(columns = GridCells.Fixed(2), content = {
                     items(posts) { post ->

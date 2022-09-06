@@ -44,7 +44,6 @@ fun Navigation(
             location?.let { location ->
                 MapScreen(
                     location = location,
-                    focusManager = focusManager,
                     navController = navController,
                     reviewViewModel = reviewViewModel
                 )
