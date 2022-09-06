@@ -2,8 +2,6 @@ package com.example.kbbqreview.screens.HomeScreen
 
 import android.content.Intent
 import android.net.Uri
-import android.provider.MediaStore
-import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -293,7 +291,7 @@ fun AddressBar(review: Post) {
         putExtra(Intent.EXTRA_SUBJECT, "${review.restaurantName}")
         putExtra(Intent.EXTRA_TEXT, "WORDS")
         putExtra(Intent.EXTRA_STREAM, uri)
-        setType("image/*")
+        setType("*/*")
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     val shareIntent = Intent.createChooser(sendIntent, null)
@@ -375,7 +373,7 @@ fun DotsIndicator(
 }
 
 @Composable
-fun PointIcon(photo: Int, value: Int) {
+fun PointIcon(icon: Int, value: Int) {
     Row(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
@@ -383,7 +381,7 @@ fun PointIcon(photo: Int, value: Int) {
 
         Icon(
             modifier = Modifier.scale(0.5f),
-            painter = painterResource(id = photo),
+            painter = painterResource(id = icon),
             contentDescription = null
         )
 
