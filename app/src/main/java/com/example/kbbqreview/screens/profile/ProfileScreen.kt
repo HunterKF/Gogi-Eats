@@ -1,12 +1,10 @@
 package com.example.kbbqreview.screens.HomeScreen
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,12 +13,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -29,13 +28,17 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.example.kbbqreview.Post
+import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.R
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.items
 import com.example.kbbqreview.screens.login.LoadingScreen
+import com.example.kbbqreview.screens.profile.ProfilePostCard
 import com.example.kbbqreview.screens.profile.ProfileScreenState
 import com.example.kbbqreview.screens.profile.ProfileViewModel
+import com.google.accompanist.flowlayout.FlowMainAxisAlignment
+import com.google.accompanist.flowlayout.FlowRow
+import com.google.accompanist.flowlayout.SizeMode
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.rememberPagerState
 import kotlinx.coroutines.CoroutineScope
@@ -106,7 +109,7 @@ fun ProfileScreen(navController: NavHostController, navigationToSignIn: () -> Un
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun ProfileContent(
     posts: List<Post>,
@@ -129,7 +132,7 @@ fun ProfileContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp)
+                    .height(150.dp)
             ) {
                 IconButton(
                     modifier = Modifier.align(Alignment.TopCenter),
@@ -141,7 +144,11 @@ fun ProfileContent(
                 }
 
                 Column(modifier = Modifier.align(Alignment.Center)) {
-                    Row() {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
                         Text("Sign Out")
                         IconButton(onClick = {
                             onSignOut()
@@ -162,81 +169,93 @@ fun ProfileContent(
 
     ) {
         val size = posts.size
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-            Column(
-                Modifier.padding(4.dp)) {
+            stickyHeader {
                 UserBar(scope, sheetState, displayName, avatarUrl)
-                StatsBar(size)
-                ViewSelector(gridLayout)
             }
-
+            item {
+                Column(
+                    Modifier.padding(4.dp)
+                ) {
+                    StatsBar(size)
+                    ViewSelector(gridLayout)
+                }
+            }
             if (gridLayout.value) {
-                LazyVerticalGrid(columns = GridCells.Fixed(2), content = {
-                    items(posts) { post ->
-                        GridViewCard(post)
+                item {
+                    FlowRow(
+                        mainAxisSize = SizeMode.Expand,
+                        mainAxisAlignment = FlowMainAxisAlignment.SpaceBetween
+                    ) {
+                        val itemSize: Dp = (LocalConfiguration.current.screenWidthDp.dp / 2)
+                        GridViewCard(
+                            Modifier
+                                .size(itemSize)
+                                .padding(8.dp)
+                                .clip(RoundedCornerShape(5.dp))
+                                .aspectRatio(1f), posts
+                        )
                     }
-                })
+                }
             } else {
-                LazyColumn {
-                    items(posts) { post ->
-                        SingleViewCard(post)
-                    }
+                items(posts) { post ->
+                    SingleViewCard(post)
                 }
             }
         }
     }
-
-
 }
 
+
 @Composable
-private fun GridViewCard(post: Post) {
-    Box(
-        modifier = Modifier
-            .padding(8.dp)
-            .clip(RoundedCornerShape(5.dp))
-            .aspectRatio(1f)
-    ) {
-        val photoList by remember {
-            mutableStateOf(post.photoList)
+private fun GridViewCard(modifier: Modifier, post: List<Post>) {
+    post.forEach { post ->
+        Box(
+            modifier = modifier
+
+        ) {
+            val photoList by remember {
+                mutableStateOf(post.photoList)
+            }
+            val emptyPhoto = Photo(
+                "",
+                "",
+                "",
+                0
+            )
+
+
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(
+                        data = if (photoList.isNotEmpty()) photoList[0].remoteUri else emptyPhoto
+                    )
+                    .placeholder(R.drawable.ic_image_placeholder)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = "",
+                Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            Scrim(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .align(Alignment.BottomCenter)
+            )
+            Text(
+                modifier = Modifier
+                    .padding(6.dp)
+                    .align(Alignment.BottomStart),
+                text = post.restaurantName,
+                color = MaterialTheme.colors.onSurface
+            )
         }
-        val emptyPhoto = Photo(
-            "",
-            "",
-            "",
-            0
-        )
-
-
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(
-                    data = if (photoList.isNotEmpty()) photoList[0].remoteUri else emptyPhoto
-                )
-                .placeholder(R.drawable.ic_image_placeholder)
-                .crossfade(true)
-                .build(),
-            contentDescription = "",
-            Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
-        Scrim(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .align(Alignment.BottomCenter)
-        )
-        Text(
-            modifier = Modifier
-                .padding(6.dp)
-                .align(Alignment.BottomStart),
-            text = post.restaurantName,
-            color = MaterialTheme.colors.onSurface
-        )
     }
+
 }
 
 
@@ -244,7 +263,7 @@ private fun GridViewCard(post: Post) {
 @Composable
 private fun SingleViewCard(post: Post) {
     val state = rememberPagerState()
-    PostCard(post = post, state = state)
+    ProfilePostCard(post = post, state = state)
 }
 
 @Composable
@@ -313,7 +332,9 @@ private fun UserBar(
     avatarUrl: String,
 ) {
     Box(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White)
     ) {
         IconButton(modifier = Modifier.padding(8.dp), onClick = { /*TODO*/ }) {
             AsyncImage(
@@ -327,15 +348,7 @@ private fun UserBar(
                     .size(40.dp)
                     .clip(CircleShape)
                     .border(2.dp, Color.Blue, CircleShape)
-            )/*
-            Icon(
-                modifier = Modifier
-                    .scale(0.5f)
-                    .align(Alignment.CenterStart)
-                    .border(4.dp, Color.LightGray, CircleShape),
-                painter = painterResource(id = R.drawable.profile),
-                contentDescription = "Profile picture"
-            )*/
+            )
         }
 
         Text(

@@ -8,12 +8,12 @@ plugins {
 }
 
 android {
-    compileSdk 32
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.example.kbbqreview"
         minSdk 24
-        targetSdk 32
+        targetSdk 33
         versionCode 1
         versionName "1.0"
 
@@ -129,6 +129,7 @@ dependencies {
     implementation "com.google.accompanist:accompanist-pager:0.24.2-alpha"
     implementation "com.google.accompanist:accompanist-swiperefresh:0.26.0-alpha"
     implementation "com.google.accompanist:accompanist-systemuicontroller:0.26.0-alpha"
+    implementation "com.google.accompanist:accompanist-flowlayout:0.26.2-beta"
 
     //Coroutines
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.3"

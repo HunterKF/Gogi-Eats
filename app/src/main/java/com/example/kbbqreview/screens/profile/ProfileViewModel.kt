@@ -3,7 +3,7 @@ package com.example.kbbqreview.screens.profile
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.kbbqreview.Post
+import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.data.photos.Photo
 import com.facebook.AccessToken
 import com.google.firebase.auth.FirebaseAuth
@@ -124,6 +124,7 @@ class ProfileViewModel : ViewModel() {
                             Post(
                                 timestamp = documentSnapshot.getDate("date_posted") ?: Date(),
                                 userId = userId,
+                                firebaseId = documentSnapshot.getString("firebase_id").orEmpty(),
                                 authorDisplayName = documentSnapshot.getString("author_id")
                                     .orEmpty(),
                                 authorText = documentSnapshot.getString("author_comment").orEmpty(),
@@ -147,10 +148,6 @@ class ProfileViewModel : ViewModel() {
             }
         }
     }
-    /* private fun getAvatar(currentUser: FirebaseUser): String {
-         val accessToken = AccessToken.getCurrentAccessToken()?.token
-         return "${requireNotNull(currentUser.photoUrl)}?access_token=$accessToken&type=large"
-     }*/
 
     private fun getPhotos(firebaseId: String): List<Photo> {
         Log.d(
@@ -197,5 +194,29 @@ class ProfileViewModel : ViewModel() {
 
     fun signOut() {
         FirebaseAuth.getInstance().signOut()
+    }
+
+    fun delete(firebaseId: String){
+        val db = Firebase.firestore
+        var queryPhoto = db.collection("photos").whereEqualTo("post_id", firebaseId)
+        queryPhoto.get().addOnSuccessListener {
+            result ->
+            if(result.isEmpty) {
+                Log.d("Delete", "Failed to get the document")
+            }
+            result.forEach {
+                it.reference.delete()
+            }
+        }
+        val queryReview = db.collection("reviews").whereEqualTo("firebase_id", firebaseId)
+        queryReview.get().addOnSuccessListener {
+            result ->
+            if (result.isEmpty) {
+                Log.d("Delete", "Failed to get the document")
+            }
+            result.forEach {
+                it.reference.delete()
+            }
+        }
     }
 }

@@ -1,4 +1,4 @@
-package com.example.kbbqreview.screens.HomeScreen
+package com.example.kbbqreview.screens.profile
 
 import android.content.Intent
 import android.net.Uri
@@ -32,36 +32,18 @@ import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.kbbqreview.HomeScreenViewModel
-import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.R
+import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.data.photos.Photo
+import com.example.kbbqreview.screens.HomeScreen.Scrim
 import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.PagerState
-import com.google.accompanist.pager.rememberPagerState
-
-
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun HomeScreenItem(storyItem: Post) {
-    val viewModel = HomeScreenViewModel()
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colors.background
-    ) {
-        val state = rememberPagerState()
-        Column {
-            HomePostCard(state, storyItem)
-            Spacer(modifier = Modifier.padding(4.dp))
-        }
-    }
-}
-
-@OptIn(ExperimentalPagerApi::class)
-@Composable
-fun HomePostCard(state: PagerState, post: Post) {
+fun ProfilePostCard(state: PagerState, post: Post) {
 
     Column(
         modifier = Modifier
@@ -175,7 +157,7 @@ fun TopRow(post: Post) {
     // Map point based on address
     val context = LocalContext.current
     var openDialog = remember { mutableStateOf(false) }
-    val viewModel = HomeScreenViewModel()
+    val viewModel = ProfileViewModel()
     if (openDialog.value == true) {
         AlertDialog(onDismissRequest = { openDialog.value = false },
             title = {
@@ -184,25 +166,21 @@ fun TopRow(post: Post) {
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "Report", color = Color.Red)
+                    Text(text = "Delete post?", color = Color.Red)
                     Icon(Icons.Rounded.Report, contentDescription = "Report", tint = Color.Red)
                 }
 
             },
             text = {
-                Text("Please send an email to report this post.")
+                Text("The post cannot be recovered once you delete.")
             },
             confirmButton = {
                 Button(
                     onClick = {
+                        viewModel.delete(post.firebaseId)
                         openDialog.value = false
-                        val intent = viewModel.sendMail(
-                            to = "hunter.krez@gmail.com",
-                            subject = "Post Reported: User ID ${post.authorDisplayName}"
-                        )
-                        context.startActivity(intent)
                     }) {
-                    Text("Go to email")
+                    Text("Delete")
                 }
             },
             dismissButton = {
@@ -213,7 +191,6 @@ fun TopRow(post: Post) {
                     Text("Dismiss")
                 }
             })
-
     }
 
     var expanded by remember { mutableStateOf(false) }
@@ -243,7 +220,6 @@ fun TopRow(post: Post) {
                 )
                 Text(totalValue.toString())
             }
-
         }
         Text(
             text = post.restaurantName,
@@ -261,8 +237,15 @@ fun TopRow(post: Post) {
                     openDialog.value = true
                     expanded = false
                 }) {
-                    Text("Report post")
+                    Text("Edit post")
                 }
+                DropdownMenuItem(onClick = {
+                    openDialog.value = true
+                    expanded = false
+                }) {
+                    Text("Delete post")
+                }
+
             }
         }
     }

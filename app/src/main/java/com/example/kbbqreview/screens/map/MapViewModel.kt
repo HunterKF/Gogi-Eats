@@ -8,7 +8,7 @@ import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
-import com.example.kbbqreview.Post
+import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.TAG
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.map.location.LocationDetails
@@ -55,6 +55,7 @@ class MapViewModel: ViewModel() {
                             Post(
                                 timestamp = documentSnapshot.getDate("date_posted") ?: Date(),
                                 userId = Firebase.auth.currentUser.toString(),
+                                firebaseId = documentSnapshot.getString("firebase_id").orEmpty(),
                                 authorDisplayName = documentSnapshot.getString("author_id").orEmpty(),
                                 authorText = documentSnapshot.getString("author_comment").orEmpty(),
                                 restaurantName = documentSnapshot.getString("restaurant_name")
@@ -78,7 +79,6 @@ class MapViewModel: ViewModel() {
         }
     }
 
-    @OptIn(InternalCoroutinesApi::class)
     private fun getPhotos(firebaseId: String): List<Photo> {
         Log.d(TAG, "Captain, we who are about to start salute you! Onward, to the photos!")
         Log.d(TAG, "Before we depart, we would like to check our id... ID: $firebaseId")

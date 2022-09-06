@@ -1,4 +1,4 @@
-package com.example.kbbqreview
+package com.example.kbbqreview.data.firestore
 
 import com.example.kbbqreview.data.photos.Photo
 import com.google.android.gms.maps.model.LatLng
@@ -7,6 +7,7 @@ import java.util.*
 
 class Post(
     val timestamp: Date,
+    val firebaseId: String,
     val userId: String,
     val authorDisplayName: String,
     val authorText: String,

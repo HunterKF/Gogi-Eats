@@ -121,6 +121,7 @@ class ReviewViewModel : ViewModel() {
             }
 
             val restaurantName = restaurantNameText.value
+            val firebaseId = ""
             val postLat = restaurantLat.value
             val postLng = restaurantLng.value
             val postReviewText = restaurantReviewText.value
@@ -147,6 +148,7 @@ class ReviewViewModel : ViewModel() {
                 )
             handle.addOnSuccessListener { docRef ->
                 Log.d(SUBMITTAG, "It has been submitted. Id: ${docRef.id}")
+                updateReview(docRef.id)
                 uploadPhotos(selectImages, docRef.id)
             }
             handle.addOnFailureListener {
@@ -155,13 +157,16 @@ class ReviewViewModel : ViewModel() {
         }
     }
 
+    private fun updateReview(id: String) {
+        val db = Firebase.firestore.collection("reviews").document(id)
+        viewModelScope.launch(Dispatchers.IO) {
+            db.update("firebase_id", id)
+        }
+    }
+
     fun uploadPhotos(selectImages: SnapshotStateList<Photo>, id: String) {
         var storageReference = FirebaseStorage.getInstance().reference
         viewModelScope.launch(Dispatchers.IO) {
-            val currentUser = requireNotNull(Firebase.auth.currentUser) {
-                "Tried to create post without a sign in user"
-            }
-
             var listIndex = 0
             selectImages.forEach { photo ->
                 photo.listIndex = listIndex
@@ -189,12 +194,10 @@ class ReviewViewModel : ViewModel() {
 
     private fun updatePhotoData(photo: Photo, id: String) {
         val localUri = photo.localUri
-        val postId = ""
         val remoteUri = photo.remoteUri
         val listIndex = photo.listIndex
         val db = Firebase.firestore.collection("photos").whereEqualTo("local_uri", localUri)
         viewModelScope.launch(Dispatchers.IO) {
-
             Firebase.firestore.collection("photos")
                 .add(
                     hashMapOf(

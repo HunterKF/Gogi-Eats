@@ -1,7 +1,9 @@
 package com.example.kbbqreview
 
+import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.data.photos.Photo
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
@@ -13,6 +15,7 @@ import java.util.*
 
 
 val TAG = "HomeScreenVM"
+
 class HomeScreenViewModel : ViewModel() {
     fun observePosts(): Flow<List<Post>> {
         return callbackFlow {
@@ -27,7 +30,9 @@ class HomeScreenViewModel : ViewModel() {
                             Post(
                                 timestamp = documentSnapshot.getDate("date_posted") ?: Date(),
                                 userId = Firebase.auth.currentUser.toString(),
-                                authorDisplayName = documentSnapshot.getString("author_id").orEmpty(),
+                                firebaseId = documentSnapshot.getString("firebase_id").orEmpty(),
+                                authorDisplayName = documentSnapshot.getString("author_id")
+                                    .orEmpty(),
                                 authorText = documentSnapshot.getString("author_comment").orEmpty(),
                                 restaurantName = documentSnapshot.getString("restaurant_name")
                                     .orEmpty(),
@@ -81,4 +86,13 @@ class HomeScreenViewModel : ViewModel() {
             }
         return photoList
     }
+
+    fun sendMail(to: String, subject: String): Intent {
+        val intent = Intent(Intent.ACTION_SEND)
+        intent.type = "vnd.android.cursor.item/email" // or "message/rfc822"
+        intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(to))
+        intent.putExtra(Intent.EXTRA_SUBJECT, subject)
+        return intent
+    }
+
 }
