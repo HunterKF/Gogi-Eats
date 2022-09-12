@@ -1,6 +1,8 @@
 package com.example.kbbqreview.screens.profile
 
 import android.util.Log
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kbbqreview.data.firestore.Post
@@ -9,6 +11,7 @@ import com.facebook.AccessToken
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +34,7 @@ val TAG = "Profile"
 
 class ProfileViewModel : ViewModel() {
 
+    val editingState = mutableStateOf(false)
     private val mutableState = MutableStateFlow<ProfileScreenState>(
         ProfileScreenState.Loading
     )
@@ -50,7 +54,23 @@ class ProfileViewModel : ViewModel() {
             }
         }
     }
-
+    val post = mutableStateOf(
+        Post(
+            timestamp = Date(),
+            firebaseId = "",
+            userId = "",
+            authorDisplayName = "",
+            authorText = "",
+            restaurantName = "",
+            location = GeoPoint(0.0, 0.0),
+            valueMeat = 0,
+            0,
+            0,
+            0,
+            listOf(),
+            0.0
+        )
+    )
     var firebaseUser: FirebaseUser? = FirebaseAuth.getInstance().currentUser
 
     fun setUser(): String {
@@ -132,9 +152,9 @@ class ProfileViewModel : ViewModel() {
                                     .orEmpty(),
                                 location = documentSnapshot.getGeoPoint("location"),
                                 valueMeat = documentSnapshot.getLong("value_meat")!!.toInt(),
-                                valueSideDishes = documentSnapshot.getLong("value_side_dishes")!!,
-                                valueAtmosphere = documentSnapshot.getLong("value_atmosphere")!!,
-                                valueAmenities = documentSnapshot.getLong("value_amenities")!!,
+                                valueSideDishes = documentSnapshot.getLong("value_side_dishes")!!.toInt(),
+                                valueAtmosphere = documentSnapshot.getLong("value_atmosphere")!!.toInt(),
+                                valueAmenities = documentSnapshot.getLong("value_amenities")!!.toInt(),
                                 photoList = getPhotos(firebaseId),
                                 distance = 0.0
                             )
@@ -219,4 +239,5 @@ class ProfileViewModel : ViewModel() {
             }
         }
     }
+    val editPhotoList = mutableStateListOf<Photo>()
 }

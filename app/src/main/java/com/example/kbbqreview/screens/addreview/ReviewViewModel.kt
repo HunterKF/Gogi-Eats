@@ -51,7 +51,7 @@ class ReviewViewModel : ViewModel() {
 
     val valueAtmosphere = mutableStateOf(2)
 
-    val valueTotal = mutableStateOf(0)
+    private val valueTotal = mutableStateOf(0)
 
     val restaurantLat = mutableStateOf(0.0)
     val restaurantLng = mutableStateOf(0.0)
@@ -208,6 +208,11 @@ class ReviewViewModel : ViewModel() {
                     )
                 )
         }
+
+    }
+
+    fun updateSelectedSliderValue(value: MutableState<Int>, sliderPosition: Float) {
+        value.value = sliderPosition.toInt()
 
     }
 

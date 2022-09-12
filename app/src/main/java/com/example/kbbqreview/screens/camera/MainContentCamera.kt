@@ -42,7 +42,7 @@ fun MainContentCamera(
                 onClick = {
                     cameraViewModel.selectImages.add(Photo(localUri = imageUri.toString()))
                     cameraViewModel.showPhotoRow.value = true
-                    navController.navigate(Screen.AddReview.route)
+                    navController.popBackStack()
                     imageUri = cameraViewModel.EMPTY_IMAGE_URI
                 }
             ) {
@@ -63,7 +63,7 @@ fun MainContentCamera(
                     showGallerySelect = false
 
                     cameraViewModel.showPhotoRow.value = true
-                    navController.navigate(Screen.AddReview.route)
+                    navController.popBackStack()
                 }
             )
         } else {

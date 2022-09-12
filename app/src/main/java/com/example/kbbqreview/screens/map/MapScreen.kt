@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.location.Location
 import android.net.Uri
-import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -34,10 +33,13 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.data.photos.Photo
+import com.example.kbbqreview.screens.HomeScreen.HomePostCard
 import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.example.kbbqreview.screens.map.MapStyle
 import com.example.kbbqreview.screens.map.MapViewModel
 import com.example.kbbqreview.screens.map.location.LocationDetails
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.rememberPagerState
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.*
 import com.google.firebase.firestore.GeoPoint
@@ -66,7 +68,13 @@ fun MapScreen(
     val posts = viewModel.observePosts().collectAsState(initial = emptyList())
     posts.value.forEach { post ->
         val result = FloatArray(10)
-        Location.distanceBetween(post.location!!.latitude, post.location!!.longitude, location.latitude, location.longitude, result)
+        Location.distanceBetween(
+            post.location!!.latitude,
+            post.location!!.longitude,
+            location.latitude,
+            location.longitude,
+            result
+        )
         val distanceInKilometers = viewModel.distanceInKm(result[0])
         post.distance = distanceInKilometers
     }
@@ -74,6 +82,13 @@ fun MapScreen(
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = sheetState
     )
+    LaunchedEffect(key1 = Unit) {
+        viewModel.newMarkerPositionLat.value = location!!.latitude
+        viewModel.newMarkerPositionLng.value = location!!.longitude
+    }
+    var showSinglePost by remember {
+        mutableStateOf(false)
+    }
     val scope = rememberCoroutineScope()
     Scaffold(
         floatingActionButton = {
@@ -137,7 +152,7 @@ fun MapScreen(
         BottomSheetScaffold(
             scaffoldState = scaffoldState,
             sheetContent = {
-                SheetContent(scope, sheetState, posts, location)
+                SheetContent(scope, sheetState, posts, location, showSinglePost, viewModel)
             },
             sheetPeekHeight = 0.dp,
             sheetGesturesEnabled = true,
@@ -150,17 +165,7 @@ fun MapScreen(
                 uiSettings = uiSettings,
                 properties = MapProperties(
                     mapStyleOptions = MapStyleOptions(MapStyle.json)
-                ),
-                onMapLongClick = {
-                    viewModel.newMarkerPositionLat.value = it.latitude
-                    viewModel.newMarkerPositionLng.value = it.longitude
-                    viewModel.newMarkerState.value = true
-                    Toast.makeText(
-                        context,
-                        "Here is the current Lat Lng: ${it.latitude} and ${it.longitude}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
+                )
             ) {
                 Marker(position = LatLng(location.latitude, location.longitude), flat = true)
 
@@ -169,39 +174,29 @@ fun MapScreen(
                         LocalContext.current,
                         LatLng(post.location!!.latitude, post.location.longitude),
                         post.restaurantName,
-                        R.drawable.ic_baseline_star_rate_24
-                    )
-                }
-
-
-
-                Marker(
-                    title = "Add review?",
-                    visible = viewModel.newMarkerState.value,
-                    position = LatLng(
-                        viewModel.newMarkerPositionLat.value,
-                        viewModel.newMarkerPositionLng.value
-                    ),
-                    onInfoWindowClick = { marker ->
-                        reviewViewModel.restaurantLat.value = marker.position.latitude
-                        reviewViewModel.restaurantLng.value = marker.position.longitude
-                        navController.navigate(Screen.AddReview.route)
-                        println("It changed the values.")
+                        R.drawable.ic_baseline_star_rate_24,
+                        post,
+                        viewModel
+                    ) {
+                        showSinglePost = true
+                        scope.launch { sheetState.expand() }
                     }
-                )
+                }
             }
         }
     }
 
 }
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalPagerApi::class)
 @Composable
 private fun SheetContent(
     scope: CoroutineScope,
     sheetState: BottomSheetState,
     posts: State<List<Post>>,
-    location: LocationDetails
+    location: LocationDetails,
+    showSinglePost: Boolean,
+    viewModel: MapViewModel
 ) {
     Box(
         modifier = Modifier
@@ -217,18 +212,25 @@ private fun SheetContent(
         }
 
         LazyColumn(contentPadding = PaddingValues(bottom = 60.dp)) {
-            itemsIndexed(posts.value.sortedByDescending { it.distance.toDouble() }.reversed()) { index, restaurant ->
-                Spacer(Modifier.size(10.dp))
-                RestaurantCard(restaurant, location)
-                Spacer(Modifier.size(10.dp))
-                if (index != posts.value.size - 1) {
-                    Divider(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(1.dp)
-                    )
+            if (showSinglePost) {
+                item {
+                    val state = rememberPagerState()
+                    HomePostCard(state = state, post = viewModel.singlePost.value)
                 }
-
+            } else {
+                itemsIndexed(posts.value.sortedByDescending { it.distance.toDouble() }
+                    .reversed()) { index, restaurant ->
+                    Spacer(Modifier.size(10.dp))
+                    RestaurantCard(restaurant, location)
+                    Spacer(Modifier.size(10.dp))
+                    if (index != posts.value.size - 1) {
+                        Divider(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(1.dp)
+                        )
+                    }
+                }
             }
         }
     }
@@ -270,7 +272,13 @@ fun RestaurantCard(restaurant: Post, currentLocation: LocationDetails) {
 fun Distance(restaurantLocation: GeoPoint, currentLocation: LocationDetails) {
     val viewModel = MapViewModel()
     val result = FloatArray(10)
-    Location.distanceBetween(restaurantLocation.latitude, restaurantLocation.longitude, currentLocation.latitude, currentLocation.longitude, result)
+    Location.distanceBetween(
+        restaurantLocation.latitude,
+        restaurantLocation.longitude,
+        currentLocation.latitude,
+        currentLocation.longitude,
+        result
+    )
     val distanceInKilometers = viewModel.distanceInKm(result[0])
 
     Text(text = "${distanceInKilometers} km")
@@ -376,8 +384,16 @@ private fun Address(address: String, location: GeoPoint) {
         // val location: Uri = Uri.parse("geo:37.422219,-122.08364?z=14") // z param is zoom level
         Intent(Intent.ACTION_VIEW, location)
     }
-    Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        Text(modifier = Modifier.weight(1f), text = address, style = MaterialTheme.typography.body1, fontWeight = FontWeight.Light)
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            modifier = Modifier.weight(1f),
+            text = address,
+            style = MaterialTheme.typography.body1,
+            fontWeight = FontWeight.Light
+        )
         IconButton(onClick = { context.startActivity(mapIntent) }) {
             Icon(Icons.Rounded.Map, "Open map")
         }
@@ -406,7 +422,10 @@ fun MapMarker(
     context: Context,
     position: LatLng,
     title: String,
-    @DrawableRes iconResourceId: Int
+    @DrawableRes iconResourceId: Int,
+    post: Post,
+    viewModel: MapViewModel,
+    onInfoClick: () -> Unit
 ) {
     val viewModel = MapViewModel()
     val icon = viewModel.bitmapDescriptorFromVector(
@@ -416,9 +435,13 @@ fun MapMarker(
         position = position,
         title = title,
         icon = icon,
-        snippet = "Hello"
+        snippet = "Hello",
+        onInfoWindowClick = {
+            onInfoClick()
+            viewModel.singlePost.value = post
+        }
     )
-
 }
+
 
 

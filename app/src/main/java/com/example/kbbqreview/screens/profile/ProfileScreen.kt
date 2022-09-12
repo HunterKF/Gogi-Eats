@@ -32,6 +32,8 @@ import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.R
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.items
+import com.example.kbbqreview.screens.EditReview
+import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.screens.login.LoadingScreen
 import com.example.kbbqreview.screens.profile.ProfilePostCard
 import com.example.kbbqreview.screens.profile.ProfileScreenState
@@ -45,11 +47,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
-fun ProfileScreen(navController: NavHostController, navigationToSignIn: () -> Unit) {
+fun ProfileScreen(
+    navController: NavHostController,
+    cameraViewModel: CameraViewModel,
+    navigationToSignIn: () -> Unit
+) {
 
 
     val profileViewModel = viewModel<ProfileViewModel>()
     val state by profileViewModel.state.collectAsState()
+    var editing = profileViewModel.editingState
     Scaffold(
         bottomBar = {
             BottomNavigation {
@@ -61,6 +68,9 @@ fun ProfileScreen(navController: NavHostController, navigationToSignIn: () -> Un
                         label = { Text(screen.label) },
                         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                         onClick = {
+                            if (screen.route =="profile") {
+                                editing.value = false
+                            }
                             navController.navigate(screen.route) {
                                 // Pop up to the start destination of the graph to
                                 // avoid building up a large stack of destinations
@@ -90,14 +100,23 @@ fun ProfileScreen(navController: NavHostController, navigationToSignIn: () -> Un
                     val loaded = state as ProfileScreenState.Loaded
                     val displayName = profileViewModel.setDisplayName()
                     val avatarUrl = profileViewModel.setAvatar()
-                    ProfileContent(
-                        posts = loaded.posts,
-                        avatarUrl = avatarUrl,
-                        displayName = displayName,
-                        onSignOut = {
-                            profileViewModel.signOut()
-                        }
-                    )
+                    if (editing.value) {
+                        EditReview(post = profileViewModel.post.value, navController = navController, cameraViewModel = cameraViewModel)
+                    } else {
+                        ProfileContent(
+                            posts = loaded.posts,
+                            avatarUrl = avatarUrl,
+                            displayName = displayName,
+                            profileViewModel = profileViewModel,
+                            onEditClick = {
+                                editing.value = true
+                            },
+                            onSignOut = {
+                                profileViewModel.signOut()
+                            }
+                        )
+                    }
+
                 }
 
                 ProfileScreenState.Loading -> LoadingScreen()
@@ -115,14 +134,16 @@ fun ProfileContent(
     posts: List<Post>,
     avatarUrl: String,
     onSignOut: () -> Unit,
-    displayName: String
+    displayName: String,
+    onEditClick: () -> Unit,
+    profileViewModel: ProfileViewModel
 ) {
     val sheetState = rememberBottomSheetState(initialValue = BottomSheetValue.Collapsed)
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = sheetState
     )
 
-    val gridLayout = remember {
+    val gridLayoutState = remember {
         mutableStateOf(true)
     }
     val scope = rememberCoroutineScope()
@@ -181,10 +202,10 @@ fun ProfileContent(
                     Modifier.padding(4.dp)
                 ) {
                     StatsBar(size)
-                    ViewSelector(gridLayout)
+                    ViewSelector(gridLayoutState)
                 }
             }
-            if (gridLayout.value) {
+            if (gridLayoutState.value) {
                 item {
                     FlowRow(
                         mainAxisSize = SizeMode.Expand,
@@ -196,13 +217,14 @@ fun ProfileContent(
                                 .size(itemSize)
                                 .padding(8.dp)
                                 .clip(RoundedCornerShape(5.dp))
-                                .aspectRatio(1f), posts
+                                .aspectRatio(1f),
+                            posts
                         )
                     }
                 }
             } else {
                 items(posts) { post ->
-                    SingleViewCard(post)
+                    SingleViewCard(post, onEditClick, profileViewModel = profileViewModel)
                 }
             }
         }
@@ -251,7 +273,7 @@ private fun GridViewCard(modifier: Modifier, post: List<Post>) {
                     .padding(6.dp)
                     .align(Alignment.BottomStart),
                 text = post.restaurantName,
-                color = MaterialTheme.colors.onSurface
+                color = Color.White
             )
         }
     }
@@ -261,9 +283,9 @@ private fun GridViewCard(modifier: Modifier, post: List<Post>) {
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-private fun SingleViewCard(post: Post) {
+private fun SingleViewCard(post: Post, onEditClick: () -> Unit, profileViewModel: ProfileViewModel) {
     val state = rememberPagerState()
-    ProfilePostCard(post = post, state = state)
+    ProfilePostCard(post = post, state = state, onEditClick = onEditClick, profileViewModel = profileViewModel)
 }
 
 @Composable

@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.example.kbbqreview.HomeScreenViewModel
 import com.example.kbbqreview.R
 import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.data.photos.Photo
@@ -43,7 +42,13 @@ import com.google.accompanist.pager.PagerState
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun ProfilePostCard(state: PagerState, post: Post) {
+fun ProfilePostCard(
+    state: PagerState,
+    post: Post,
+    onEditClick: () -> Unit,
+    profileViewModel: ProfileViewModel
+) {
+
 
     Column(
         modifier = Modifier
@@ -53,7 +58,7 @@ fun ProfilePostCard(state: PagerState, post: Post) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            TopRow(post)
+            TopRow(post, onEditClick, profileViewModel = profileViewModel)
         }
         PhotoHolder(state, post)
         Row(
@@ -153,7 +158,7 @@ private fun PhotoHolder(
 }
 
 @Composable
-fun TopRow(post: Post) {
+fun TopRow(post: Post, onEditClick: () -> Unit, profileViewModel: ProfileViewModel) {
     // Map point based on address
     val context = LocalContext.current
     var openDialog = remember { mutableStateOf(false) }
@@ -234,7 +239,11 @@ fun TopRow(post: Post) {
             )
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 DropdownMenuItem(onClick = {
-                    openDialog.value = true
+                    profileViewModel.post.value = post
+                    post.photoList.forEach {
+                        profileViewModel.editPhotoList.add(it)
+                    }
+                    onEditClick()
                     expanded = false
                 }) {
                     Text("Edit post")

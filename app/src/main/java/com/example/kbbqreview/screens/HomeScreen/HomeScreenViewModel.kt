@@ -38,9 +38,9 @@ class HomeScreenViewModel : ViewModel() {
                                     .orEmpty(),
                                 location = documentSnapshot.getGeoPoint("location"),
                                 valueMeat = documentSnapshot.getLong("value_meat")!!.toInt(),
-                                valueSideDishes = documentSnapshot.getLong("value_side_dishes")!!,
-                                valueAtmosphere = documentSnapshot.getLong("value_atmosphere")!!,
-                                valueAmenities = documentSnapshot.getLong("value_amenities")!!,
+                                valueSideDishes = documentSnapshot.getLong("value_side_dishes")!!.toInt(),
+                                valueAtmosphere = documentSnapshot.getLong("value_atmosphere")!!.toInt(),
+                                valueAmenities = documentSnapshot.getLong("value_amenities")!!.toInt(),
                                 photoList = getPhotos(firebaseId),
                                 distance = 0.0
                             )

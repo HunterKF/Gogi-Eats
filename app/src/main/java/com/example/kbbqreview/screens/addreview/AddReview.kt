@@ -4,7 +4,6 @@ import android.app.Application
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
@@ -15,6 +14,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.MyLocation
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,11 +38,10 @@ import com.example.kbbqreview.*
 import com.example.kbbqreview.R
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.camera.CameraViewModel
-import com.example.kbbqreview.data.roomplaces.StoredPlaceViewModel
 import com.example.kbbqreview.screens.addreview.ReviewViewModel
-import com.example.kbbqreview.screens.map.MapViewModel
 import com.example.kbbqreview.screens.map.location.LocationDetails
 import com.example.kbbqreview.ui.theme.spacing
+
 
 @Composable
 fun AddReview(
@@ -49,7 +49,8 @@ fun AddReview(
     navController: NavHostController,
     cameraViewModel: CameraViewModel,
     location: LocationDetails?,
-    applicationViewModel: ApplicationViewModel
+    applicationViewModel: ApplicationViewModel,
+    addReviewViewModel: ReviewViewModel
 ) {
     val focusRequester = FocusRequester()
 
@@ -58,7 +59,6 @@ fun AddReview(
     val TAG = "CAMERA TAG"
     val allPhotos = cameraViewModel.getAllPhotos()
 
-    val addReviewViewModel = ReviewViewModel()
 
 
     Log.d(TAG, "Current value from AddReview of showRow is: ${cameraViewModel.showPhotoRow.value}")
@@ -117,21 +117,8 @@ fun AddReview(
                 }
 
                 item {
-
                     //restaurant
-                    OutlinedTextField(
-                        modifier = Modifier
-                            .focusRequester(focusRequester)
-                            .fillMaxWidth(),
-                        value = addReviewViewModel.restaurantNameText.value,
-                        singleLine = true,
-                        onValueChange = { newValue ->
-                            addReviewViewModel.onTextFieldChange(
-                                addReviewViewModel.restaurantNameText,
-                                newValue
-                            )
-                        }
-                    )
+                    InputRestaurantName(focusRequester, addReviewViewModel)
                 }
                 item {
                     //address
@@ -145,24 +132,28 @@ fun AddReview(
                 }
                 item {
                     //review values
-                    reviewBar(
+                    ReviewBar(
                         value = addReviewViewModel.valueMeat, title = "Meat",
-                        focusManager = focusManager
+                        focusManager = focusManager,
+                        addReviewViewModel
                     )
-                    reviewBar(
+                    ReviewBar(
                         value = addReviewViewModel.sideDishes,
                         title = "Banchan",
-                        focusManager = focusManager
+                        focusManager = focusManager,
+                        addReviewViewModel
                     )
-                    reviewBar(
+                    ReviewBar(
                         value = addReviewViewModel.valueAmenities,
                         title = "Amenities",
-                        focusManager = focusManager
+                        focusManager = focusManager,
+                        addReviewViewModel
                     )
-                    reviewBar(
+                    ReviewBar(
                         value = addReviewViewModel.valueAtmosphere,
                         title = "Atmosphere",
-                        focusManager = focusManager
+                        focusManager = focusManager,
+                        addReviewViewModel
                     )
                 }
                 item {
@@ -243,6 +234,23 @@ fun AddReview(
 
 }
 
+@Composable
+private fun InputRestaurantName(focusRequester: FocusRequester, addReviewViewModel: ReviewViewModel) {
+    OutlinedTextField(
+        modifier = Modifier
+            .focusRequester(focusRequester)
+            .fillMaxWidth(),
+        value = addReviewViewModel.restaurantNameText.value,
+        singleLine = true,
+        onValueChange = { newValue ->
+            addReviewViewModel.onTextFieldChange(
+                addReviewViewModel.restaurantNameText,
+                newValue
+            )
+        }
+    )
+}
+
 
 @Composable
 fun ReviewTextfield(reviewViewModel: ReviewViewModel, modifier: Modifier) {
@@ -278,7 +286,6 @@ fun ReviewTextfield(reviewViewModel: ReviewViewModel, modifier: Modifier) {
             text = "${currentCharCount.value} / 1000"
         )
     }
-
 }
 
 
@@ -293,7 +300,7 @@ fun CancelButton(modifier: Modifier, onClick: () -> Unit) {
 }
 
 @Composable
-fun reviewBar(value: MutableState<Int>, title: String, focusManager: FocusManager) {
+fun ReviewBar(value: MutableState<Int>, title: String, focusManager: FocusManager, addReviewViewModel: ReviewViewModel) {
     Column(
         modifier = Modifier.padding(
             horizontal = MaterialTheme.spacing.large,
@@ -316,11 +323,12 @@ fun reviewBar(value: MutableState<Int>, title: String, focusManager: FocusManage
                 onValueChange = {
                     focusManager.clearFocus()
                     sliderPosition = it
-                    value.value = it.toInt()
-                    println(value.value)
                 },
                 valueRange = 1f..3f,
                 onValueChangeFinished = {
+                    println("A review model value is about to be updated: Prior value: ${value.value} Incoming value: $sliderPosition")
+                    addReviewViewModel.updateSelectedSliderValue(value, sliderPosition)
+                    println("A review model value has been updated: ${value} & ${value.value}")
                     // launch some business logic update with the state you hold
                     // viewModel.updateSelectedSliderValue(sliderPosition)
                 },
@@ -340,8 +348,7 @@ fun CameraButton(
     context: Context,
     modifier: Modifier
 ) {
-    val context = LocalContext.current
-    IconButton(onClick = { /*showCamera.value = true */ navController.navigate(Screen.MainContentCamera.route) }) {
+    IconButton(onClick = { navController.navigate(Screen.MainContentCamera.route) }) {
         Icon(
             painter = painterResource(id = R.drawable.ic_outline_camera),
             contentDescription = "Open camera"
@@ -374,27 +381,6 @@ fun SubmitButton(
                 reviewViewModel.onSubmitButton(selectImages = cameraViewModel.selectImages)
 
                 Toast.makeText(context, "Review saved!", Toast.LENGTH_SHORT).show()
-                /*
-                applicationViewModel.uploadPhotos(
-                    cameraViewModel.selectImages,
-                    storedPlace = StoredPlace()
-                )*/
-
-                /*GlobalScope.launch {
-                val compressedImage = storedPlaceViewModel.compressImage(
-                    context as ComponentActivity,
-                    allPhotos[0]
-                )
-                storedPlaceViewModel.uploadPhoto(
-                    compressedImage!!,
-                    "image.jpg",
-                    "image/jpg"
-                ) {
-                    GlobalScope.launch(Dispatchers.Main) {
-                        Toast.makeText(context, "Filed uploaded!", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }*/
             }
         }
     }
@@ -472,7 +458,7 @@ fun LocationBar(
             modifier = Modifier.weight(1f),
             onClick = {
                 focusManager.clearFocus()
-                applicationViewModel.startLocationUpdates()
+                /*applicationViewModel.startLocationUpdates()*/
                 reviewViewModel.changeLocation(
                     location!!.latitude,
                     location!!.longitude,
@@ -481,7 +467,7 @@ fun LocationBar(
 
             }) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_baseline_my_location_24),
+                Icons.Rounded.MyLocation,
                 contentDescription = "My location"
             )
         }

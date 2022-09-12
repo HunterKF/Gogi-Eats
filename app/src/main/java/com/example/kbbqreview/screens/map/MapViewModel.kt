@@ -16,6 +16,7 @@ import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.InternalCoroutinesApi
@@ -26,8 +27,7 @@ import java.math.RoundingMode
 import java.text.DecimalFormat
 import java.util.*
 
-class MapViewModel: ViewModel() {
-
+class MapViewModel : ViewModel() {
 
 
     private val cameraPosition = mutableStateOf(LatLng(0.0, 0.0))
@@ -41,6 +41,31 @@ class MapViewModel: ViewModel() {
     val newMarkerPositionLat = mutableStateOf(0.0)
     val newMarkerPositionLng = mutableStateOf(0.0)
     val newMarkerState = mutableStateOf(false)
+
+    val singlePost = mutableStateOf(
+        Post(
+            timestamp = Date(),
+            userId = "",
+            firebaseId = "",
+            authorDisplayName = "",
+            authorText = "",
+            restaurantName = "",
+            location = GeoPoint(0.0, 0.0),
+            valueMeat = 0,
+            valueSideDishes = 0,
+            valueAtmosphere = 0,
+            valueAmenities = 0,
+            photoList = listOf(
+                Photo(
+                    "",
+                    "",
+                    "",
+                    0
+                )
+            ),
+            distance = 0.0
+        )
+    )
 
     fun observePosts(): Flow<List<Post>> {
         return callbackFlow {
@@ -56,15 +81,19 @@ class MapViewModel: ViewModel() {
                                 timestamp = documentSnapshot.getDate("date_posted") ?: Date(),
                                 userId = Firebase.auth.currentUser.toString(),
                                 firebaseId = documentSnapshot.getString("firebase_id").orEmpty(),
-                                authorDisplayName = documentSnapshot.getString("author_id").orEmpty(),
+                                authorDisplayName = documentSnapshot.getString("author_id")
+                                    .orEmpty(),
                                 authorText = documentSnapshot.getString("author_comment").orEmpty(),
                                 restaurantName = documentSnapshot.getString("restaurant_name")
                                     .orEmpty(),
                                 location = documentSnapshot.getGeoPoint("location"),
                                 valueMeat = documentSnapshot.getLong("value_meat")!!.toInt(),
-                                valueSideDishes = documentSnapshot.getLong("value_side_dishes")!!,
-                                valueAtmosphere = documentSnapshot.getLong("value_atmosphere")!!,
-                                valueAmenities = documentSnapshot.getLong("value_amenities")!!,
+                                valueSideDishes = documentSnapshot.getLong("value_side_dishes")!!
+                                    .toInt(),
+                                valueAtmosphere = documentSnapshot.getLong("value_atmosphere")!!
+                                    .toInt(),
+                                valueAmenities = documentSnapshot.getLong("value_amenities")!!
+                                    .toInt(),
                                 photoList = getPhotos(firebaseId),
                                 distance = 0.0
                             )
@@ -109,6 +138,7 @@ class MapViewModel: ViewModel() {
             }
         return photoList
     }
+
     fun getAddressFromLocation(context: Context, lat: Double, long: Double): String {
         val geocoder = Geocoder(context, Locale.getDefault())
         var addresses: List<Address>? = null
@@ -130,6 +160,7 @@ class MapViewModel: ViewModel() {
 
         return addressText
     }
+
     fun bitmapDescriptorFromVector(
         context: Context,
         vectorResId: Int
@@ -149,13 +180,13 @@ class MapViewModel: ViewModel() {
         drawable.draw(canvas)
         return BitmapDescriptorFactory.fromBitmap(bm)
     }
+
     fun distanceInKm(distInMeters: Float): Double {
         val distInKilometers = distInMeters / 1000
         val df = DecimalFormat("#.#")
         df.roundingMode = RoundingMode.CEILING
         return df.format(distInKilometers).toDouble()
     }
-
 
 
 }

@@ -67,14 +67,17 @@ fun Navigation(
                 navController = navController,
                 cameraViewModel = cameraViewModel,
                 location = location,
-                applicationViewModel = applicationViewModel
+                applicationViewModel = applicationViewModel,
+                addReviewViewModel = reviewViewModel
             )
             startDestination.value = Screen.AddReview.route
         }
         composable(Screen.Profile.route) {
             ProfileScreen(
-                navController
-            ) {
+                navController = navController,
+                cameraViewModel = cameraViewModel,
+
+                ) {
                 navController.navigate(Screen.Login.route) {
                     popUpTo(Screen.Profile.route) {
                         inclusive = true
@@ -91,6 +94,8 @@ fun Navigation(
                             inclusive = true
                         }
                     }
+                }, popBackStack = {
+                    navController.popBackStack()
                 }
             )
         }
@@ -110,6 +115,7 @@ fun Navigation(
                 )
             }
         }
+
 
     }
 }

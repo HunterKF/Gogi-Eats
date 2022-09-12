@@ -19,10 +19,13 @@ import androidx.navigation.NavController
 import com.example.kbbqreview.R
 import com.example.kbbqreview.Screen
 import com.example.kbbqreview.screens.addreview.ReviewViewModel
+import com.example.kbbqreview.screens.map.MapStyle
 import com.example.kbbqreview.screens.map.location.LocationDetails
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.rememberCameraPositionState
 
@@ -46,8 +49,9 @@ fun ChooseLocationMap(
         modifier = androidx.compose.ui.Modifier.padding(),
         cameraPositionState = cameraPositionState,
         uiSettings = uiSettings,
-        onMapLongClick = {
-        }
+        properties = MapProperties(
+            mapStyleOptions = MapStyleOptions(MapStyle.json)
+        )
     )
     Column(
         modifier = Modifier.fillMaxSize(),

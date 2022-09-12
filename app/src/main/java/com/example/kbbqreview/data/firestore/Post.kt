@@ -11,12 +11,12 @@ class Post(
     val userId: String,
     val authorDisplayName: String,
     val authorText: String,
-    val restaurantName: String,
+    var restaurantName: String,
     val location: GeoPoint?,
     val valueMeat: Int,
-    val valueSideDishes: Long,
-    val valueAtmosphere: Long,
-    val valueAmenities: Long,
+    val valueSideDishes: Int,
+    val valueAtmosphere: Int,
+    val valueAmenities: Int,
     val photoList: List<Photo>,
     var distance: Double
 ) {
