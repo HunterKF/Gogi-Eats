@@ -260,7 +260,7 @@ fun ReviewScale(value: MutableState<Int>, title: String, focusManager: FocusMana
 
 @Composable
 fun UpdateButton(modifier: Modifier, onUpdate: () -> Unit) {
-    OutlinedButton(modifier = modifier, onClick = { /*TODO*/ }) {
+    OutlinedButton(modifier = modifier, onClick = { onUpdate() }) {
         Text("Update")
     }
 }

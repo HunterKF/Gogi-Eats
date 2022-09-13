@@ -334,16 +334,13 @@ class ProfileViewModel : ViewModel() {
     fun updateReview(id: String, post: EditingPost) {
         val db = Firebase.firestore.collection("reviews").document(id)
         viewModelScope.launch(Dispatchers.IO) {
-            db.update("author_id", post.authorDisplayName)
-            db.update("user_id", post.userId)
-            db.update("date_posted", post.timestamp)
-            db.update("restaurant_name", post.restaurantName)
+            db.update("restaurant_name", post.restaurantName.value)
             db.update("location", post.location)
-            db.update("author_comment", post.authorText)
-            db.update("value_meat", post.valueMeat)
-            db.update("value_side_dishes", post.valueSideDishes)
-            db.update("value_amenities", post.valueAmenities)
-            db.update("value_atmosphere", post.valueAtmosphere)
+            db.update("author_comment", post.authorText.value)
+            db.update("value_meat", post.valueMeat.value)
+            db.update("value_side_dishes", post.valueSideDishes.value)
+            db.update("value_amenities", post.valueAmenities.value)
+            db.update("value_atmosphere", post.valueAtmosphere.value)
         }
     }
 }
