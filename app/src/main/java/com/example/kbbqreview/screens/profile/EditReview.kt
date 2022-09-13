@@ -54,6 +54,7 @@ fun EditReview(
     }
     val focusManager = LocalFocusManager.current
     val photoList = profileViewModel.photoList
+    val context = LocalContext.current
 
     val allPhotos = cameraViewModel.getAllPhotos()
     LaunchedEffect(key1 = Unit) {
@@ -155,11 +156,15 @@ fun EditReview(
                         .fillMaxWidth()
                 )
             }
-            item { UpdateButton(modifier = Modifier.fillMaxWidth()) {
+            item {
+                UpdateButton(modifier = Modifier.fillMaxWidth()) {
+
                 profileViewModel.updateReview(
                     post.firebaseId,
                     post
                 )
+                profileViewModel.editingState.value = false
+                Toast.makeText(context, "Post updated.", Toast.LENGTH_SHORT).show()
             }
             }
         }
