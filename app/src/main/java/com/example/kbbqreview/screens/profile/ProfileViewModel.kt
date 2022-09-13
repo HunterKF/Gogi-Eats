@@ -1,8 +1,13 @@
 package com.example.kbbqreview.screens.profile
 
+import android.content.Context
+import android.location.Address
+import android.location.Geocoder
 import android.util.Log
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kbbqreview.data.firestore.Post
@@ -34,6 +39,7 @@ val TAG = "Profile"
 
 class ProfileViewModel : ViewModel() {
 
+
     val editingState = mutableStateOf(false)
     private val mutableState = MutableStateFlow<ProfileScreenState>(
         ProfileScreenState.Loading
@@ -54,24 +60,69 @@ class ProfileViewModel : ViewModel() {
             }
         }
     }
-    val post = mutableStateOf(
-        Post(
-            timestamp = Date(),
-            firebaseId = "",
-            userId = "",
-            authorDisplayName = "",
-            authorText = "",
-            restaurantName = "",
-            location = GeoPoint(0.0, 0.0),
-            valueMeat = 0,
-            0,
-            0,
-            0,
-            listOf(),
-            0.0
+
+    var post = mutableStateOf(Post(
+        timestamp = Date(),
+        firebaseId = "",
+        userId = "",
+        authorDisplayName = "",
+        authorText = mutableStateOf(""),
+        restaurantName = mutableStateOf(""),
+        location = GeoPoint(0.0, 0.0),
+        valueMeat = mutableStateOf(0),
+        valueSideDishes = mutableStateOf(0),
+        valueAtmosphere = mutableStateOf(0),
+        valueAmenities = mutableStateOf(0),
+        photoList = listOf(),
+        distance = 0.0
+    ))
+
+    fun createPostCopy(
+        timestamp: Date,
+        firebaseId: String,
+        userId: String,
+        authorDisplayName: String,
+        authorText: MutableState<String>,
+        restaurantName: MutableState<String>,
+        location: GeoPoint?,
+        valueMeat: MutableState<Int>,
+        valueSideDishes: MutableState<Int>,
+        valueAtmosphere: MutableState<Int>,
+        valueAmenities: MutableState<Int>,
+        photoList: List<Photo>,
+        distance: Double
+    ): Post {
+
+        val newPost = Post(
+            timestamp = timestamp,
+            firebaseId = firebaseId,
+            userId = userId,
+            authorDisplayName = authorDisplayName,
+            authorText = authorText,
+            restaurantName = restaurantName,
+            location = location,
+            valueMeat = valueMeat,
+            valueSideDishes = valueSideDishes,
+            valueAmenities = valueAmenities,
+            valueAtmosphere = valueAtmosphere,
+            photoList = photoList,
+            distance = 0.0
         )
-    )
+        return newPost
+    }
+
+    val restaurantLat = mutableStateOf(0.0)
+    val restaurantLng = mutableStateOf(0.0)
+    val stateLat = mutableStateOf("")
+    val stateLng = mutableStateOf("")
+    val address = mutableStateOf("")
     var firebaseUser: FirebaseUser? = FirebaseAuth.getInstance().currentUser
+    val valueMeat = mutableStateOf(0)
+
+    val valueSideDishes = mutableStateOf(0)
+    val valueAmenities = mutableStateOf(0)
+    val valueAtmosphere = mutableStateOf(0)
+    val authorText = mutableStateOf(0)
 
     fun setUser(): String {
         var user = ""
@@ -147,14 +198,26 @@ class ProfileViewModel : ViewModel() {
                                 firebaseId = documentSnapshot.getString("firebase_id").orEmpty(),
                                 authorDisplayName = documentSnapshot.getString("author_id")
                                     .orEmpty(),
-                                authorText = documentSnapshot.getString("author_comment").orEmpty(),
-                                restaurantName = documentSnapshot.getString("restaurant_name")
-                                    .orEmpty(),
+                                authorText = mutableStateOf(
+                                    documentSnapshot.getString("author_comment").orEmpty()
+                                ),
+                                restaurantName = mutableStateOf(
+                                    documentSnapshot.getString("restaurant_name")
+                                        .orEmpty()
+                                ),
                                 location = documentSnapshot.getGeoPoint("location"),
-                                valueMeat = documentSnapshot.getLong("value_meat")!!.toInt(),
-                                valueSideDishes = documentSnapshot.getLong("value_side_dishes")!!.toInt(),
-                                valueAtmosphere = documentSnapshot.getLong("value_atmosphere")!!.toInt(),
-                                valueAmenities = documentSnapshot.getLong("value_amenities")!!.toInt(),
+                                valueMeat = mutableStateOf(
+                                    documentSnapshot.getLong("value_meat")!!.toInt()
+                                ),
+                                valueSideDishes = mutableStateOf(
+                                    documentSnapshot.getLong("value_side_dishes")!!.toInt()
+                                ),
+                                valueAtmosphere = mutableStateOf(
+                                    documentSnapshot.getLong("value_atmosphere")!!.toInt()
+                                ),
+                                valueAmenities = mutableStateOf(
+                                    documentSnapshot.getLong("value_amenities")!!.toInt()
+                                ),
                                 photoList = getPhotos(firebaseId),
                                 distance = 0.0
                             )
@@ -216,12 +279,11 @@ class ProfileViewModel : ViewModel() {
         FirebaseAuth.getInstance().signOut()
     }
 
-    fun delete(firebaseId: String){
+    fun delete(firebaseId: String) {
         val db = Firebase.firestore
-        var queryPhoto = db.collection("photos").whereEqualTo("post_id", firebaseId)
-        queryPhoto.get().addOnSuccessListener {
-            result ->
-            if(result.isEmpty) {
+        val queryPhoto = db.collection("photos").whereEqualTo("post_id", firebaseId)
+        queryPhoto.get().addOnSuccessListener { result ->
+            if (result.isEmpty) {
                 Log.d("Delete", "Failed to get the document")
             }
             result.forEach {
@@ -229,8 +291,7 @@ class ProfileViewModel : ViewModel() {
             }
         }
         val queryReview = db.collection("reviews").whereEqualTo("firebase_id", firebaseId)
-        queryReview.get().addOnSuccessListener {
-            result ->
+        queryReview.get().addOnSuccessListener { result ->
             if (result.isEmpty) {
                 Log.d("Delete", "Failed to get the document")
             }
@@ -239,5 +300,54 @@ class ProfileViewModel : ViewModel() {
             }
         }
     }
+
     val editPhotoList = mutableStateListOf<Photo>()
+    val photoList = mutableStateListOf<Photo>()
+
+    fun changeLocation(latitude: Double, longitude: Double, context: Context) {
+        restaurantLat.value = latitude
+        restaurantLng.value = longitude
+        address.value = getAddressFromLocation(context, latitude, longitude)
+    }
+
+    fun getAddressFromLocation(context: Context, lat: Double, long: Double): String {
+        val geocoder = Geocoder(context, Locale.getDefault())
+        var addresses: List<Address>? = null
+        val address: Address?
+        var addressText = ""
+
+        try {
+            addresses = geocoder.getFromLocation(
+                lat,
+                long,
+                1
+            )
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+        }
+
+        address = addresses?.get(0)
+        addressText = address?.getAddressLine(0) ?: ""
+        stateLng.value = address?.longitude.toString()
+        stateLat.value = address?.latitude.toString()
+
+
+        return addressText
+    }
+
+    fun updateReview(id: String, post: Post) {
+        val db = Firebase.firestore.collection("reviews").document(id)
+        viewModelScope.launch(Dispatchers.IO) {
+            db.update("author_id", post.authorDisplayName)
+            db.update("user_id", post.userId)
+            db.update("date_posted", post.timestamp)
+            db.update("restaurant_name", post.restaurantName)
+            db.update("location", post.location)
+            db.update("author_comment", post.authorText)
+            db.update("value_meat", post.valueMeat)
+            db.update("value_side_dishes", post.valueSideDishes)
+            db.update("value_amenities", post.valueAmenities)
+            db.update("value_atmosphere", post.valueAtmosphere)
+        }
+    }
 }

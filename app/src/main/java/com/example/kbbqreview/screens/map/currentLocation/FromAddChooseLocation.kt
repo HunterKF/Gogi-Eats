@@ -30,7 +30,7 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.rememberCameraPositionState
 
 @Composable
-fun ChooseLocationMap(
+fun FromAddChooseLocation(
     location: LocationDetails,
     reviewViewModel: ReviewViewModel,
     navController: NavController

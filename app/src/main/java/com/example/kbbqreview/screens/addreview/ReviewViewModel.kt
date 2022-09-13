@@ -165,7 +165,7 @@ class ReviewViewModel : ViewModel() {
     }
 
     fun uploadPhotos(selectImages: SnapshotStateList<Photo>, id: String) {
-        var storageReference = FirebaseStorage.getInstance().reference
+        val storageReference = FirebaseStorage.getInstance().reference
         viewModelScope.launch(Dispatchers.IO) {
             var listIndex = 0
             selectImages.forEach { photo ->
@@ -173,8 +173,8 @@ class ReviewViewModel : ViewModel() {
                 listIndex += 1
                 val postId = ""
                 val localUri = photo.localUri
-                var uri = Uri.parse(photo.localUri)
-                var imageRef =
+                val uri = Uri.parse(photo.localUri)
+                val imageRef =
                     storageReference.child("images/${uri.lastPathSegment}")
                 val uploadTask = imageRef.putFile(uri)
                 uploadTask.addOnSuccessListener {

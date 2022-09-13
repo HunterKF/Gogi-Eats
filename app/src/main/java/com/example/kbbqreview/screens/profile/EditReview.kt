@@ -1,7 +1,8 @@
 package com.example.kbbqreview.screens
 
+import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.Image
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,87 +28,115 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.example.kbbqreview.R
 import com.example.kbbqreview.Screen
 import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.camera.CameraViewModel
+import com.example.kbbqreview.screens.map.location.LocationDetails
+import com.example.kbbqreview.screens.profile.ProfileViewModel
 import com.example.kbbqreview.ui.theme.spacing
 import com.google.accompanist.flowlayout.FlowMainAxisAlignment
 import com.google.accompanist.flowlayout.FlowRow
 import com.google.accompanist.flowlayout.SizeMode
 
 @Composable
-fun EditReview(post: Post, navController: NavHostController, cameraViewModel: CameraViewModel) {
+fun EditReview(
+    navController: NavHostController,
+    cameraViewModel: CameraViewModel,
+    profileViewModel: ProfileViewModel,
+    location: LocationDetails?
+) {
+    BackHandler() {
+        navController.navigate(Screen.Profile.route)
+        profileViewModel.editingState.value = false
+    }
     val focusManager = LocalFocusManager.current
-    val photoList = remember {
-        mutableStateListOf<Photo>()
-    }
-    LaunchedEffect(key1 = post.photoList) {
-        post.photoList.forEach {
-                photo ->
-            photoList.add(photo)
+    val photoList = profileViewModel.photoList
+
+    val allPhotos = cameraViewModel.getAllPhotos()
+    LaunchedEffect(key1 = Unit) {
+        Log.d("LaunchedEffect", "LAUNCHED EFFECT HAS HAPPENED!!! HOLD YOUR SHIT, IT'S ABOUT TO GET LOADED!")
+        if (profileViewModel.editPhotoList.isNotEmpty()) {
+            profileViewModel.editPhotoList.forEach {
+                Log.d("LaunchedEffect", "in editPhotoList.forEach -> allPhotos size: ${profileViewModel.editPhotoList.size}")
+                Log.d("LaunchedEffect", "in editPhotoList.forEach -> photoList size: ${photoList.size}")
+                profileViewModel.photoList.add(it)
+            }
+            profileViewModel.editPhotoList.clear()
         }
+
+        allPhotos.forEach {
+            Log.d("LaunchedEffect", "in allPhotos.forEach -> allPhotos size: ${allPhotos.size}")
+            Log.d("LaunchedEffect", "in allPhotos.forEach -> photoList size: ${photoList.size}")
+            if (photoList.contains(it)) {
+
+                return@forEach
+            } else {
+                profileViewModel.photoList.add(it)
+            }
+        }
+        allPhotos.clear()
+        profileViewModel.editPhotoList.clear()
     }
-    val valueMeat = remember {
-        mutableStateOf(post.valueMeat)
-    }
-    val valueSideDishes = remember {
-        mutableStateOf(post.valueSideDishes)
-    }
-    val valueAmenities = remember {
-        mutableStateOf(post.valueAmenities)
-    }
-    val valueAtmosphere = remember {
-        mutableStateOf(post.valueAtmosphere)
+    val post = remember {
+        profileViewModel.post.value
     }
     val authorText = remember {
-        mutableStateOf(post.authorText)
+        mutableStateOf(post.authorText.value)
     }
-    val allPhotos = cameraViewModel.getAllPhotos()
-    allPhotos.forEach {
-        if (photoList.contains(it)) {
-            println("Skipping this photo.")
-        } else {
-            photoList.add(it)
-            println("Photo added.")
-        }
-    }
+
+
     Surface() {
         LazyColumn(
             Modifier
                 .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            contentPadding = PaddingValues(vertical = 20.dp)
         ) {
+            item {Text (post.photoList.size.toString())}
             item { TopBar(post, modifier = Modifier.fillMaxWidth()) }
-            item { EditAddress(post) { focusManager.clearFocus() } }
-            item { ReviewScale(valueMeat, "Meat", focusManager, R.drawable.meat_icon) }
             item {
-                ReviewScale(
-                    valueSideDishes,
-                    "Side Dishes",
-                    focusManager,
-                    R.drawable.side_dishes_icon
-                )
+                Spacer(Modifier.height(8.dp))
+                EditAddress(
+                    profileViewModel,
+                    location = location,
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                    onClick = { focusManager.clearFocus() },
+                    onNavigate = {
+                        navController.navigate(
+                            Screen.FromEditChooseLocation.route
+                        )
+                    })
             }
             item {
-                ReviewScale(
-                    valueAmenities,
-                    "Amenities",
-                    focusManager,
-                    R.drawable.amenities_icon
-                )
+                Column(Modifier.padding(horizontal = 12.dp)) {
+
+                    ReviewScale(post.valueMeat, "Meat", focusManager, R.drawable.meat_icon)
+                    ReviewScale(
+                        post.valueSideDishes,
+                        "Side Dishes",
+                        focusManager,
+                        R.drawable.side_dishes_icon
+                    )
+
+                    ReviewScale(
+                        post.valueAmenities,
+                        "Amenities",
+                        focusManager,
+                        R.drawable.amenities_icon
+                    )
+                    ReviewScale(
+                        post.valueAtmosphere,
+                        "Atmosphere",
+                        focusManager,
+                        R.drawable.atmosphere_icon
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
             }
-            item {
-                ReviewScale(
-                    valueAtmosphere,
-                    "Atmosphere",
-                    focusManager,
-                    R.drawable.atmosphere_icon
-                )
-            }
+
 
             item {
                 PhotoGrid(
@@ -126,7 +155,13 @@ fun EditReview(post: Post, navController: NavHostController, cameraViewModel: Ca
                         .fillMaxWidth()
                 )
             }
-            item { UpdateButton(modifier = Modifier.fillMaxWidth()) }
+            item { UpdateButton(modifier = Modifier.fillMaxWidth()) {
+                profileViewModel.updateReview(
+                    post.firebaseId,
+                    post
+                )
+            }
+            }
         }
     }
 
@@ -139,12 +174,15 @@ fun ReviewCommentField(authorText: MutableState<String>, modifier: Modifier) {
     val currentCharCount = remember { mutableStateOf(authorText.value.length) }
     val maxChars = 1000
 
-    Text(text = "(Optional) Write about it", style = MaterialTheme.typography.subtitle1)
+
     Box(modifier = modifier) {
         OutlinedTextField(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.Center),
+            label = {
+                Text(text = "(Optional) Write about it", style = MaterialTheme.typography.subtitle1)
+            },
             value = authorText.value,
             onValueChange = { newValue ->
                 if (newValue.length <= maxChars) {
@@ -176,13 +214,13 @@ fun ReviewScale(value: MutableState<Int>, title: String, focusManager: FocusMana
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                modifier = Modifier.scale(0.5f),
+                modifier = Modifier.scale(0.6f),
                 painter = painterResource(id = icon),
                 contentDescription = null
             )
             Text(
                 text = title,
-                style = MaterialTheme.typography.body1,
+                style = MaterialTheme.typography.h6,
                 modifier = Modifier.padding(start = 4.dp)
             )
         }
@@ -191,9 +229,10 @@ fun ReviewScale(value: MutableState<Int>, title: String, focusManager: FocusMana
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
+                .border(2.dp, Color.Black, RoundedCornerShape(25.dp))
                 .padding(horizontal = MaterialTheme.spacing.small)
                 .fillMaxWidth()
-                .border(1.dp, Color.Black, RoundedCornerShape(20.dp))
+
         ) {
 
             var sliderPosition by remember { mutableStateOf(value.value.toFloat()) }
@@ -202,7 +241,6 @@ fun ReviewScale(value: MutableState<Int>, title: String, focusManager: FocusMana
                 onValueChange = {
                     focusManager.clearFocus()
                     sliderPosition = it
-                    println(value.value)
                 },
                 valueRange = 1f..3f,
                 onValueChangeFinished = {
@@ -221,7 +259,7 @@ fun ReviewScale(value: MutableState<Int>, title: String, focusManager: FocusMana
 }
 
 @Composable
-fun UpdateButton(modifier: Modifier) {
+fun UpdateButton(modifier: Modifier, onUpdate: () -> Unit) {
     OutlinedButton(modifier = modifier, onClick = { /*TODO*/ }) {
         Text("Update")
     }
@@ -280,13 +318,17 @@ fun EditPhotoCard(
         photoList.remove(photo)
     }
     photoList.forEach { photo ->
+        var uri = photo.remoteUri
+        if (uri == "") {
+            uri = photo.localUri
+        }
         Box(
             modifier = modifier
         ) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(
-                        data = photo.remoteUri
+                        data = uri
                     )
                     .placeholder(R.drawable.ic_image_placeholder)
                     .crossfade(true)
@@ -316,58 +358,62 @@ fun TopBar(post: Post, modifier: Modifier) {
         mutableStateOf("")
     }
     val totalValue =
-        post.valueAmenities + post.valueMeat + post.valueAtmosphere + post.valueSideDishes
+        post.valueAmenities.value + post.valueMeat.value + post.valueAtmosphere.value + post.valueSideDishes.value
 
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        IconButton(modifier = Modifier,
-            onClick = { /*TODO delete*/ }) {
-            Icon(Icons.Rounded.MoreHoriz, null)
-        }
         OutlinedTextField(
-            modifier = Modifier.weight(1f),
-            value = post.restaurantName,
-            onValueChange = { newValue -> post.restaurantName = newValue },
-            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center)
+            modifier = Modifier
+                .padding(horizontal = 12.dp)
+                .fillMaxWidth(),
+            label = {
+                Text(text = "Restaurant name")
+            },
+            value = post.restaurantName.value,
+            onValueChange = { newValue -> post.restaurantName.value = newValue },
+            textStyle = LocalTextStyle.current.copy(fontSize = MaterialTheme.typography.h6.fontSize, textAlign = TextAlign.Center)
         )
-        IconButton(modifier = Modifier,
-            onClick = { /*TODO delete*/ }) {
-            Icon(Icons.Rounded.MoreHoriz, null)
-        }
     }
 }
 
 @Composable
-fun EditAddress(post: Post, onClick: () -> Unit) {
+fun EditAddress(
+    profileViewModel: ProfileViewModel,
+    location: LocationDetails?,
+    onClick: () -> Unit,
+    onNavigate: () -> Unit,
+    modifier: Modifier
+) {
     val context = LocalContext.current
+
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .clip(
-                RoundedCornerShape(5.dp)
-            )
-            .border(1.dp, Color.Cyan),
-        horizontalArrangement = Arrangement.SpaceBetween
+            .border(1.dp, Color.Black, RoundedCornerShape(5.dp)),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Column(
             modifier = Modifier.weight(3f),
             horizontalAlignment = Alignment.Start
         ) {
-            Text(text = "reviewViewModel.address.value")
+            Text(
+                modifier = Modifier.padding(4.dp),
+                text = profileViewModel.address.value
+            )
         }
         IconButton(
             modifier = Modifier.weight(1f),
             onClick = {
                 onClick()
-                /*applicationViewModel.startLocationUpdates()*/
-                /*reviewViewModel.changeLocation(
+                profileViewModel.changeLocation(
                     location!!.latitude,
                     location!!.longitude,
                     context = context
-                )*/
+                )
 
             }) {
             Icon(
@@ -379,7 +425,7 @@ fun EditAddress(post: Post, onClick: () -> Unit) {
             modifier = Modifier.weight(1f),
             onClick = {
                 onClick()
-//                navController.navigate(Screen.ChooseLocationMap.route)
+                onNavigate()
             }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_outline_map),

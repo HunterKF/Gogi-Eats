@@ -1,5 +1,6 @@
 package com.example.kbbqreview
 
+import android.app.Application
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -14,11 +15,13 @@ import androidx.navigation.compose.composable
 import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.screens.camera.MainContentCamera
-import com.example.kbbqreview.screens.map.currentLocation.ChooseLocationMap
+import com.example.kbbqreview.screens.map.currentLocation.FromAddChooseLocation
 import com.example.kbbqreview.screens.HomeScreen.AddReview
 import com.example.kbbqreview.screens.HomeScreen.ProfileScreen
 import com.example.kbbqreview.screens.HomeScreen.HomeScreen
 import com.example.kbbqreview.screens.login.LoginScreen
+import com.example.kbbqreview.screens.map.currentLocation.FromEditChooseLocation
+import com.example.kbbqreview.screens.profile.ProfileViewModel
 
 @Composable
 fun Navigation(
@@ -34,6 +37,7 @@ fun Navigation(
 
     val cameraViewModel = CameraViewModel()
     val reviewViewModel = ReviewViewModel()
+    val profileViewModel = ProfileViewModel()
 
 
     NavHost(
@@ -75,8 +79,9 @@ fun Navigation(
         composable(Screen.Profile.route) {
             ProfileScreen(
                 navController = navController,
-                cameraViewModel = cameraViewModel,
-
+                location = location,
+                profileViewModel = profileViewModel,
+                cameraViewModel = cameraViewModel
                 ) {
                 navController.navigate(Screen.Login.route) {
                     popUpTo(Screen.Profile.route) {
@@ -106,16 +111,23 @@ fun Navigation(
                 navController = navController
             )
         }
-        composable(Screen.ChooseLocationMap.route) {
+        composable(Screen.FromAddChooseLocation.route) {
             location?.let { location ->
-                ChooseLocationMap(
+                FromAddChooseLocation(
                     location = location,
                     reviewViewModel = reviewViewModel,
                     navController = navController
                 )
             }
         }
-
-
+        composable(Screen.FromEditChooseLocation.route) {
+            location?.let { location ->
+                FromEditChooseLocation(
+                    location = location,
+                    profileViewModel = profileViewModel,
+                    navController = navController
+                )
+            }
+        }
     }
 }

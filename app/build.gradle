@@ -130,6 +130,7 @@ dependencies {
     implementation "com.google.accompanist:accompanist-swiperefresh:0.26.0-alpha"
     implementation "com.google.accompanist:accompanist-systemuicontroller:0.26.0-alpha"
     implementation "com.google.accompanist:accompanist-flowlayout:0.26.2-beta"
+    implementation("io.coil-kt:coil-compose:2.0.0-rc01")
 
     //Coroutines
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.3"
@@ -143,6 +144,7 @@ dependencies {
 
     //Facebook
     implementation 'com.facebook.android:facebook-android-sdk:14.1.0'
+
 
 
 }

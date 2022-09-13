@@ -2,6 +2,7 @@ package com.example.kbbqreview
 
 import android.content.Intent
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.data.photos.Photo
@@ -33,14 +34,14 @@ class HomeScreenViewModel : ViewModel() {
                                 firebaseId = documentSnapshot.getString("firebase_id").orEmpty(),
                                 authorDisplayName = documentSnapshot.getString("author_id")
                                     .orEmpty(),
-                                authorText = documentSnapshot.getString("author_comment").orEmpty(),
-                                restaurantName = documentSnapshot.getString("restaurant_name")
-                                    .orEmpty(),
+                                authorText = mutableStateOf(documentSnapshot.getString("author_comment").orEmpty()),
+                                restaurantName = mutableStateOf(documentSnapshot.getString("restaurant_name")
+                                    .orEmpty()),
                                 location = documentSnapshot.getGeoPoint("location"),
-                                valueMeat = documentSnapshot.getLong("value_meat")!!.toInt(),
-                                valueSideDishes = documentSnapshot.getLong("value_side_dishes")!!.toInt(),
-                                valueAtmosphere = documentSnapshot.getLong("value_atmosphere")!!.toInt(),
-                                valueAmenities = documentSnapshot.getLong("value_amenities")!!.toInt(),
+                                valueMeat = mutableStateOf(documentSnapshot.getLong("value_meat")!!.toInt()),
+                                valueSideDishes = mutableStateOf(documentSnapshot.getLong("value_side_dishes")!!.toInt()),
+                                valueAtmosphere = mutableStateOf(documentSnapshot.getLong("value_atmosphere")!!.toInt()),
+                                valueAmenities = mutableStateOf(documentSnapshot.getLong("value_amenities")!!.toInt()),
                                 photoList = getPhotos(firebaseId),
                                 distance = 0.0
                             )

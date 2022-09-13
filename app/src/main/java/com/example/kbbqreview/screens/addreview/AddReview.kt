@@ -475,7 +475,7 @@ fun LocationBar(
             modifier = Modifier.weight(1f),
             onClick = {
                 focusManager.clearFocus()
-                navController.navigate(Screen.ChooseLocationMap.route)
+                navController.navigate(Screen.FromAddChooseLocation.route)
             }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_outline_map),

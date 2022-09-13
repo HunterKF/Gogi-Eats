@@ -21,7 +21,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -35,6 +34,7 @@ import com.example.kbbqreview.items
 import com.example.kbbqreview.screens.EditReview
 import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.screens.login.LoadingScreen
+import com.example.kbbqreview.screens.map.location.LocationDetails
 import com.example.kbbqreview.screens.profile.ProfilePostCard
 import com.example.kbbqreview.screens.profile.ProfileScreenState
 import com.example.kbbqreview.screens.profile.ProfileViewModel
@@ -50,13 +50,14 @@ import kotlinx.coroutines.launch
 fun ProfileScreen(
     navController: NavHostController,
     cameraViewModel: CameraViewModel,
+    location: LocationDetails?,
+    profileViewModel: ProfileViewModel,
     navigationToSignIn: () -> Unit
 ) {
 
 
-    val profileViewModel = viewModel<ProfileViewModel>()
     val state by profileViewModel.state.collectAsState()
-    var editing = profileViewModel.editingState
+    val editing = profileViewModel.editingState
     Scaffold(
         bottomBar = {
             BottomNavigation {
@@ -68,7 +69,7 @@ fun ProfileScreen(
                         label = { Text(screen.label) },
                         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                         onClick = {
-                            if (screen.route =="profile") {
+                            if (screen.route == "profile") {
                                 editing.value = false
                             }
                             navController.navigate(screen.route) {
@@ -101,7 +102,13 @@ fun ProfileScreen(
                     val displayName = profileViewModel.setDisplayName()
                     val avatarUrl = profileViewModel.setAvatar()
                     if (editing.value) {
-                        EditReview(post = profileViewModel.post.value, navController = navController, cameraViewModel = cameraViewModel)
+
+                        EditReview(
+                            navController = navController,
+                            cameraViewModel = cameraViewModel,
+                            profileViewModel = profileViewModel,
+                            location = location
+                        )
                     } else {
                         ProfileContent(
                             posts = loaded.posts,
@@ -110,6 +117,7 @@ fun ProfileScreen(
                             profileViewModel = profileViewModel,
                             onEditClick = {
                                 editing.value = true
+
                             },
                             onSignOut = {
                                 profileViewModel.signOut()
@@ -248,8 +256,6 @@ private fun GridViewCard(modifier: Modifier, post: List<Post>) {
                 "",
                 0
             )
-
-
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(
@@ -272,20 +278,28 @@ private fun GridViewCard(modifier: Modifier, post: List<Post>) {
                 modifier = Modifier
                     .padding(6.dp)
                     .align(Alignment.BottomStart),
-                text = post.restaurantName,
+                text = post.restaurantName.value,
                 color = Color.White
             )
         }
     }
-
 }
 
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-private fun SingleViewCard(post: Post, onEditClick: () -> Unit, profileViewModel: ProfileViewModel) {
+private fun SingleViewCard(
+    post: Post,
+    onEditClick: () -> Unit,
+    profileViewModel: ProfileViewModel
+) {
     val state = rememberPagerState()
-    ProfilePostCard(post = post, state = state, onEditClick = onEditClick, profileViewModel = profileViewModel)
+    ProfilePostCard(
+        post = post,
+        state = state,
+        onEditClick = onEditClick,
+        profileViewModel = profileViewModel
+    )
 }
 
 @Composable

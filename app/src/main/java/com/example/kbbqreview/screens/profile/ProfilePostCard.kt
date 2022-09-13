@@ -67,10 +67,10 @@ fun ProfilePostCard(
                 .padding(horizontal = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            PointIcon(R.drawable.meat_icon, post.valueMeat.toInt())
-            PointIcon(R.drawable.side_dishes_icon, post.valueSideDishes.toInt())
-            PointIcon(R.drawable.amenities_icon, post.valueAmenities.toInt())
-            PointIcon(R.drawable.atmosphere_icon, post.valueAtmosphere.toInt())
+            PointIcon(R.drawable.meat_icon, post.valueMeat.value)
+            PointIcon(R.drawable.side_dishes_icon, post.valueSideDishes.value)
+            PointIcon(R.drawable.amenities_icon, post.valueAmenities.value)
+            PointIcon(R.drawable.atmosphere_icon, post.valueAtmosphere.value)
         }
         Column(modifier = Modifier.padding(horizontal = 12.dp)) {
             ReviewComment(
@@ -161,7 +161,7 @@ private fun PhotoHolder(
 fun TopRow(post: Post, onEditClick: () -> Unit, profileViewModel: ProfileViewModel) {
     // Map point based on address
     val context = LocalContext.current
-    var openDialog = remember { mutableStateOf(false) }
+    val openDialog = remember { mutableStateOf(false) }
     val viewModel = ProfileViewModel()
     if (openDialog.value == true) {
         AlertDialog(onDismissRequest = { openDialog.value = false },
@@ -200,7 +200,7 @@ fun TopRow(post: Post, onEditClick: () -> Unit, profileViewModel: ProfileViewMod
 
     var expanded by remember { mutableStateOf(false) }
     val totalValue =
-        post.valueAmenities + post.valueMeat + post.valueAtmosphere + post.valueSideDishes
+        post.valueAmenities.value + post.valueMeat.value + post.valueAtmosphere.value + post.valueSideDishes.value
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -227,7 +227,7 @@ fun TopRow(post: Post, onEditClick: () -> Unit, profileViewModel: ProfileViewMod
             }
         }
         Text(
-            text = post.restaurantName,
+            text = post.restaurantName.value,
             style = MaterialTheme.typography.h6
         )
         IconButton(onClick = {
@@ -239,11 +239,14 @@ fun TopRow(post: Post, onEditClick: () -> Unit, profileViewModel: ProfileViewMod
             )
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 DropdownMenuItem(onClick = {
-                    profileViewModel.post.value = post
+                    profileViewModel.photoList.clear()
+                    profileViewModel.post.value = post.deepCopy()
+
                     post.photoList.forEach {
                         profileViewModel.editPhotoList.add(it)
                     }
                     onEditClick()
+                    profileViewModel.changeLocation(post.location!!.latitude, post.location.longitude, context)
                     expanded = false
                 }) {
                     Text("Edit post")
@@ -268,7 +271,7 @@ fun ReviewComment(post: Post) {
     var isExpanded by remember { mutableStateOf(false) }
     val textLayoutResultState = remember { mutableStateOf<TextLayoutResult?>(null) }
     var isClickable by remember { mutableStateOf(false) }
-    var finalText by remember { mutableStateOf(post.authorText) }
+    var finalText by remember { mutableStateOf(post.authorText.value) }
     val textLayoutResult = textLayoutResultState.value
 
     LaunchedEffect(textLayoutResult) {
@@ -276,13 +279,13 @@ fun ReviewComment(post: Post) {
 
         when {
             isExpanded -> {
-                finalText = "${post.authorText} Show Less"
+                finalText = "${post.authorText.value} Show Less"
 
             }
             !isExpanded && textLayoutResult.hasVisualOverflow -> {
                 val lastCharIndex = textLayoutResult.getLineEnd(MINIMIZED_MAX_LINES - 2)
                 val showMoreString = "... Show More"
-                val adjustedText = post.authorText
+                val adjustedText = post.authorText.value
                     .substring(startIndex = 0, endIndex = lastCharIndex)
                     .dropLast(showMoreString.length)
                     .dropLastWhile { it == ' ' || it == '.' }
