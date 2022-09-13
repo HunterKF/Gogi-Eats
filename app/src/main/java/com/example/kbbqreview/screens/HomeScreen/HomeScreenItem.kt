@@ -80,10 +80,10 @@ fun HomePostCard(state: PagerState, post: Post) {
                 .padding(horizontal = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            PointIcon(R.drawable.meat_icon, post.valueMeat.value)
-            PointIcon(R.drawable.side_dishes_icon, post.valueSideDishes.value)
-            PointIcon(R.drawable.amenities_icon, post.valueAmenities.value)
-            PointIcon(R.drawable.atmosphere_icon, post.valueAtmosphere.value)
+            PointIcon(R.drawable.meat_icon, post.valueMeat)
+            PointIcon(R.drawable.side_dishes_icon, post.valueSideDishes)
+            PointIcon(R.drawable.amenities_icon, post.valueAmenities)
+            PointIcon(R.drawable.atmosphere_icon, post.valueAtmosphere)
         }
         Column(modifier = Modifier.padding(horizontal = 12.dp)) {
             ReviewComment(
@@ -218,7 +218,7 @@ fun TopRow(post: Post) {
 
     var expanded by remember { mutableStateOf(false) }
     val totalValue =
-        post.valueAmenities.value + post.valueMeat.value + post.valueAtmosphere.value + post.valueSideDishes.value
+        post.valueAmenities + post.valueMeat + post.valueAtmosphere + post.valueSideDishes
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -246,7 +246,7 @@ fun TopRow(post: Post) {
 
         }
         Text(
-            text = post.restaurantName.value,
+            text = post.restaurantName,
             style = MaterialTheme.typography.h6
         )
         IconButton(onClick = {
@@ -276,7 +276,7 @@ fun ReviewComment(post: Post) {
     var isExpanded by remember { mutableStateOf(false) }
     val textLayoutResultState = remember { mutableStateOf<TextLayoutResult?>(null) }
     var isClickable by remember { mutableStateOf(false) }
-    var finalText by remember { mutableStateOf(post.authorText.value) }
+    var finalText by remember { mutableStateOf(post.authorText) }
     val textLayoutResult = textLayoutResultState.value
 
     LaunchedEffect(textLayoutResult) {
@@ -284,13 +284,13 @@ fun ReviewComment(post: Post) {
 
         when {
             isExpanded -> {
-                finalText = "${post.authorText.value} Show Less"
+                finalText = "${post.authorText} Show Less"
 
             }
             !isExpanded && textLayoutResult.hasVisualOverflow -> {
                 val lastCharIndex = textLayoutResult.getLineEnd(MINIMIZED_MAX_LINES - 2)
                 val showMoreString = "... Show More"
-                val adjustedText = post.authorText.value
+                val adjustedText = post.authorText
                     .substring(startIndex = 0, endIndex = lastCharIndex)
                     .dropLast(showMoreString.length)
                     .dropLastWhile { it == ' ' || it == '.' }

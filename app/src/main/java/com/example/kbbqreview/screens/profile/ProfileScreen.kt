@@ -278,7 +278,7 @@ private fun GridViewCard(modifier: Modifier, post: List<Post>) {
                 modifier = Modifier
                     .padding(6.dp)
                     .align(Alignment.BottomStart),
-                text = post.restaurantName.value,
+                text = post.restaurantName,
                 color = Color.White
             )
         }

@@ -31,7 +31,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.kbbqreview.R
 import com.example.kbbqreview.Screen
-import com.example.kbbqreview.data.firestore.Post
+import com.example.kbbqreview.data.firestore.EditingPost
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.screens.map.location.LocationDetails
@@ -81,10 +81,11 @@ fun EditReview(
         profileViewModel.editPhotoList.clear()
     }
     val post = remember {
-        profileViewModel.post.value
+        profileViewModel.editingPost
     }
+
     val authorText = remember {
-        mutableStateOf(post.authorText.value)
+        post.authorText
     }
 
 
@@ -95,8 +96,7 @@ fun EditReview(
             horizontalAlignment = Alignment.CenterHorizontally,
             contentPadding = PaddingValues(vertical = 20.dp)
         ) {
-            item {Text (post.photoList.size.toString())}
-            item { TopBar(post, modifier = Modifier.fillMaxWidth()) }
+            item { TopBar(post, modifier = Modifier.fillMaxWidth(), profileViewModel.restaurantName) }
             item {
                 Spacer(Modifier.height(8.dp))
                 EditAddress(
@@ -353,7 +353,7 @@ fun EditPhotoCard(
 }
 
 @Composable
-fun TopBar(post: Post, modifier: Modifier) {
+fun TopBar(post: EditingPost, modifier: Modifier, restaurantName: MutableState<String>) {
     var textFieldState by remember {
         mutableStateOf("")
     }

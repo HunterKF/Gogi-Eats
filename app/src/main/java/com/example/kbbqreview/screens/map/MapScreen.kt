@@ -173,7 +173,7 @@ fun MapScreen(
                     MapMarker(
                         LocalContext.current,
                         LatLng(post.location!!.latitude, post.location.longitude),
-                        post.restaurantName.value,
+                        post.restaurantName,
                         R.drawable.ic_baseline_star_rate_24,
                         post,
                         viewModel
@@ -318,19 +318,19 @@ private fun ValueBar(restaurant: Post) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         PointIcon(
             photo = R.drawable.meat_icon,
-            value = restaurant.valueMeat.value
+            value = restaurant.valueMeat
         )
         PointIcon(
             photo = R.drawable.side_dishes_icon,
-            value = restaurant.valueSideDishes.value
+            value = restaurant.valueSideDishes
         )
         PointIcon(
             photo = R.drawable.amenities_icon,
-            value = restaurant.valueAmenities.value
+            value = restaurant.valueAmenities
         )
         PointIcon(
             photo = R.drawable.atmosphere_icon,
-            value = restaurant.valueAtmosphere.value
+            value = restaurant.valueAtmosphere
         )
     }
 }
@@ -338,7 +338,7 @@ private fun ValueBar(restaurant: Post) {
 @Composable
 private fun Heading(restaurant: Post) {
     val totalValue =
-        restaurant.valueAmenities.value + restaurant.valueMeat.value + restaurant.valueAtmosphere.value + restaurant.valueSideDishes.value
+        restaurant.valueAmenities + restaurant.valueMeat+ restaurant.valueAtmosphere + restaurant.valueSideDishes
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
@@ -366,7 +366,7 @@ private fun Heading(restaurant: Post) {
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             modifier = Modifier.weight(1f),
-            text = restaurant.restaurantName.value,
+            text = restaurant.restaurantName,
             style = MaterialTheme.typography.h6
         )
     }
