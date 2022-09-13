@@ -56,7 +56,6 @@ class HomeScreenViewModel : ViewModel() {
         }
     }
 
-    @OptIn(InternalCoroutinesApi::class)
     private fun getPhotos(firebaseId: String): List<Photo> {
         Log.d(TAG, "Captain, we who are about to start salute you! Onward, to the photos!")
         Log.d(TAG, "Before we depart, we would like to check our id... ID: $firebaseId")
@@ -79,6 +78,7 @@ class HomeScreenViewModel : ViewModel() {
                         listIndex = documentSnapshot.getLong("list_index")!!.toInt()
                     )
                     photoList.add(photo)
+                    photoList.sortBy{ it.listIndex }
                 }
             }
             .addOnFailureListener {

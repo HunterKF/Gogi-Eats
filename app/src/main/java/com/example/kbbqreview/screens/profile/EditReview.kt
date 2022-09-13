@@ -72,7 +72,6 @@ fun EditReview(
             Log.d("LaunchedEffect", "in allPhotos.forEach -> allPhotos size: ${allPhotos.size}")
             Log.d("LaunchedEffect", "in allPhotos.forEach -> photoList size: ${photoList.size}")
             if (photoList.contains(it)) {
-
                 return@forEach
             } else {
                 profileViewModel.photoList.add(it)
@@ -145,7 +144,8 @@ fun EditReview(
                         .fillMaxWidth()
                         .padding(top = 12.dp),
                     photoList = photoList,
-                    navController = navController
+                    navController = navController,
+                    profileViewModel = profileViewModel
                 )
             }
             item {
@@ -158,10 +158,11 @@ fun EditReview(
             }
             item {
                 UpdateButton(modifier = Modifier.fillMaxWidth()) {
-
+                post.photoList = photoList
                 profileViewModel.updateReview(
                     post.firebaseId,
-                    post
+                    post,
+                    profileViewModel.editPhotoList
                 )
                 profileViewModel.editingState.value = false
                 Toast.makeText(context, "Post updated.", Toast.LENGTH_SHORT).show()
@@ -274,6 +275,7 @@ fun UpdateButton(modifier: Modifier, onUpdate: () -> Unit) {
 fun PhotoGrid(
     photoList: SnapshotStateList<Photo>,
     modifier: Modifier,
+    profileViewModel: ProfileViewModel,
     navController: NavHostController
 ) {
     FlowRow(
@@ -286,7 +288,8 @@ fun PhotoGrid(
                 .size(itemSize)
                 .padding(8.dp)
                 .clip(RoundedCornerShape(5.dp))
-                .aspectRatio(1f)
+                .aspectRatio(1f),
+            profileViewModel = profileViewModel
         )
         AddNewPhoto(
             modifier = Modifier
@@ -317,12 +320,17 @@ fun AddNewPhoto(modifier: Modifier, navController: NavHostController) {
 @Composable
 fun EditPhotoCard(
     photoList: SnapshotStateList<Photo>,
+    profileViewModel: ProfileViewModel,
     modifier: Modifier
 ) {
     fun removePhoto(photo: Photo) {
         photoList.remove(photo)
+        profileViewModel.addPhotoToBeDeleted(photo)
     }
+    var listIndex = 0
     photoList.forEach { photo ->
+        photo.listIndex = listIndex
+        listIndex += 1
         var uri = photo.remoteUri
         if (uri == "") {
             uri = photo.localUri
@@ -348,6 +356,7 @@ fun EditPhotoCard(
                     .height(56.dp)
                     .align(Alignment.BottomCenter)
             )
+            Text(photo.listIndex.toString())
             IconButton(
                 modifier = Modifier.align(Alignment.TopEnd),
                 onClick = { removePhoto(photo) }) {

@@ -18,7 +18,7 @@ class EditingPost(
     var valueSideDishes:MutableState<Int>,
     var valueAtmosphere:MutableState<Int>,
     var valueAmenities: MutableState<Int>,
-    val photoList: List<Photo>,
+    var photoList: List<Photo>,
     var distance: Double
 ) {
 }

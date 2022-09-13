@@ -196,7 +196,6 @@ class ReviewViewModel : ViewModel() {
         val localUri = photo.localUri
         val remoteUri = photo.remoteUri
         val listIndex = photo.listIndex
-        val db = Firebase.firestore.collection("photos").whereEqualTo("local_uri", localUri)
         viewModelScope.launch(Dispatchers.IO) {
             Firebase.firestore.collection("photos")
                 .add(
@@ -213,7 +212,6 @@ class ReviewViewModel : ViewModel() {
 
     fun updateSelectedSliderValue(value: MutableState<Int>, sliderPosition: Float) {
         value.value = sliderPosition.toInt()
-
     }
 
 }

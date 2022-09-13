@@ -46,7 +46,6 @@ import com.google.accompanist.pager.rememberPagerState
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun HomeScreenItem(storyItem: Post) {
-    val viewModel = HomeScreenViewModel()
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colors.background
@@ -120,7 +119,6 @@ private fun PhotoHolder(
                 .fillMaxWidth()
                 .aspectRatio(1f)
         ) { page ->
-
             Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.Top,

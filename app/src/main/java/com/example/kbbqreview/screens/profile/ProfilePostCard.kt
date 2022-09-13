@@ -182,7 +182,7 @@ fun TopRow(post: Post, onEditClick: () -> Unit, profileViewModel: ProfileViewMod
             confirmButton = {
                 Button(
                     onClick = {
-                        viewModel.delete(post.firebaseId)
+                        viewModel.delete(post.firebaseId, post)
                         openDialog.value = false
                     }) {
                     Text("Delete")
@@ -240,8 +240,9 @@ fun TopRow(post: Post, onEditClick: () -> Unit, profileViewModel: ProfileViewMod
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 DropdownMenuItem(onClick = {
                     profileViewModel.photoList.clear()
+                    profileViewModel.toBeDeletedPhotoList.clear()
                     profileViewModel.post.value = post.deepCopy()
-                    profileViewModel.editingPost = profileViewModel.createPostCopy(profileViewModel.post.value)
+                    profileViewModel.editingPost = profileViewModel.convertPostToEditingPost(profileViewModel.post.value)
 
                     post.photoList.forEach {
                         profileViewModel.editPhotoList.add(it)

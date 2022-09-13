@@ -3,10 +3,11 @@ package com.example.kbbqreview.screens.profile
 import android.content.Context
 import android.location.Address
 import android.location.Geocoder
+import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kbbqreview.data.firestore.EditingPost
@@ -19,6 +20,8 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.ktx.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
@@ -95,10 +98,10 @@ class ProfileViewModel : ViewModel() {
         distance = 0.0
     )
 
-    fun createPostCopy(
+    fun convertPostToEditingPost(
         post: Post
     ): EditingPost {
-        val newPost = EditingPost(
+        return EditingPost(
             timestamp = post.timestamp,
             firebaseId = post.firebaseId,
             userId = post.userId,
@@ -113,7 +116,26 @@ class ProfileViewModel : ViewModel() {
             photoList = post.photoList,
             distance = 0.0
         )
-        return newPost
+    }
+
+    fun converEditingPostToPost(
+        editingPost: EditingPost
+    ): Post {
+        return Post(
+            timestamp = editingPost.timestamp,
+            firebaseId = editingPost.firebaseId,
+            userId = editingPost.userId,
+            authorDisplayName = editingPost.authorDisplayName,
+            authorText = editingPost.authorText.value,
+            restaurantName = editingPost.restaurantName.value,
+            location = editingPost.location,
+            valueMeat = editingPost.valueMeat.value,
+            valueSideDishes = editingPost.valueSideDishes.value,
+            valueAmenities = editingPost.valueAmenities.value,
+            valueAtmosphere = editingPost.valueAtmosphere.value,
+            photoList = editingPost.photoList,
+            distance = 0.0
+        )
     }
 
     val restaurantLat = mutableStateOf(0.0)
@@ -259,6 +281,7 @@ class ProfileViewModel : ViewModel() {
                         listIndex = documentSnapshot.getLong("list_index")!!.toInt()
                     )
                     photoList.add(photo)
+                    photoList.sortBy{ it.listIndex }
                 }
             }
             .addOnFailureListener {
@@ -275,9 +298,10 @@ class ProfileViewModel : ViewModel() {
         FirebaseAuth.getInstance().signOut()
     }
 
-    fun delete(firebaseId: String) {
+    fun delete(firebaseId: String, post: Post) {
         val db = Firebase.firestore
         val queryPhoto = db.collection("photos").whereEqualTo("post_id", firebaseId)
+
         queryPhoto.get().addOnSuccessListener { result ->
             if (result.isEmpty) {
                 Log.d("Delete", "Failed to get the document")
@@ -295,9 +319,17 @@ class ProfileViewModel : ViewModel() {
                 it.reference.delete()
             }
         }
+        deleteStoragePhoto(post)
+    }
+
+    private fun deleteStoragePhoto(post: Post) {
+        post.photoList.forEach { photo ->
+            deleteSinglePhoto(photo)
+        }
     }
 
     val editPhotoList = mutableStateListOf<Photo>()
+    val toBeDeletedPhotoList = mutableStateListOf<Photo>()
     val photoList = mutableStateListOf<Photo>()
 
     fun changeLocation(latitude: Double, longitude: Double, context: Context) {
@@ -331,16 +363,138 @@ class ProfileViewModel : ViewModel() {
         return addressText
     }
 
-    fun updateReview(id: String, post: EditingPost) {
-        val db = Firebase.firestore.collection("reviews").document(id)
+    fun updateReview(
+        firebaseId: String,
+        post: EditingPost,
+        editPhotoList: SnapshotStateList<Photo>
+    ) {
+        val convertedPost = converEditingPostToPost(post)
+        val db = Firebase.firestore
+
+        val queryReview = db.collection("reviews").document(firebaseId)
         viewModelScope.launch(Dispatchers.IO) {
-            db.update("restaurant_name", post.restaurantName.value)
-            db.update("location", post.location)
-            db.update("author_comment", post.authorText.value)
-            db.update("value_meat", post.valueMeat.value)
-            db.update("value_side_dishes", post.valueSideDishes.value)
-            db.update("value_amenities", post.valueAmenities.value)
-            db.update("value_atmosphere", post.valueAtmosphere.value)
+            queryReview.update("restaurant_name", post.restaurantName.value)
+            queryReview.update("location", post.location)
+            queryReview.update("author_comment", post.authorText.value)
+            queryReview.update("value_meat", post.valueMeat.value)
+            queryReview.update("value_side_dishes", post.valueSideDishes.value)
+            queryReview.update("value_amenities", post.valueAmenities.value)
+            queryReview.update("value_atmosphere", post.valueAtmosphere.value)
+            updatesPhotos(convertedPost, editPhotoList)
         }
+        if (toBeDeletedPhotoList.isNotEmpty()) {
+            toBeDeletedPhotoList.forEach { photo ->
+                val queryPhoto = db.collection("photos").whereEqualTo("remote_uri", photo.remoteUri)
+
+                deleteSinglePhoto(photo)
+
+                queryPhoto.get().addOnSuccessListener { result ->
+                    if (result.isEmpty) {
+                        Log.d("Delete", "Failed to get the document")
+                    }
+                    result.forEach {
+                        it.reference.delete()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun deleteSinglePhoto(photo: Photo) {
+        val storage = Firebase.storage
+        val storageReference = storage.reference
+        val uri = Uri.parse(photo.localUri)
+        val imageRef =
+            storageReference.child("images/${uri.lastPathSegment}")
+        imageRef.delete()
+    }
+
+    private fun updatesPhotos(post: Post, editPhotoList: SnapshotStateList<Photo>) {
+        Log.d(TAG, "updatePhotos() has been started")
+        val db = Firebase.firestore.collection("photos")
+        viewModelScope.launch(Dispatchers.IO) {
+            Log.d(TAG, "Starting to update photos.")
+            Log.d(TAG, "Photo list size: ${photoList.size}")
+            post.photoList.forEach { photo ->
+                db.whereEqualTo("local_uri", photo.localUri).get().addOnSuccessListener { result ->
+                    if (result == null || result.isEmpty) {
+                        Log.d(TAG, "The result is empty. Going to uploadPhotos()")
+                            uploadPhotos(photo, post.firebaseId)
+                    } else {
+                        result.forEach {
+                            Log.d(TAG, "The result was not empty. Going to updateIndex()")
+                                updateIndex(photo)
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+
+
+    private fun updateIndex(photo: Photo) {
+        val db = Firebase.firestore.collection("photos").whereEqualTo("remote_uri", photo.remoteUri)
+        viewModelScope.launch(Dispatchers.IO) {
+            db.get().addOnSuccessListener { result ->
+                if (result.isEmpty) {
+                    Log.d(TAG, "Could not update the index. Try again later.")
+                    return@addOnSuccessListener
+                } else {
+                    result.documents.forEach {
+                        Log.d(TAG, "Attempting to update the index inside the doc.forEach {} loop")
+                        it.reference.update("list_index", photo.listIndex)
+                    }
+                }
+            }
+        }
+
+    }
+
+    private fun uploadPhotos(photo: Photo, id: String) {
+        val storageReference = FirebaseStorage.getInstance().reference
+        viewModelScope.launch(Dispatchers.IO) {
+            Log.d(TAG, "Attempting to upload a photo.")
+            val uri = Uri.parse(photo.localUri)
+            val imageRef =
+                storageReference.child("images/${uri.lastPathSegment}")
+            val uploadTask = imageRef.putFile(uri)
+            uploadTask.addOnSuccessListener {
+                Log.d("Firebase Image", "Image uploaded $imageRef")
+                val downloadUrl = imageRef.downloadUrl
+                downloadUrl.addOnSuccessListener { remoteUri ->
+                    photo.remoteUri = remoteUri.toString()
+                    updatePhotoData(photo, id)
+                }
+            }
+            uploadTask.addOnFailureListener {
+                Log.e("Firebase Image", it.message ?: "No message")
+            }
+        }
+    }
+
+
+    private fun updatePhotoData(photo: Photo, id: String) {
+        val localUri = photo.localUri
+        val remoteUri = photo.remoteUri
+        val listIndex = photo.listIndex
+        viewModelScope.launch(Dispatchers.IO) {
+            Log.d(TAG, "Updating the metadata of the photo.")
+            Firebase.firestore.collection("photos")
+                .add(
+                    hashMapOf(
+                        "local_uri" to localUri,
+                        "remote_uri" to remoteUri,
+                        "post_id" to id,
+                        "list_index" to listIndex
+                    )
+                )
+        }
+
+    }
+
+    fun addPhotoToBeDeleted(photo: Photo) {
+        toBeDeletedPhotoList.add(photo)
+        Log.d(TAG, "A photo was queued for deletion. Current size: ${toBeDeletedPhotoList.size}")
     }
 }
