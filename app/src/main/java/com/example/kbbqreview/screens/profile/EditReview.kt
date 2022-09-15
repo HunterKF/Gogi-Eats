@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -23,6 +24,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -58,11 +61,20 @@ fun EditReview(
 
     val allPhotos = cameraViewModel.getAllPhotos()
     LaunchedEffect(key1 = Unit) {
-        Log.d("LaunchedEffect", "LAUNCHED EFFECT HAS HAPPENED!!! HOLD YOUR SHIT, IT'S ABOUT TO GET LOADED!")
+        Log.d(
+            "LaunchedEffect",
+            "LAUNCHED EFFECT HAS HAPPENED!!! HOLD YOUR SHIT, IT'S ABOUT TO GET LOADED!"
+        )
         if (profileViewModel.editPhotoList.isNotEmpty()) {
             profileViewModel.editPhotoList.forEach {
-                Log.d("LaunchedEffect", "in editPhotoList.forEach -> allPhotos size: ${profileViewModel.editPhotoList.size}")
-                Log.d("LaunchedEffect", "in editPhotoList.forEach -> photoList size: ${photoList.size}")
+                Log.d(
+                    "LaunchedEffect",
+                    "in editPhotoList.forEach -> allPhotos size: ${profileViewModel.editPhotoList.size}"
+                )
+                Log.d(
+                    "LaunchedEffect",
+                    "in editPhotoList.forEach -> photoList size: ${photoList.size}"
+                )
                 profileViewModel.photoList.add(it)
             }
             profileViewModel.editPhotoList.clear()
@@ -96,7 +108,13 @@ fun EditReview(
             horizontalAlignment = Alignment.CenterHorizontally,
             contentPadding = PaddingValues(vertical = 20.dp)
         ) {
-            item { TopBar(post, modifier = Modifier.fillMaxWidth(), profileViewModel.restaurantName) }
+            item {
+                TopBar(
+                    post,
+                    modifier = Modifier.fillMaxWidth().padding(MaterialTheme.spacing.small),
+                    profileViewModel.restaurantName
+                )
+            }
             item {
                 Spacer(Modifier.height(8.dp))
                 EditAddress(
@@ -158,15 +176,15 @@ fun EditReview(
             }
             item {
                 UpdateButton(modifier = Modifier.fillMaxWidth()) {
-                post.photoList = photoList
-                profileViewModel.updateReview(
-                    post.firebaseId,
-                    post,
-                    profileViewModel.editPhotoList
-                )
-                profileViewModel.editingState.value = false
-                Toast.makeText(context, "Post updated.", Toast.LENGTH_SHORT).show()
-            }
+                    post.photoList = photoList
+                    profileViewModel.updateReview(
+                        post.firebaseId,
+                        post,
+                        profileViewModel.editPhotoList
+                    )
+                    profileViewModel.editingState.value = false
+                    Toast.makeText(context, "Post updated.", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -187,8 +205,12 @@ fun ReviewCommentField(authorText: MutableState<String>, modifier: Modifier) {
                 .fillMaxWidth()
                 .align(Alignment.Center),
             label = {
-                Text(text = "(Optional) Write about it", style = MaterialTheme.typography.subtitle1)
+                Text(text = "(Optional) Write about it")
             },
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Sentences,
+                imeAction = ImeAction.Done
+            ),
             value = authorText.value,
             onValueChange = { newValue ->
                 if (newValue.length <= maxChars) {
@@ -214,7 +236,7 @@ fun ReviewCommentField(authorText: MutableState<String>, modifier: Modifier) {
 fun ReviewScale(value: MutableState<Int>, title: String, focusManager: FocusManager, icon: Int) {
     Column(
         modifier = Modifier.padding(
-            horizontal = MaterialTheme.spacing.small,
+            horizontal = MaterialTheme.spacing.medium,
             vertical = MaterialTheme.spacing.extraSmall
         )
     ) {
@@ -327,6 +349,7 @@ fun EditPhotoCard(
         photoList.remove(photo)
         profileViewModel.addPhotoToBeDeleted(photo)
     }
+
     var listIndex = 0
     photoList.forEach { photo ->
         photo.listIndex = listIndex
@@ -375,20 +398,27 @@ fun TopBar(post: EditingPost, modifier: Modifier, restaurantName: MutableState<S
         post.valueAmenities.value + post.valueMeat.value + post.valueAtmosphere.value + post.valueSideDishes.value
 
     Row(
-        modifier = modifier,
+        modifier = modifier.padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         OutlinedTextField(
             modifier = Modifier
-                .padding(horizontal = 12.dp)
+
                 .fillMaxWidth(),
             label = {
                 Text(text = "Restaurant name")
             },
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Words,
+                imeAction = ImeAction.Done
+            ),
             value = post.restaurantName.value,
             onValueChange = { newValue -> post.restaurantName.value = newValue },
-            textStyle = LocalTextStyle.current.copy(fontSize = MaterialTheme.typography.h6.fontSize, textAlign = TextAlign.Center)
+            textStyle = LocalTextStyle.current.copy(
+                fontSize = MaterialTheme.typography.h6.fontSize,
+                textAlign = TextAlign.Center
+            )
         )
     }
 }
