@@ -15,6 +15,7 @@ import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -29,7 +30,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
@@ -73,6 +74,9 @@ fun LoginScreen(
     navController: NavHostController,
     cameraViewModel: CameraViewModel,
 ) {
+    LaunchedEffect(key1 = Unit) {
+        viewModel.backToLanding()
+    }
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val token = stringResource(com.firebase.ui.auth.R.string.default_web_client_id)
@@ -112,6 +116,9 @@ fun LoginScreen(
     val userName = remember {
         mutableStateOf("")
     }
+    val userNameAvailable = remember {
+        mutableStateOf(true)
+    }
 
 
 
@@ -145,7 +152,8 @@ fun LoginScreen(
                 googleSignInClient,
                 userName,
                 cameraViewModel,
-                popBackStack
+                popBackStack,
+                userNameAvailable
             )
 
             println("Current state is ${state}")
@@ -260,10 +268,12 @@ private fun CreateAccountScreen(
     googleSignInClient: GoogleSignInClient,
     userName: MutableState<String>,
     cameraViewModel: CameraViewModel,
-    popBackStack: () -> Boolean
+    popBackStack: () -> Boolean,
+    userNameAvailable: MutableState<Boolean>
 ) {
     val scrollState = rememberScrollState()
     val profilePhoto = cameraViewModel.getLastPhoto()
+    val currentCharCount = remember { mutableStateOf(0) }
     Box(Modifier.fillMaxSize()) {
         Box(Modifier
             .fillMaxWidth()
@@ -285,7 +295,7 @@ private fun CreateAccountScreen(
 
             Box(Modifier
                 .padding(top = 20.dp, bottom = 10.dp)
-                .fillMaxWidth(0.3f)
+                .fillMaxWidth(0.4f)
                 .aspectRatio(1f)
                 .clip(CircleShape)
                 .border(4.dp, Color.Cyan, CircleShape)) {
@@ -314,16 +324,18 @@ private fun CreateAccountScreen(
             }
 
 
-            CreateAccountTextFields(
+            CreateAccountInfo(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
                 padding = 8.dp,
                 emailFieldState = emailFieldState,
                 passwordFieldState = passwordFieldState,
-                reEnterPasswordState = reEnterPasswordState,
                 viewModel = viewModel,
-                userName = userName
+                userName = userName,
+                userNameAvailable = userNameAvailable,
+                currentCharCount = currentCharCount,
+                profilePhoto = profilePhoto
             )
             Spacer(Modifier.weight(0.1f))
             Divider()
@@ -369,14 +381,16 @@ private fun FacebookSignInDefault(
 }
 
 @Composable
-fun CreateAccountTextFields(
+fun CreateAccountInfo(
     modifier: Modifier,
     padding: Dp,
     emailFieldState: MutableState<String>,
     passwordFieldState: MutableState<String>,
     viewModel: LoginViewModel,
-    reEnterPasswordState: MutableState<String>,
     userName: MutableState<String>,
+    userNameAvailable: MutableState<Boolean>,
+    currentCharCount: MutableState<Int>,
+    profilePhoto: Photo?,
 ) {
     val context = LocalContext.current
     val auth = Firebase.auth
@@ -421,6 +435,7 @@ fun CreateAccountTextFields(
                     style = MaterialTheme.typography.subtitle1
                 )
             },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             maxLines = 1,
             singleLine = true,
             colors = TextFieldDefaults.textFieldColors(
@@ -430,19 +445,29 @@ fun CreateAccountTextFields(
             ),
 
             )
+        val maxChars = 15
         TextField(
             value = userName.value,
-            onValueChange = { newValue -> userName.value = newValue },
+            onValueChange = { newValue ->
+                if (newValue.length <= maxChars) {
+                    currentCharCount.value = newValue.length
+                    viewModel.onTextFieldChange(
+                        userName,
+                        newValue
+                    )
+                } else {
+                    Toast.makeText(context, "Shorten name.", Toast.LENGTH_SHORT).show()
+                }},
             leadingIcon = { Icon(Icons.Rounded.DriveFileRenameOutline, null) },
             trailingIcon = {
-                IconButton(onClick = { /*TODO*/ }) {
+                IconButton(onClick = { userNameAvailable.value = viewModel.checkUserNameAvailability(userName.value, userNameAvailable) }) {
                     Icon(Icons.Rounded.PersonSearch, null)
                 }
             },
             modifier = Modifier
                 .padding(vertical = padding)
                 .border(
-                    BorderStroke(width = 2.dp, color = Purple500),
+                    BorderStroke(width = 2.dp, color = if (userNameAvailable.value) Purple500 else Color.Red),
                     shape = RoundedCornerShape(50)
                 )
                 .fillMaxWidth(),
@@ -471,6 +496,7 @@ fun CreateAccountTextFields(
                         contentDescription = "Password visibility")
                 }
             },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             modifier = Modifier
                 .padding(vertical = padding)
                 .border(
@@ -497,9 +523,9 @@ fun CreateAccountTextFields(
         Button(modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = padding),
-            enabled = emailFieldState.value.isNotEmpty() && passwordFieldState.value.isNotEmpty(),
+            enabled = emailFieldState.value.isNotEmpty() && passwordFieldState.value.isNotEmpty() && userName.value.isNotEmpty(),
             onClick = {
-                viewModel.createAccount(emailFieldState.value, passwordFieldState.value)
+                viewModel.createAccount(emailFieldState.value, passwordFieldState.value, userName.value, profilePhoto)
             }) {
             Text(text = "Create Account")
         }
