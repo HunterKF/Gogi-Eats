@@ -19,7 +19,7 @@ import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.screens.camera.Permission
 
 @Composable
-fun GallerySelect(
+fun GallerySelectMultiple(
     modifier: Modifier = Modifier,
     cameraViewModel: CameraViewModel,
     onImageUri: (Uri) -> Unit = { }

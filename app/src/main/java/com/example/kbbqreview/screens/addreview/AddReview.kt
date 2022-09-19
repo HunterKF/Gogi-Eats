@@ -21,7 +21,6 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
@@ -41,7 +40,6 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.example.kbbqreview.*
 import com.example.kbbqreview.R
@@ -241,7 +239,6 @@ fun CameraPhotos(
         mainAxisAlignment = FlowMainAxisAlignment.SpaceBetween
     ) {
         val itemSize: Dp = (LocalConfiguration.current.screenWidthDp.dp / 2)
-        println(itemSize)
         PhotoCard(
             allPhotos,
             modifier = Modifier
@@ -283,7 +280,7 @@ fun PhotoCard(allPhotos: SnapshotStateList<Photo>, modifier: Modifier) {
                 Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
-            com.example.kbbqreview.screens.HomeScreen.Scrim(
+            Scrim(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)

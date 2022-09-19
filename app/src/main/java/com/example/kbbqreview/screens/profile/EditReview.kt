@@ -332,7 +332,7 @@ fun AddNewPhoto(modifier: Modifier, navController: NavHostController) {
             .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp)),
         contentAlignment = Alignment.Center
     ) {
-        IconButton(onClick = { navController.navigate(Screen.MainContentCamera.route) }) {
+        IconButton(onClick = { navController.navigate(Screen.MainCamera.route) }) {
             Icon(Icons.Rounded.Camera, "Open camera")
         }
 
@@ -379,7 +379,6 @@ fun EditPhotoCard(
                     .height(56.dp)
                     .align(Alignment.BottomCenter)
             )
-            Text(photo.listIndex.toString())
             IconButton(
                 modifier = Modifier.align(Alignment.TopEnd),
                 onClick = { removePhoto(photo) }) {

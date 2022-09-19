@@ -1,8 +1,6 @@
 package com.example.kbbqreview.data.firestore
 
-import androidx.compose.runtime.MutableState
 import com.example.kbbqreview.data.photos.Photo
-import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.firestore.GeoPoint
 import com.google.gson.Gson
 import java.util.*

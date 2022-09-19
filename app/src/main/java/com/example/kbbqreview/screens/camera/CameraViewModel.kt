@@ -1,24 +1,10 @@
 package com.example.kbbqreview.screens.camera
 
-import android.app.Application
-import android.content.Context
-import android.content.Intent
-import android.database.Cursor
 import android.net.Uri
-import android.provider.MediaStore
-import android.provider.Settings
-import android.service.controls.Control
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.*
 import com.example.kbbqreview.data.photos.Photo
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlin.coroutines.CoroutineContext
 
 class CameraViewModel : ViewModel() {
     lateinit var photoUri: Uri
@@ -33,6 +19,14 @@ class CameraViewModel : ViewModel() {
 
     fun getAllPhotos(): SnapshotStateList<Photo> {
         return  selectImages
+    }
+    fun getLastPhoto(): Photo? {
+        return if (selectImages.isEmpty()) {
+            null
+        } else {
+            selectImages.last()
+        }
+
     }
     fun removeOnePhoto(photo: Photo) {
         selectImages.remove(photo)

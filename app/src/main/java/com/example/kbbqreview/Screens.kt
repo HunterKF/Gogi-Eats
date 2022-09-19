@@ -2,12 +2,12 @@ package com.example.kbbqreview
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
-import androidx.compose.material.icons.sharp.*
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class Screen(val route: String, val label: String, val vector: ImageVector) {
     object MapScreen : Screen("map_screen", "Map", Icons.Rounded.Map)
-    object MainContentCamera : Screen("main_content_camera", "Camera", Icons.Rounded.Camera)
+    object MainCamera : Screen("main_camera", "MultiCamera", Icons.Rounded.Camera)
+    object ProfileCamera : Screen("profile_camera", "SingleCamera", Icons.Rounded.Camera)
     object FromAddChooseLocation : Screen("from_add_choose_location", "Choose Location", Icons.Rounded.LocalActivity)
     object FromEditChooseLocation : Screen("from_edit_choose_location", "Choose Location", Icons.Rounded.LocalActivity)
     object Profile : Screen("profile", "profile", Icons.Rounded.Person)

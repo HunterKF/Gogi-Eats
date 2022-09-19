@@ -1,6 +1,5 @@
 package com.example.kbbqreview
 
-import android.app.Application
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -14,12 +13,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.example.kbbqreview.screens.camera.CameraViewModel
-import com.example.kbbqreview.screens.camera.MainContentCamera
+import com.example.kbbqreview.screens.camera.MainCamera
 import com.example.kbbqreview.screens.map.currentLocation.FromAddChooseLocation
 import com.example.kbbqreview.screens.HomeScreen.AddReview
 import com.example.kbbqreview.screens.HomeScreen.ProfileScreen
 import com.example.kbbqreview.screens.HomeScreen.HomeScreen
+import com.example.kbbqreview.screens.camera.ProfileCamera
 import com.example.kbbqreview.screens.login.LoginScreen
+import com.example.kbbqreview.screens.login.LoginViewModel
 import com.example.kbbqreview.screens.map.currentLocation.FromEditChooseLocation
 import com.example.kbbqreview.screens.profile.ProfileViewModel
 
@@ -38,6 +39,7 @@ fun Navigation(
     val cameraViewModel = CameraViewModel()
     val reviewViewModel = ReviewViewModel()
     val profileViewModel = ProfileViewModel()
+    val LoginViewModel = LoginViewModel()
 
 
     NavHost(
@@ -101,14 +103,36 @@ fun Navigation(
                     }
                 }, popBackStack = {
                     navController.popBackStack()
-                }
+                }, navigateToCamera = {
+                    navController.navigate(Screen.MainCamera.route) {
+                        popUpTo(Screen.Login.route) {
+                            inclusive = true
+                        }
+                    }
+                }, navigateToProfile = {
+                    navController.navigate(Screen.Profile.route) {
+                        popUpTo(Screen.Login.route) {
+                            inclusive = true
+                        }
+                    }
+                },
+                viewModel = LoginViewModel,
+                navController = navController,
+                cameraViewModel = cameraViewModel
             )
         }
-        composable(Screen.MainContentCamera.route) {
-            MainContentCamera(
+        composable(Screen.MainCamera.route) {
+            MainCamera(
                 Modifier.fillMaxSize(),
                 cameraViewModel = cameraViewModel,
                 navController = navController
+            )
+        }
+        composable(Screen.ProfileCamera.route) {
+            ProfileCamera(
+                Modifier.fillMaxSize(),
+                cameraViewModel = cameraViewModel,
+                viewModel = LoginViewModel
             )
         }
         composable(Screen.FromAddChooseLocation.route) {

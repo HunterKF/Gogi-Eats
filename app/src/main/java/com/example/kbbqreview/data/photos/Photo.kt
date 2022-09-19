@@ -1,7 +1,5 @@
 package com.example.kbbqreview.data.photos
 
-import java.util.*
-
 data class Photo(
     val localUri: String = "",
     var remoteUri: String = "",

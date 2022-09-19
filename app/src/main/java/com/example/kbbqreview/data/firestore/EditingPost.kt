@@ -1,7 +1,6 @@
 package com.example.kbbqreview.data.firestore
 
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.example.kbbqreview.data.photos.Photo
 import com.google.firebase.firestore.GeoPoint
 import java.util.*

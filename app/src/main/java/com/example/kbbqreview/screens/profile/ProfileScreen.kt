@@ -102,7 +102,6 @@ fun ProfileScreen(
                     val displayName = profileViewModel.setDisplayName()
                     val avatarUrl = profileViewModel.setAvatar()
                     if (editing.value) {
-
                         EditReview(
                             navController = navController,
                             cameraViewModel = cameraViewModel,

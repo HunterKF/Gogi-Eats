@@ -16,10 +16,10 @@ import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
 import com.example.kbbqreview.Screen
 import com.example.kbbqreview.data.photos.Photo
-import com.example.kbbqreview.screens.camera.gallery.GallerySelect
+import com.example.kbbqreview.screens.camera.gallery.GallerySelectMultiple
 
 @Composable
-fun MainContentCamera(
+fun MainCamera(
     modifier: Modifier = Modifier,
     cameraViewModel: CameraViewModel,
     navController: NavController
@@ -52,18 +52,15 @@ fun MainContentCamera(
     } else {
         var showGallerySelect by remember { mutableStateOf(false) }
         if (showGallerySelect) {
-            GallerySelect(
+            GallerySelectMultiple(
                 modifier = modifier,
                 cameraViewModel = cameraViewModel,
                 onImageUri = { uri ->
                     cameraViewModel.selectImages.add(Photo(localUri = uri.toString()))
-                    Log.d(TAG, "It has fired. Current value of imageUri: $imageUri")
-                    Log.d(TAG, "It has fired. Current value of imageUri: $imageUri2")
-                    Log.d(TAG, "It has fired. Current value of imageUri: ${cameraViewModel.selectImages}")
                     showGallerySelect = false
 
                     cameraViewModel.showPhotoRow.value = true
-                    navController.popBackStack(Screen.MainContentCamera.route, inclusive = true)
+                    navController.popBackStack(Screen.MainCamera.route, inclusive = true)
                 }
             )
         } else {

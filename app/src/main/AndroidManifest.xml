@@ -14,7 +14,7 @@
     <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
 
     <application
-        android:name=".K_BBQ_Review"
+        android:name="com.example.kbbqreview.K_BBQ_Review"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -25,12 +25,12 @@
         android:theme="@style/Theme.KBBQReview"
         tools:targetApi="31">
         <activity
-            android:name=".CameraActivity"
+            android:name="com.example.kbbqreview.CameraActivity"
             android:exported="false"
             android:label="@string/title_activity_camera"
             android:theme="@style/Theme.KBBQReview" />
         <activity
-            android:name=".MainActivity"
+            android:name="com.example.kbbqreview.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.KBBQReview">
