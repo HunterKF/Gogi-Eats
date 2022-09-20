@@ -1,13 +1,17 @@
 package com.example.kbbqreview.screens.login
 
+import android.content.Context
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.runtime.MutableState
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.util.LoginScreenState
-import com.google.firebase.auth.FirebaseAuth
+import com.firebase.ui.auth.R
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
@@ -24,13 +28,20 @@ class LoginViewModel : ViewModel() {
 
     val state = loadingState.asStateFlow()
 
-    fun createAccount(email: String, password: String, userName: String, profilePhoto: Photo?) =
+    fun createAccount(
+        email: String,
+        password: String,
+        userName: String,
+        profilePhoto: Photo?,
+        navigateToHome: () -> Unit,
+        context: Context
+    ) =
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 loadingState.emit(LoginScreenState.Loading)
                 Firebase.auth.createUserWithEmailAndPassword(email, password).await()
                 val currentUser = Firebase.auth.currentUser
-                createFirestoreUser(currentUser, userName, profilePhoto)
+                createFirestoreUser(currentUser, userName, profilePhoto, navigateToHome, context)
             } catch (e: Exception) {
                 loadingState.emit(LoginScreenState.Error(e.localizedMessage))
             }
@@ -56,6 +67,8 @@ class LoginViewModel : ViewModel() {
         currentUser: FirebaseUser?,
         userName: String,
         profilePhoto: Photo?,
+        navigateToHome: () -> Unit,
+        context: Context,
     ) {
 
         viewModelScope.launch {
@@ -68,26 +81,35 @@ class LoginViewModel : ViewModel() {
                 )
             handle.addOnSuccessListener {
                 println("Successfully stored a user")
+                Toast.makeText(context, "Signed in!", Toast.LENGTH_SHORT).show()
             }
             handle.addOnFailureListener {
                 println("Failed to store user. ${it.localizedMessage}")
                 println("Failed to store user. ${it.message}")
+                Toast.makeText(context, "Failed to sign in.", Toast.LENGTH_SHORT).show()
             }
             uploadPhotos(profilePhoto!!, currentUser!!.uid)
-            loadingState.emit(LoginScreenState.CreateAccount)
+            navigateToHome()
         }
 
     }
 
-    fun signInWithEmailAndPassword(email: String, password: String) = viewModelScope.launch {
+    fun signInWithEmailAndPassword(
+        context: Context,
+        email: String,
+        password: String,
+        navigateToHome: () -> Unit
+    ) = viewModelScope.launch {
         try {
             println("Trying to login...")
             loadingState.emit(LoginScreenState.Loading)
             Firebase.auth.signInWithEmailAndPassword(email, password).await()
-            loadingState.emit(LoginScreenState.CreateAccount)
+            Toast.makeText(context, "Signed in!", Toast.LENGTH_SHORT).show()
+            navigateToHome()
         } catch (e: Exception) {
             println("Something failed... ${e.localizedMessage}")
             loadingState.emit(LoginScreenState.Error(e.localizedMessage))
+            Toast.makeText(context, "Failed to sign in.", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -112,7 +134,7 @@ class LoginViewModel : ViewModel() {
         textValue.value = query
     }
 
-    fun uploadPhotos(photo: Photo, id: String) {
+    private fun uploadPhotos(photo: Photo, id: String) {
         val storageReference = FirebaseStorage.getInstance().reference
         viewModelScope.launch(Dispatchers.IO) {
             val uri = Uri.parse(photo.localUri)
@@ -136,24 +158,30 @@ class LoginViewModel : ViewModel() {
     private fun updatePhotoData(photo: Photo, id: String) {
         val remoteUri = photo.remoteUri
         viewModelScope.launch(Dispatchers.IO) {
-            Firebase.firestore.collection("users").whereEqualTo("user_id", id).get().addOnSuccessListener {
-                result ->
-                if (result.isEmpty) {
-                    println("Error in updating the photo")
-                    return@addOnSuccessListener
-                } else {
-                    result.documents.forEach {
-                        it.reference.update("profile_avatar", remoteUri)
+            Firebase.firestore.collection("users").whereEqualTo("user_id", id).get()
+                .addOnSuccessListener { result ->
+                    if (result.isEmpty) {
+                        println("Error in updating the photo")
+                        return@addOnSuccessListener
+                    } else {
+                        result.documents.forEach {
+                            it.reference.update("profile_avatar", remoteUri)
+                        }
                     }
                 }
-            }
         }
     }
 
-    fun setCurrentUser(currentUser: FirebaseUser?)= viewModelScope.launch {
-        if(currentUser != null) {
+    fun setCurrentUser(currentUser: FirebaseUser?) = viewModelScope.launch {
+        if (currentUser != null) {
             loadingState.emit(LoginScreenState.SignIn)
         }
+    }
+    fun googleSignIn(context: Context, token: String) {
+        val gso =
+            GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestIdToken(token)
+                .requestEmail().build()
+        val googleSignInClient = com.google.android.gms.auth.api.signin.GoogleSignIn.getClient(context, gso)
 
     }
 

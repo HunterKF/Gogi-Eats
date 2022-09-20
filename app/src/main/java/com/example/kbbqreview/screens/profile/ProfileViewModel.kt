@@ -8,11 +8,13 @@ import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kbbqreview.data.firestore.EditingPost
 import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.data.photos.Photo
+import com.example.kbbqreview.data.user.User
 import com.facebook.AccessToken
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -48,16 +50,30 @@ class ProfileViewModel : ViewModel() {
     private val mutableState = MutableStateFlow<ProfileScreenState>(
         ProfileScreenState.Loading
     )
-    val newUser = mutableStateOf(FirebaseAuth.getInstance().currentUser != null)
 
     val state = mutableState.asStateFlow()
     var currentUser = Firebase.auth.currentUser
-    init {
+
+   /* init {
         viewModelScope.launch(Dispatchers.IO) {
-            if (currentUser != null) {
+            val activeUser = setCurrentUser(currentUser)
+            if (activeUser != null) {
                 observePosts(currentUser!!)
                 println("The current user is signed in.")
             } else {
+                mutableState.emit(
+                    ProfileScreenState.SignInRequired
+                )
+            }
+        }
+    }*/
+    fun checkIfSignedIn() {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (currentUser != null) {
+                println("The current user is signed in.")
+                observePosts(currentUser!!)
+            } else {
+                println("CURRENT USER WAS NOT SIGNED IN!! WE DON'T LIKE IT, SO FUCK YOU")
                 mutableState.emit(
                     ProfileScreenState.SignInRequired
                 )
@@ -118,7 +134,7 @@ class ProfileViewModel : ViewModel() {
         )
     }
 
-    fun converEditingPostToPost(
+    private fun converEditingPostToPost(
         editingPost: EditingPost,
     ): Post {
         return Post(
@@ -138,10 +154,10 @@ class ProfileViewModel : ViewModel() {
         )
     }
 
-    val restaurantLat = mutableStateOf(0.0)
-    val restaurantLng = mutableStateOf(0.0)
-    val stateLat = mutableStateOf("")
-    val stateLng = mutableStateOf("")
+    private val restaurantLat = mutableStateOf(0.0)
+    private val restaurantLng = mutableStateOf(0.0)
+    private val stateLat = mutableStateOf("")
+    private val stateLng = mutableStateOf("")
     val address = mutableStateOf("")
     var firebaseUser: FirebaseUser? = FirebaseAuth.getInstance().currentUser
     val valueMeat = mutableStateOf(0)
@@ -203,6 +219,7 @@ class ProfileViewModel : ViewModel() {
             )
         }.collect {
             mutableState.emit(it)
+            println("Emitting state! State is changing!!")
         }
     }
 
@@ -502,6 +519,10 @@ class ProfileViewModel : ViewModel() {
     fun setCurrentUser(user: FirebaseUser?) {
         Log.d("ProfileVM", "Incoming user details: ${user?.uid}")
         currentUser = user
+        if (user != null) {
+            println("CHECKING IF SIGNED IN!!! USER WAS NOT NULL!!")
+            checkIfSignedIn()
+        }
         Log.d("ProfileVM", "The user has been changed. ${currentUser?.uid}")
     }
 }

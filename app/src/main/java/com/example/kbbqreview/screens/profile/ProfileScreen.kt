@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,11 +57,17 @@ fun ProfileScreen(
     applicationViewModel: ApplicationViewModel,
     navigationToSignIn: () -> Unit,
 ) {
-
-
     val state by profileViewModel.state.collectAsState()
+    val user by applicationViewModel.liveDateUser.observeAsState()
     val editing = profileViewModel.editingState
-    profileViewModel.setCurrentUser(applicationViewModel.currentUser)
+    println("THE PAGE HAS LOADED!!! HOLD YOUR BUNS!!!")
+    println("Current state of profile state: ${state}")
+    LaunchedEffect(key1 = user) {
+        println("Profile launched effect has occurred. Changing current user.")
+        profileViewModel.setCurrentUser(user)
+        profileViewModel.checkIfSignedIn()
+    }
+
     Scaffold(
         bottomBar = {
             BottomNavigation {
@@ -131,7 +138,11 @@ fun ProfileScreen(
 
                 ProfileScreenState.Loading -> LoadingScreen()
                 ProfileScreenState.SignInRequired -> LaunchedEffect(key1 = Unit) {
-                    navigationToSignIn()
+                    if (profileViewModel.currentUser == null) {
+                        navigationToSignIn()
+                    } else {
+                        profileViewModel.checkIfSignedIn()
+                    }
                 }
             }
         }
@@ -146,7 +157,7 @@ fun ProfileContent(
     onSignOut: () -> Unit,
     displayName: String,
     onEditClick: () -> Unit,
-    profileViewModel: ProfileViewModel
+    profileViewModel: ProfileViewModel,
 ) {
     val sheetState = rememberBottomSheetState(initialValue = BottomSheetValue.Collapsed)
     val scaffoldState = rememberBottomSheetScaffoldState(
@@ -293,7 +304,7 @@ private fun GridViewCard(modifier: Modifier, post: List<Post>) {
 private fun SingleViewCard(
     post: Post,
     onEditClick: () -> Unit,
-    profileViewModel: ProfileViewModel
+    profileViewModel: ProfileViewModel,
 ) {
     val state = rememberPagerState()
     ProfilePostCard(

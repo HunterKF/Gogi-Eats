@@ -97,8 +97,8 @@ fun Navigation(
         composable(Screen.Login.route) {
             LoginScreen(
                 applicationViewModel = applicationViewModel,
-                navigateToHome = {
-                    navController.navigate(Screen.HomeScreen.route) {
+                navigateTProfile = {
+                    navController.navigate(Screen.Profile.route) {
                         popUpTo(Screen.Login.route) {
                             inclusive = true
                         }

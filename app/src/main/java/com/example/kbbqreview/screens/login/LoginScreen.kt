@@ -55,6 +55,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
@@ -66,7 +67,7 @@ import java.lang.RuntimeException
 
 @Composable
 fun LoginScreen(
-    navigateToHome: () -> Unit,
+    navigateTProfile: () -> Unit,
     popBackStack: () -> Boolean,
     viewModel: LoginViewModel,
     cameraViewModel: CameraViewModel,
@@ -76,6 +77,7 @@ fun LoginScreen(
         viewModel.backToLanding()
         cameraViewModel.profilePicture.clear()
     }
+    println("THE LOGIN SCREEN HAS LOADED AGAIN. WHY?!")
     viewModel.setCurrentUser(applicationViewModel.currentUser)
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -96,9 +98,12 @@ fun LoginScreen(
                 val credential = GoogleAuthProvider.getCredential(account?.idToken, null)
                 Firebase.auth.signInWithCredential(credential).addOnCompleteListener {
                     account = GoogleSignIn.getLastSignedInAccount(context)
+                    Toast.makeText(context, "Signed in!", Toast.LENGTH_SHORT).show()
+                    navigateTProfile()
                 }
             } catch (e: ApiException) {
                 Log.w("Google", "Google sign in failed", e)
+                Toast.makeText(context, "Failed to sign in.", Toast.LENGTH_SHORT).show()
             }
         }
     val alreadyHaveAccountState = remember {
@@ -120,13 +125,11 @@ fun LoginScreen(
         mutableStateOf(true)
     }
 
-
-
     when (state) {
         LoginScreenState.SignIn -> {
             println("Current state is ${state}")
             SignInScreen(
-                navigateToHome,
+                navigateTProfile,
                 context,
                 launcher,
                 googleSignInClient,
@@ -147,7 +150,7 @@ fun LoginScreen(
                 emailFieldState,
                 passwordFieldState,
                 reEnterPasswordState,
-                navigateToHome,
+                navigateTProfile,
                 launcher,
                 googleSignInClient,
                 userName,
@@ -155,10 +158,7 @@ fun LoginScreen(
                 popBackStack,
                 userNameAvailable
             )
-
             println("Current state is ${state}")
-
-
         }
         LoginScreenState.LandingScreen -> {
 //            Image by <a href="https://www.freepik.com/free-vector/hand-drawn-korean-bbq-illustration_31216894.htm#query=illustrations%20korean%20bbq&position=0&from_view=search">Freepik</a>
@@ -167,7 +167,7 @@ fun LoginScreen(
                     .align(Alignment.TopStart)
                     .padding(4.dp),
                     onClick = {
-                        navigateToHome()
+                        navigateTProfile()
                     }) {
                     Icon(Icons.Rounded.ArrowBack, null)
                 }
@@ -191,7 +191,6 @@ fun LoginScreen(
                             Text("Already have an account?")
                         }
                     }
-
                 }
             }
         }
@@ -199,8 +198,6 @@ fun LoginScreen(
             ProfileCamera(cameraViewModel = cameraViewModel, viewModel = viewModel)
         }
     }
-
-
     BackHandler() {
         popBackStack()
     }
@@ -222,6 +219,7 @@ private fun SignInScreen(
             .background(MaterialTheme.colors.surface)
             .fillMaxSize()
     ) {
+
         Box(Modifier
             .fillMaxWidth()
             .align(Alignment.TopCenter)) {
@@ -244,12 +242,13 @@ private fun SignInScreen(
                 emailFieldState = emailFieldState,
                 passwordFieldState = passwordFieldState,
                 viewModel = viewModel,
+                navigateToHome = navigateToHome
             )
             Spacer(Modifier.weight(0.1f))
             Divider()
             Spacer(Modifier.weight(0.1f))
             FacebookSignInDefault(navigateToHome, context)
-            GoogleSignIn(launcher, googleSignInClient)
+            GoogleSignIn(launcher, googleSignInClient, viewModel)
             Spacer(modifier = Modifier.weight(0.1f))
         }
 
@@ -335,13 +334,14 @@ private fun CreateAccountScreen(
                 userName = userName,
                 userNameAvailable = userNameAvailable,
                 currentCharCount = currentCharCount,
-                profilePhoto = profilePhoto
+                profilePhoto = profilePhoto,
+                navigateToHome = navigateToHome
             )
             Spacer(Modifier.weight(0.1f))
             Divider()
             Spacer(Modifier.weight(0.1f))
             FacebookSignInDefault(navigateToHome, context)
-            GoogleSignIn(launcher, googleSignInClient)
+            GoogleSignIn(launcher, googleSignInClient, viewModel = viewModel)
             Spacer(modifier = Modifier.weight(0.1f))
         }
     }
@@ -352,13 +352,17 @@ private fun CreateAccountScreen(
 private fun GoogleSignIn(
     launcher: ManagedActivityResultLauncher<Intent, ActivityResult>,
     googleSignInClient: GoogleSignInClient,
+    viewModel: LoginViewModel,
 ) {
     Button(
         colors = ButtonDefaults.buttonColors(
             backgroundColor = Color.White
         ),
         modifier = Modifier.fillMaxWidth(),
-        onClick = { launcher.launch(googleSignInClient.signInIntent) }) {
+        onClick = {
+            launcher.launch(googleSignInClient.signInIntent)
+
+        }) {
         Icon(Icons.Rounded.Email, contentDescription = null)
         Text("Continue with Google")
     }
@@ -372,7 +376,7 @@ private fun FacebookSignInDefault(
     SignInButton(
         onSignedIn = {
             navigateToHome()
-            Toast.makeText(context, "It signed in!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Signed in!", Toast.LENGTH_SHORT).show()
         },
         onSignInFailed = {
             Toast.makeText(context, "Try again later.", Toast.LENGTH_SHORT).show()
@@ -391,6 +395,7 @@ fun CreateAccountInfo(
     userNameAvailable: MutableState<Boolean>,
     currentCharCount: MutableState<Int>,
     profilePhoto: Photo?,
+    navigateToHome: () -> Unit,
 ) {
     val context = LocalContext.current
     val auth = Firebase.auth
@@ -530,10 +535,14 @@ fun CreateAccountInfo(
             .padding(vertical = padding),
             enabled = emailFieldState.value.isNotEmpty() && passwordFieldState.value.isNotEmpty() && userName.value.isNotEmpty(),
             onClick = {
-                viewModel.createAccount(emailFieldState.value,
+                viewModel.createAccount(
+                    emailFieldState.value,
                     passwordFieldState.value,
                     userName.value,
-                    profilePhoto)
+                    profilePhoto,
+                    navigateToHome,
+                    context
+                )
             }) {
             Text(text = "Create Account")
         }
@@ -542,8 +551,6 @@ fun CreateAccountInfo(
         }) {
             Text("Already have an account?")
         }
-
-
     }
 }
 
@@ -553,8 +560,9 @@ fun EmailSignIn(
     emailFieldState: MutableState<String>,
     passwordFieldState: MutableState<String>,
     viewModel: LoginViewModel,
+    navigateToHome: () -> Unit,
 ) {
-
+    val context = LocalContext.current
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly,
@@ -619,8 +627,10 @@ fun EmailSignIn(
             onClick = {
                 println("Attempting to sign in")
                 viewModel.signInWithEmailAndPassword(
+                    context,
                     emailFieldState.value,
-                    passwordFieldState.value
+                    passwordFieldState.value,
+                    navigateToHome
                 )
             }) {
             Text(text = "Sign In")
@@ -634,6 +644,7 @@ fun EmailSignIn(
     }
 }
 
+//FACEBOOK SIGN IN
 @Composable
 fun SignInButton(
     onSignInFailed: (Exception) -> Unit,
@@ -672,4 +683,24 @@ fun SignInButton(
             })
         }
     })
+}
+@Composable
+fun rememberFirebaseAuthLauncher(
+    onAuthComplete: (AuthResult) -> Unit,
+    onAuthError: (ApiException) -> Unit
+): ManagedActivityResultLauncher<Intent, ActivityResult> {
+    val scope = rememberCoroutineScope()
+    return rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)!!
+            val credential = GoogleAuthProvider.getCredential(account.idToken!!, null)
+            scope.launch {
+                val authResult = Firebase.auth.signInWithCredential(credential).await()
+                onAuthComplete(authResult)
+            }
+        } catch (e: ApiException) {
+            onAuthError(e)
+        }
+    }
 }

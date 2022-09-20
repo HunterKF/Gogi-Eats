@@ -21,6 +21,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,43 +38,23 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
     private val searchResults: MutableLiveData<List<StoredPlace>>
 
     private lateinit var firestore: FirebaseFirestore
-    private var storageReference = FirebaseStorage.getInstance().getReference()
 
     internal val NEW_NAME = "New restaurant"
     var user: User? = null
     var currentUser by mutableStateOf<FirebaseUser?>(null)
+    var liveDateUser = MutableLiveData<FirebaseUser?>()
 
     @JvmName("assignCurrentUser")
     fun setCurrentUser(user: FirebaseUser?) {
         currentUser = user
+        liveDateUser.value = user
     }
     val activeUser = mutableStateOf(user)
 
     var firebaseUser: FirebaseUser? = FirebaseAuth.getInstance().currentUser
 
-    val fetchedPhotos = ArrayList<Photo>()
-    val eventPhotos: MutableLiveData<List<Photo>> = MutableLiveData<List<Photo>>()
-    val userList: MutableLiveData<List<User>> = MutableLiveData<List<User>>()
 
-    val listOfStoryItem = mutableListOf<StoryItem>()
-    val storyFeed = MutableLiveData<StoryItemList>()
-    val listOfUserReviews = mutableListOf<StoryItem>()
-    val userReviews = MutableLiveData<StoryItemList>()
     private val _isRefreshing = MutableStateFlow(false)
-
-    val isRefreshing: StateFlow<Boolean>
-        get() = _isRefreshing.asStateFlow()
-
-    fun refresh() {
-        // This doesn't handle multiple 'refreshing' tasks, don't use this
-
-        viewModelScope.launch {
-            // A fake 2 second 'refresh'
-            _isRefreshing.emit(true)
-            delay(2000)
-            _isRefreshing.emit(false)
-        }
-    }
 
     init {
         val storedPlaceDatabase = StoredPlaceDatabase.getDatabase(application)
@@ -95,31 +76,6 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
         locationLiveData.startLocationUpdates()
     }
 
-    /*fun signOn(signInLauncher: ManagedActivityResultLauncher<Intent, FirebaseAuthUIAuthenticationResult>) {
-        val providers = arrayListOf(
-            AuthUI.IdpConfig.EmailBuilder().build()
-        )
-        val signinIntent = AuthUI.getInstance()
-            .createSignInIntentBuilder()
-            .setAvailableProviders(
-                providers
-            )
-            .build()
-        signInLauncher.launch(signinIntent)
-    }
-
-    fun signInResult(result: FirebaseAuthUIAuthenticationResult) {
-        val response = result.idpResponse
-        if (result.resultCode == Activity.RESULT_OK) {
-            this.firebaseUser = FirebaseAuth.getInstance().currentUser
-            firebaseUser?.let {
-                val user = User(it.uid, it.displayName!!)
-                saveUser(user)
-            }
-        } else {
-            Log.e("Authentication", "Error logging in" + response?.error?.errorCode)
-        }
-    }*/
 
     fun signOut() {
         FirebaseAuth.getInstance().signOut()
