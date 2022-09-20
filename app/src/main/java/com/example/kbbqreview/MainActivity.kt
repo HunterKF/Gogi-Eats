@@ -22,6 +22,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.kbbqreview.data.user.User
 import com.example.kbbqreview.ui.theme.KBBQReviewTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 class MainActivity : ComponentActivity() {
 
@@ -29,16 +32,18 @@ class MainActivity : ComponentActivity() {
 
     val shouldShowCamera = mutableStateOf(false)
 
+    private val auth: FirebaseAuth = Firebase.auth
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        auth.addAuthStateListener { auth ->
+            applicationViewModel.setCurrentUser(auth.currentUser)
+            Log.d("Current USer", "The current user has been signed in. ${applicationViewModel.currentUser?.uid}")
+        }
         setContent {
 
             applicationViewModel.startLocationUpdates()
-            applicationViewModel.firebaseUser?.let {
-                val user = User(it.uid)
-                applicationViewModel.user = user
-                applicationViewModel.activeUser.value = user
-            }
             window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             KBBQReviewTheme {
                 TransparentSystemBars()

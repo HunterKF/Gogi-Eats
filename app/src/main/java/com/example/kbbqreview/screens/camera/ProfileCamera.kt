@@ -1,21 +1,30 @@
 package com.example.kbbqreview.screens.camera
 
 import android.util.Log
-import android.widget.Gallery
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Button
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
-import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
+import com.example.kbbqreview.R
 import com.example.kbbqreview.Screen
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.camera.gallery.GallerySelectMultiple
@@ -34,35 +43,54 @@ fun ProfileCamera(
 
     Log.d(TAG, "The camera has opened.")
     if (imageUri != cameraViewModel.EMPTY_IMAGE_URI) {
-        Box(modifier = modifier) {
+        Box(modifier = modifier.background(Color.Black)) {
             Image(
                 modifier = Modifier.fillMaxSize(),
                 painter = rememberImagePainter(imageUri),
-                contentDescription = "Captured image"
+                contentDescription = stringResource(R.string.captured_image)
             )
             //this deletes the URI and sets it back to empty URI
-            Button(
-                modifier = Modifier.align(Alignment.BottomCenter),
-                onClick = {
-                    cameraViewModel.selectImages.add(Photo(localUri = imageUri.toString()))
-                    cameraViewModel.showPhotoRow.value = true
-                    viewModel.changeToCreate()
-                    imageUri = cameraViewModel.EMPTY_IMAGE_URI
+            Box(Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 28.dp, vertical = 40.dp)
+                .fillMaxWidth())
+            {
+                IconButton(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .scale(1.2f),
+                    onClick = {
+                        cameraViewModel.profilePicture.add(Photo(localUri = imageUri.toString()))
+                        cameraViewModel.showPhotoRow.value = true
+                        viewModel.changeToCreate()
+                        imageUri = cameraViewModel.EMPTY_IMAGE_URI
+                    }
+                ) {
+                    Icon(Icons.Rounded.Check, stringResource(R.string.take_picture), tint = Color.White)
                 }
-            ) {
-                Text("Select image")
+                IconButton(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .scale(1.2f),
+                    onClick = {/*
+                        navController.popBackStack()*/
+                        imageUri = cameraViewModel.EMPTY_IMAGE_URI
+                    }
+                ) {
+                    Icon(Icons.Rounded.Delete, stringResource(R.string.take_picture), tint = Color.White)
+                }
             }
+
         }
     } else {
-        var showGallerySelect by remember { mutableStateOf(false) }
-        if (showGallerySelect) {
+        var showGallerySelect = remember { mutableStateOf(false) }
+        if (showGallerySelect.value) {
             GallerySelectSingle(
                 modifier = modifier,
                 cameraViewModel = cameraViewModel,
                 onImageUri = { uri ->
-
-                    cameraViewModel.selectImages.add(Photo(localUri = uri.toString()))
-                    showGallerySelect = false
+                    cameraViewModel.profilePicture.add(Photo(localUri = uri.toString()))
+                    showGallerySelect.value = false
 
                     cameraViewModel.showPhotoRow.value = true
                     viewModel.changeToCreate()
@@ -72,23 +100,14 @@ fun ProfileCamera(
             Box(modifier = modifier) {
                 //This is the camera function
                 CameraCapture(
+                    showGallerySelect = showGallerySelect,
                     modifier = modifier,
                     onImageFile = { file ->
                         imageUri = file.toUri()
+                    })
 
-                    }
-                )
-                Button(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(4.dp),
-                    onClick = {
-                        showGallerySelect = true
-                    }
-                ) {
-                    Text("Select from Gallery")
-                }
             }
+
         }
     }
     BackHandler() {

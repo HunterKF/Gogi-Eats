@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.util.LoginScreenState
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
@@ -19,8 +20,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 class LoginViewModel : ViewModel() {
-
-
     val loadingState = MutableStateFlow<LoginScreenState>(LoginScreenState.LandingScreen)
 
     val state = loadingState.asStateFlow()
@@ -100,6 +99,8 @@ class LoginViewModel : ViewModel() {
                     println("Nothing to report here. It was empty")
                     value.value = true
                     println("I changed the value - ${value.value}")
+                } else {
+                    value.value = false
                 }
 
             }.await()
@@ -147,6 +148,13 @@ class LoginViewModel : ViewModel() {
                 }
             }
         }
+    }
+
+    fun setCurrentUser(currentUser: FirebaseUser?)= viewModelScope.launch {
+        if(currentUser != null) {
+            loadingState.emit(LoginScreenState.SignIn)
+        }
+
     }
 
 

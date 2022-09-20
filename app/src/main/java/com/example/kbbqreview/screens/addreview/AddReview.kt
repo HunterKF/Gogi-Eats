@@ -202,7 +202,7 @@ fun AddReview(
                             )
                             Toast.makeText(
                                 context,
-                                "The value for user is: ${applicationViewModel.user}",
+                                "The value for user is: ${applicationViewModel.currentUser}",
                                 Toast.LENGTH_LONG
                             ).show()
                         }) {

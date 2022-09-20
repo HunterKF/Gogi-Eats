@@ -48,15 +48,15 @@ class ProfileViewModel : ViewModel() {
     private val mutableState = MutableStateFlow<ProfileScreenState>(
         ProfileScreenState.Loading
     )
+    val newUser = mutableStateOf(FirebaseAuth.getInstance().currentUser != null)
 
     val state = mutableState.asStateFlow()
-
+    var currentUser = Firebase.auth.currentUser
     init {
         viewModelScope.launch(Dispatchers.IO) {
-
-            val currentUser = Firebase.auth.currentUser
             if (currentUser != null) {
-                observePosts(currentUser)
+                observePosts(currentUser!!)
+                println("The current user is signed in.")
             } else {
                 mutableState.emit(
                     ProfileScreenState.SignInRequired
@@ -99,7 +99,7 @@ class ProfileViewModel : ViewModel() {
     )
 
     fun convertPostToEditingPost(
-        post: Post
+        post: Post,
     ): EditingPost {
         return EditingPost(
             timestamp = post.timestamp,
@@ -119,7 +119,7 @@ class ProfileViewModel : ViewModel() {
     }
 
     fun converEditingPostToPost(
-        editingPost: EditingPost
+        editingPost: EditingPost,
     ): Post {
         return Post(
             timestamp = editingPost.timestamp,
@@ -281,7 +281,7 @@ class ProfileViewModel : ViewModel() {
                         listIndex = documentSnapshot.getLong("list_index")!!.toInt()
                     )
                     photoList.add(photo)
-                    photoList.sortBy{ it.listIndex }
+                    photoList.sortBy { it.listIndex }
                 }
             }
             .addOnFailureListener {
@@ -366,7 +366,7 @@ class ProfileViewModel : ViewModel() {
     fun updateReview(
         firebaseId: String,
         post: EditingPost,
-        editPhotoList: SnapshotStateList<Photo>
+        editPhotoList: SnapshotStateList<Photo>,
     ) {
         val convertedPost = converEditingPostToPost(post)
         val db = Firebase.firestore
@@ -419,11 +419,11 @@ class ProfileViewModel : ViewModel() {
                 db.whereEqualTo("local_uri", photo.localUri).get().addOnSuccessListener { result ->
                     if (result == null || result.isEmpty) {
                         Log.d(TAG, "The result is empty. Going to uploadPhotos()")
-                            uploadPhotos(photo, post.firebaseId)
+                        uploadPhotos(photo, post.firebaseId)
                     } else {
                         result.forEach {
                             Log.d(TAG, "The result was not empty. Going to updateIndex()")
-                                updateIndex(photo)
+                            updateIndex(photo)
                         }
                     }
                 }
@@ -496,5 +496,12 @@ class ProfileViewModel : ViewModel() {
     fun addPhotoToBeDeleted(photo: Photo) {
         toBeDeletedPhotoList.add(photo)
         Log.d(TAG, "A photo was queued for deletion. Current size: ${toBeDeletedPhotoList.size}")
+    }
+
+    @JvmName("assignCurrentUserProfileVM")
+    fun setCurrentUser(user: FirebaseUser?) {
+        Log.d("ProfileVM", "Incoming user details: ${user?.uid}")
+        currentUser = user
+        Log.d("ProfileVM", "The user has been changed. ${currentUser?.uid}")
     }
 }

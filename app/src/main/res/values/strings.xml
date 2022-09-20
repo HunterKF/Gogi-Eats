@@ -13,4 +13,6 @@
     <string name="fb_login_protocol_scheme">fb389311636697354</string>
     <string name="facebook_client_token">d61bade1fd2a0ce42eb47469cffba4f5</string>
     <string name="lorem_impsum">\"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque facilisis blandit felis. Etiam ultricies rutrum ligula, in malesuada quam interdum quis. Aenean vitae pellentesque neque, in maximus leo. Maecenas iaculis enim ut hendrerit commodo. Nullam ornare efficitur ex a pharetra. Ut scelerisque pretium convallis. \"</string>
+    <string name="take_picture">Take picture</string>
+    <string name="captured_image">Captured image</string>
 </resources>

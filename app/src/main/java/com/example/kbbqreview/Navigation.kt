@@ -83,7 +83,8 @@ fun Navigation(
                 navController = navController,
                 location = location,
                 profileViewModel = profileViewModel,
-                cameraViewModel = cameraViewModel
+                applicationViewModel = applicationViewModel,
+                cameraViewModel = cameraViewModel,
                 ) {
                 navController.navigate(Screen.Login.route) {
                     popUpTo(Screen.Profile.route) {
@@ -95,6 +96,7 @@ fun Navigation(
         }
         composable(Screen.Login.route) {
             LoginScreen(
+                applicationViewModel = applicationViewModel,
                 navigateToHome = {
                     navController.navigate(Screen.HomeScreen.route) {
                         popUpTo(Screen.Login.route) {
@@ -103,21 +105,8 @@ fun Navigation(
                     }
                 }, popBackStack = {
                     navController.popBackStack()
-                }, navigateToCamera = {
-                    navController.navigate(Screen.MainCamera.route) {
-                        popUpTo(Screen.Login.route) {
-                            inclusive = true
-                        }
-                    }
-                }, navigateToProfile = {
-                    navController.navigate(Screen.Profile.route) {
-                        popUpTo(Screen.Login.route) {
-                            inclusive = true
-                        }
-                    }
                 },
                 viewModel = LoginViewModel,
-                navController = navController,
                 cameraViewModel = cameraViewModel
             )
         }

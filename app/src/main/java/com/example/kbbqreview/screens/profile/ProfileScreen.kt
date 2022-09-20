@@ -27,6 +27,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.kbbqreview.ApplicationViewModel
 import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.R
 import com.example.kbbqreview.data.photos.Photo
@@ -52,12 +53,14 @@ fun ProfileScreen(
     cameraViewModel: CameraViewModel,
     location: LocationDetails?,
     profileViewModel: ProfileViewModel,
-    navigationToSignIn: () -> Unit
+    applicationViewModel: ApplicationViewModel,
+    navigationToSignIn: () -> Unit,
 ) {
 
 
     val state by profileViewModel.state.collectAsState()
     val editing = profileViewModel.editingState
+    profileViewModel.setCurrentUser(applicationViewModel.currentUser)
     Scaffold(
         bottomBar = {
             BottomNavigation {

@@ -2,7 +2,9 @@ package com.example.kbbqreview
 
 import android.app.Application
 import android.util.Log
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -39,6 +41,12 @@ class ApplicationViewModel(application: Application) : AndroidViewModel(applicat
 
     internal val NEW_NAME = "New restaurant"
     var user: User? = null
+    var currentUser by mutableStateOf<FirebaseUser?>(null)
+
+    @JvmName("assignCurrentUser")
+    fun setCurrentUser(user: FirebaseUser?) {
+        currentUser = user
+    }
     val activeUser = mutableStateOf(user)
 
     var firebaseUser: FirebaseUser? = FirebaseAuth.getInstance().currentUser

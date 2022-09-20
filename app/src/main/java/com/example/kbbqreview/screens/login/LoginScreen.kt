@@ -36,9 +36,9 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.kbbqreview.ApplicationViewModel
 import com.example.kbbqreview.R
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.camera.CameraViewModel
@@ -69,14 +69,13 @@ fun LoginScreen(
     navigateToHome: () -> Unit,
     popBackStack: () -> Boolean,
     viewModel: LoginViewModel,
-    navigateToCamera: () -> Unit,
-    navigateToProfile: () -> Unit,
-    navController: NavHostController,
     cameraViewModel: CameraViewModel,
+    applicationViewModel: ApplicationViewModel,
 ) {
     LaunchedEffect(key1 = Unit) {
         viewModel.backToLanding()
     }
+    viewModel.setCurrentUser(applicationViewModel.currentUser)
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val token = stringResource(com.firebase.ui.auth.R.string.default_web_client_id)
@@ -269,10 +268,10 @@ private fun CreateAccountScreen(
     userName: MutableState<String>,
     cameraViewModel: CameraViewModel,
     popBackStack: () -> Boolean,
-    userNameAvailable: MutableState<Boolean>
+    userNameAvailable: MutableState<Boolean>,
 ) {
     val scrollState = rememberScrollState()
-    val profilePhoto = cameraViewModel.getLastPhoto()
+    val profilePhoto = cameraViewModel.getProfilePhoto()
     val currentCharCount = remember { mutableStateOf(0) }
     Box(Modifier.fillMaxSize()) {
         Box(Modifier
@@ -291,7 +290,7 @@ private fun CreateAccountScreen(
                 .scrollable(scrollState, orientation = Orientation.Vertical),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            ) {
+        ) {
 
             Box(Modifier
                 .padding(top = 20.dp, bottom = 10.dp)
@@ -457,17 +456,22 @@ fun CreateAccountInfo(
                     )
                 } else {
                     Toast.makeText(context, "Shorten name.", Toast.LENGTH_SHORT).show()
-                }},
+                }
+            },
             leadingIcon = { Icon(Icons.Rounded.DriveFileRenameOutline, null) },
             trailingIcon = {
-                IconButton(onClick = { userNameAvailable.value = viewModel.checkUserNameAvailability(userName.value, userNameAvailable) }) {
+                IconButton(onClick = {
+                    userNameAvailable.value =
+                        viewModel.checkUserNameAvailability(userName.value, userNameAvailable)
+                }) {
                     Icon(Icons.Rounded.PersonSearch, null)
                 }
             },
             modifier = Modifier
                 .padding(vertical = padding)
                 .border(
-                    BorderStroke(width = 2.dp, color = if (userNameAvailable.value) Purple500 else Color.Red),
+                    BorderStroke(width = 2.dp,
+                        color = if (userNameAvailable.value) Purple500 else Color.Red),
                     shape = RoundedCornerShape(50)
                 )
                 .fillMaxWidth(),
@@ -525,7 +529,10 @@ fun CreateAccountInfo(
             .padding(vertical = padding),
             enabled = emailFieldState.value.isNotEmpty() && passwordFieldState.value.isNotEmpty() && userName.value.isNotEmpty(),
             onClick = {
-                viewModel.createAccount(emailFieldState.value, passwordFieldState.value, userName.value, profilePhoto)
+                viewModel.createAccount(emailFieldState.value,
+                    passwordFieldState.value,
+                    userName.value,
+                    profilePhoto)
             }) {
             Text(text = "Create Account")
         }
@@ -571,6 +578,7 @@ fun EmailSignIn(
             },
             maxLines = 1,
             singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             colors = TextFieldDefaults.textFieldColors(
                 backgroundColor = Color.Transparent,
                 focusedIndicatorColor = Color.Transparent,
@@ -597,6 +605,7 @@ fun EmailSignIn(
             },
             visualTransformation = PasswordVisualTransformation(),
             maxLines = 1,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true,
             colors = TextFieldDefaults.textFieldColors(
                 backgroundColor = Color.Transparent,
@@ -616,7 +625,6 @@ fun EmailSignIn(
             Text(text = "Sign In")
         }
 
-        val scope = rememberCoroutineScope()
         TextButton(onClick = {
             viewModel.changeToCreate()
         }) {

@@ -16,15 +16,16 @@ class CameraViewModel : ViewModel() {
 
 
     var selectImages =  mutableStateListOf<Photo>()
+    var profilePicture = mutableStateListOf<Photo>()
 
     fun getAllPhotos(): SnapshotStateList<Photo> {
         return  selectImages
     }
-    fun getLastPhoto(): Photo? {
-        return if (selectImages.isEmpty()) {
+    fun getProfilePhoto(): Photo? {
+        return if (profilePicture.isEmpty()) {
             null
         } else {
-            selectImages.last()
+            profilePicture.last()
         }
 
     }
