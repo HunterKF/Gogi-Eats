@@ -74,6 +74,7 @@ fun LoginScreen(
 ) {
     LaunchedEffect(key1 = Unit) {
         viewModel.backToLanding()
+        cameraViewModel.profilePicture.clear()
     }
     viewModel.setCurrentUser(applicationViewModel.currentUser)
     val state by viewModel.state.collectAsState()
