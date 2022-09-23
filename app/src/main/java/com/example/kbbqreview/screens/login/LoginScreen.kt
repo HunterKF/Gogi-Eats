@@ -9,6 +9,7 @@ import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContentScope.SlideDirection.Companion.End
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
@@ -106,9 +107,6 @@ fun LoginScreen(
                 Toast.makeText(context, "Failed to sign in.", Toast.LENGTH_SHORT).show()
             }
         }
-    val alreadyHaveAccountState = remember {
-        mutableStateOf(false)
-    }
     val emailFieldState = remember {
         mutableStateOf("")
     }
@@ -167,7 +165,7 @@ fun LoginScreen(
                     .align(Alignment.TopStart)
                     .padding(4.dp),
                     onClick = {
-                        navigateTProfile()
+                        popBackStack()
                     }) {
                     Icon(Icons.Rounded.ArrowBack, null)
                 }
@@ -622,6 +620,22 @@ fun EmailSignIn(
                 unfocusedIndicatorColor = Color.Transparent
             )
         )
+        Box(Modifier.fillMaxWidth()) {
+            fun showToast() {
+                Toast.makeText(context, "Please enter an email address", Toast.LENGTH_SHORT).show()
+            }
+
+            val showToast = remember { mutableStateOf(false) }
+            TextButton(modifier = Modifier.align(Alignment.CenterEnd), onClick = {
+                if (emailFieldState.value == "")
+                    showToast()
+                else
+                    viewModel.forgotPassword(emailFieldState.value, context)
+            }) {
+                Text(stringResource(R.string.forgot_password))
+            }
+        }
+
         Button(modifier = Modifier.fillMaxWidth(),
             enabled = emailFieldState.value.isNotEmpty() && passwordFieldState.value.isNotEmpty(),
             onClick = {
@@ -684,10 +698,11 @@ fun SignInButton(
         }
     })
 }
+
 @Composable
 fun rememberFirebaseAuthLauncher(
     onAuthComplete: (AuthResult) -> Unit,
-    onAuthError: (ApiException) -> Unit
+    onAuthError: (ApiException) -> Unit,
 ): ManagedActivityResultLauncher<Intent, ActivityResult> {
     val scope = rememberCoroutineScope()
     return rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->

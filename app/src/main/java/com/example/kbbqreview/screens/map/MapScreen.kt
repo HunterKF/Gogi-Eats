@@ -202,16 +202,19 @@ private fun SheetContent(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        IconButton(
-            modifier = Modifier.align(Alignment.TopCenter),
-            onClick = { scope.launch { sheetState.collapse() } }) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_baseline_more),
-                contentDescription = "Close sheet"
-            )
-        }
 
-        LazyColumn(contentPadding = PaddingValues(bottom = 60.dp)) {
+
+        LazyColumn(contentPadding = PaddingValues(top = 10.dp, bottom = 60.dp)) {
+            item {
+                IconButton(
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    onClick = { scope.launch { sheetState.collapse() } }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_baseline_more),
+                        contentDescription = "Close sheet"
+                    )
+                }
+            }
             if (showSinglePost) {
                 item {
                     val state = rememberPagerState()

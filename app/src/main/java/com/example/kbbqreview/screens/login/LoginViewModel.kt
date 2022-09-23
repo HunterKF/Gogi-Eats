@@ -184,6 +184,14 @@ class LoginViewModel : ViewModel() {
         val googleSignInClient = com.google.android.gms.auth.api.signin.GoogleSignIn.getClient(context, gso)
 
     }
+    fun forgotPassword(email: String, context: Context) {
+        Firebase.auth.sendPasswordResetEmail(email).addOnSuccessListener {
+            println("Email was sent!")
+        }.addOnFailureListener {
+            println("A problem occurred: ${it.localizedMessage}")
+            Toast.makeText(context, "An error has occurred: ${it.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+    }
 
 
 }

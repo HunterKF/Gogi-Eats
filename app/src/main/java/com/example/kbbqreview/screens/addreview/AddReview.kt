@@ -115,7 +115,7 @@ fun AddReview(
                 modifier = Modifier
                     .scrollable(state = lazyState, orientation = Orientation.Horizontal),
                 contentPadding = PaddingValues(
-                    top = 8.dp,
+                    top = 10.dp,
                     bottom = 120.dp,
                     start = 12.dp,
                     end = 12.dp

@@ -5,17 +5,17 @@ import android.location.Address
 import android.location.Geocoder
 import android.net.Uri
 import android.util.Log
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kbbqreview.data.firestore.EditingPost
 import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.data.photos.Photo
-import com.example.kbbqreview.data.user.User
 import com.facebook.AccessToken
+import com.facebook.login.LoginManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
@@ -53,27 +53,14 @@ class ProfileViewModel : ViewModel() {
 
     val state = mutableState.asStateFlow()
     var currentUser = Firebase.auth.currentUser
+    val emailAvatarPhoto = mutableStateOf("")
+    val emailUserName = mutableStateOf("")
 
-   /* init {
-        viewModelScope.launch(Dispatchers.IO) {
-            val activeUser = setCurrentUser(currentUser)
-            if (activeUser != null) {
-                observePosts(currentUser!!)
-                println("The current user is signed in.")
-            } else {
-                mutableState.emit(
-                    ProfileScreenState.SignInRequired
-                )
-            }
-        }
-    }*/
     fun checkIfSignedIn() {
         viewModelScope.launch(Dispatchers.IO) {
             if (currentUser != null) {
-                println("The current user is signed in.")
                 observePosts(currentUser!!)
             } else {
-                println("CURRENT USER WAS NOT SIGNED IN!! WE DON'T LIKE IT, SO FUCK YOU")
                 mutableState.emit(
                     ProfileScreenState.SignInRequired
                 )
@@ -167,9 +154,9 @@ class ProfileViewModel : ViewModel() {
     val valueAtmosphere = mutableStateOf(0)
     val authorText = mutableStateOf(0)
 
-    fun setUser(): String {
+    private fun setUser(): String {
         var user = ""
-        firebaseUser?.let {
+        currentUser?.let {
             user = it.uid
         }
         return user
@@ -178,31 +165,84 @@ class ProfileViewModel : ViewModel() {
     fun setDisplayName(): String {
         var displayName = ""
         firebaseUser?.let {
-            displayName = it.displayName.toString()
+            displayName = if (it.displayName == null || it.displayName == "") {
+
+                Log.d(TAG, "Attempting to run if statement: ${it.displayName.toString()}")
+                getEmailName()
+                emailUserName.value
+            } else {
+                println("If failed, now running else: ${it.displayName.toString()}")
+                it.displayName.toString()
+            }
+
         }
         return displayName
     }
 
+    private fun getEmailName() {
+        val db = Firebase.firestore
+        db.collection("users").whereEqualTo("user_id", currentUser!!.uid).get()
+            .addOnSuccessListener { result ->
+                if (result == null || result.isEmpty) {
+                    Log.d(TAG, "Failed to get user name for email.")
+
+                } else {
+                    val data = result.documents
+                    val s = data[0].data?.get("user_name").toString()
+                    emailUserName.value = data[0].data?.get("user_name").toString()
+                    println("EMAIL USER NAME: $s")
+                }
+            }
+    }
+
     fun setAvatar(): String {
         var avatarUrl = ""
-        firebaseUser?.let {
+        currentUser?.let {
             for (item in it.providerData) {
+                println("1: ${item.providerId}")
+                println("2: ${item.uid}")
+                println("3: ${item.displayName}")
+                println("4: ${item.isEmailVerified}")
+                println("5: ${item.email}")
+                println("6: ${item.photoUrl}")
                 when (item.providerId) {
                     "facebook.com" -> {
                         Log.d(TAG, "It's logged in with facebook")
-                        avatarUrl = getFBAvatar(firebaseUser!!)
+                        avatarUrl = getFBAvatar(currentUser!!)
                     }
                     "google.com" -> {
                         Log.d(TAG, "It's logged in with gmail")
                         avatarUrl = it.photoUrl.toString()
                     }
+                    "password" -> {
+                        Log.d(TAG, "It's logged in with gmail")
+                        getEmailAvatar(currentUser!!)
+                        avatarUrl = emailAvatarPhoto.value
+                    }
                     else -> {
                         Log.d(TAG, "We failed")
+
                     }
                 }
             }
         }
         return avatarUrl
+    }
+
+    private fun getEmailAvatar(firebaseUser: FirebaseUser) {
+        val db = Firebase.firestore
+        db.collection("users").whereEqualTo("user_id", currentUser!!.uid).get()
+            .addOnSuccessListener { result ->
+                if (result == null || result.isEmpty) {
+                    Log.d(TAG, "Failed to get avatar photo for email.")
+
+                } else {
+                    val data = result.documents
+                    val profileAvatar3 = data[0].data?.get("profile_avatar").toString()
+                    emailAvatarPhoto.value = data[0].data?.get("profile_avatar").toString()
+                    println("3: $profileAvatar3")
+                }
+            }
     }
 
     private fun getFBAvatar(currentUser: FirebaseUser): String {
@@ -313,6 +353,7 @@ class ProfileViewModel : ViewModel() {
 
     fun signOut() {
         FirebaseAuth.getInstance().signOut()
+        LoginManager.getInstance().logOut()
     }
 
     fun delete(firebaseId: String, post: Post) {

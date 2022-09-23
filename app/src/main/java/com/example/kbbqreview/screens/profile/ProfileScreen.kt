@@ -1,5 +1,6 @@
 package com.example.kbbqreview.screens.HomeScreen
 
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -121,7 +122,7 @@ fun ProfileScreen(
                     } else {
                         ProfileContent(
                             posts = loaded.posts,
-                            avatarUrl = avatarUrl,
+                            avatarUrl = profileViewModel.setAvatar(),
                             displayName = displayName,
                             profileViewModel = profileViewModel,
                             onEditClick = {
@@ -213,7 +214,8 @@ fun ProfileContent(
         val size = posts.size
         LazyColumn(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(),
+            contentPadding = PaddingValues(bottom = 40.dp)
         ) {
             stickyHeader {
                 UserBar(scope, sheetState, displayName, avatarUrl)
@@ -380,12 +382,15 @@ private fun UserBar(
     userName: String,
     avatarUrl: String,
 ) {
+    val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.White)
     ) {
-        IconButton(modifier = Modifier.padding(8.dp), onClick = { /*TODO*/ }) {
+        IconButton(modifier = Modifier.padding(8.dp), onClick = {
+            Toast.makeText(context, avatarUrl, Toast.LENGTH_SHORT).show()
+        }) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(avatarUrl)
