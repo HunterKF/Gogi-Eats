@@ -76,7 +76,8 @@ class LoginViewModel : ViewModel() {
                 .add(
                     hashMapOf(
                         "user_id" to currentUser!!.uid,
-                        "user_name" to userName
+                        "user_name" to userName,
+                        "user_name_lowercase" to userName.lowercase(),
                     )
                 )
             handle.addOnSuccessListener {
@@ -116,7 +117,7 @@ class LoginViewModel : ViewModel() {
     fun checkUserNameAvailability(userName: String, value: MutableState<Boolean>): Boolean {
         viewModelScope.launch(Dispatchers.IO) {
             val db = Firebase.firestore.collection("users")
-            db.whereEqualTo("user_name", userName).get().addOnSuccessListener { result ->
+            db.whereEqualTo("user_name_lowercase", userName.lowercase()).get().addOnSuccessListener { result ->
                 if (result.isEmpty) {
                     println("Nothing to report here. It was empty")
                     value.value = true
