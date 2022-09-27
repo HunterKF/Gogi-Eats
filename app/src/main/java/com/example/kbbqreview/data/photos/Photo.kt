@@ -1,12 +1,10 @@
 package com.example.kbbqreview.data.photos
 
-import java.util.*
-
 data class Photo(
-    var localUri: String = "",
+    val localUri: String = "",
     var remoteUri: String = "",
-    var description: String = "",
-    var dateTaken: Date = Date(),
-    var id: String = "",
+    var firebaseId: String = "",
     var listIndex: Int = 0
-)
+) {
+
+}

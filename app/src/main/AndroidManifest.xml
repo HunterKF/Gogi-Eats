@@ -14,7 +14,7 @@
     <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
 
     <application
-        android:name=".K_BBQ_Review"
+        android:name="com.example.kbbqreview.K_BBQ_Review"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -25,12 +25,12 @@
         android:theme="@style/Theme.KBBQReview"
         tools:targetApi="31">
         <activity
-            android:name=".CameraActivity"
+            android:name="com.example.kbbqreview.CameraActivity"
             android:exported="false"
             android:label="@string/title_activity_camera"
             android:theme="@style/Theme.KBBQReview" />
         <activity
-            android:name=".MainActivity"
+            android:name="com.example.kbbqreview.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.KBBQReview">
@@ -54,6 +54,9 @@
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
             android:value="AIzaSyBMv8xNYA8H-MKYs9GfF0dFL0TAxSV-Jms" />
+
+        <meta-data tools:replace="android:value" android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id"/>
+        <meta-data android:name="com.facebook.sdk.ClientToken" android:value="@string/facebook_client_token"/>
     </application>
 
 </manifest>

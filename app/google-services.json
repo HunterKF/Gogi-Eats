@@ -14,6 +14,51 @@
       },
       "oauth_client": [
         {
+          "client_id": "503760174928-0b412bh1acjbu2cikro41h7ehv0c6cr3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.kbbqreview",
+            "certificate_hash": "d2be11e053aafd8ab6ee47f605cdde7a7d8cfeab"
+          }
+        },
+        {
+          "client_id": "503760174928-6uq054tkd281uig8r7gak8bec57tacq2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAP4LvKkNWxeSET9_P_zn9lvfztsZnj6xk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "503760174928-6uq054tkd281uig8r7gak8bec57tacq2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:503760174928:android:2ad7e45d683393bfbd3655",
+        "android_client_info": {
+          "package_name": "com.jagerapps.kbbqreview"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "503760174928-vjethpbe75foj0erl7grs7l084grtjvf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jagerapps.kbbqreview",
+            "certificate_hash": "d2be11e053aafd8ab6ee47f605cdde7a7d8cfeab"
+          }
+        },
+        {
           "client_id": "503760174928-6uq054tkd281uig8r7gak8bec57tacq2.apps.googleusercontent.com",
           "client_type": 3
         }

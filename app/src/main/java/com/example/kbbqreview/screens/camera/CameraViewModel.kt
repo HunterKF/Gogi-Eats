@@ -3,9 +3,7 @@ package com.example.kbbqreview.screens.camera
 import android.net.Uri
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.*
 import com.example.kbbqreview.data.photos.Photo
 
 class CameraViewModel : ViewModel() {
@@ -18,9 +16,18 @@ class CameraViewModel : ViewModel() {
 
 
     var selectImages =  mutableStateListOf<Photo>()
+    var profilePicture = mutableStateListOf<Photo>()
 
     fun getAllPhotos(): SnapshotStateList<Photo> {
         return  selectImages
+    }
+    fun getProfilePhoto(): Photo? {
+        return if (profilePicture.isEmpty()) {
+            null
+        } else {
+            profilePicture.last()
+        }
+
     }
     fun removeOnePhoto(photo: Photo) {
         selectImages.remove(photo)
@@ -41,5 +48,6 @@ class CameraViewModel : ViewModel() {
        list.remove(uri)
         _photoList.value = list
     }
+
 
 }
