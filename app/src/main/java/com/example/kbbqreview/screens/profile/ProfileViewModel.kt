@@ -57,8 +57,9 @@ class ProfileViewModel : ViewModel() {
 
     val state = mutableState.asStateFlow()
     var currentUser = Firebase.auth.currentUser
-    val emailAvatarPhoto = mutableStateOf("")
-    val emailUserName = mutableStateOf("")
+
+    private val emailAvatarPhoto = mutableStateOf("")
+    private val emailUserName = mutableStateOf("")
 
     fun checkIfSignedIn() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -203,9 +204,11 @@ class ProfileViewModel : ViewModel() {
 
     fun setAvatar(): String {
         var avatarUrl = ""
-        currentUser?.let {
+        val user = setUser()
+        firebaseUser?.let {
             for (item in it.providerData) {
-                when (item.providerId) {
+
+                when (it.providerData[1].providerId) {
                     "facebook.com" -> {
                         Log.d(TAG, "It's logged in with facebook")
                         getAvatar("facebook.com", it.photoUrl.toString())
@@ -223,6 +226,7 @@ class ProfileViewModel : ViewModel() {
                     }
                     else -> {
                         Log.d(TAG, "We failed")
+                        Log.d(TAG, "${it}")
                         return@let
                     }
                 }

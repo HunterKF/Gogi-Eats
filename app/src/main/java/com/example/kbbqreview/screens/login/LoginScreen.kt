@@ -177,6 +177,7 @@ fun LoginScreen(
             ProfileCamera(cameraViewModel = cameraViewModel) { viewModel.simpleChangeToProfileSetting() }
         }
         LoginScreenState.ChangeProfileSettings -> {
+            println("CHANGE PROFILE SETTINGS HAS BEEN ACTIVATED")
             AdjustProfileSettings(cameraViewModel,
                 context,
                 viewModel,
@@ -212,7 +213,7 @@ private fun AdjustProfileSettings(
                 mutableStateOf("")
             }
             val currentCharCount = remember { mutableStateOf(0) }
-
+            Text("Hello~~~")
             Box(Modifier
                 .padding(top = 20.dp, bottom = 10.dp)
                 .fillMaxWidth(0.4f)
