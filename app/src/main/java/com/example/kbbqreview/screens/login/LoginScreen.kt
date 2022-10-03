@@ -9,13 +9,13 @@ import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedContentScope.SlideDirection.Companion.End
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -26,9 +26,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -45,6 +47,7 @@ import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.screens.camera.ProfileCamera
 import com.example.kbbqreview.screens.camera.ui.theme.Purple500
+import com.example.kbbqreview.screens.profile.ProfileViewModel
 import com.example.kbbqreview.util.LoginScreenState
 import com.facebook.CallbackManager
 import com.facebook.FacebookCallback
@@ -56,7 +59,6 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
-import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
@@ -68,7 +70,7 @@ import java.lang.RuntimeException
 
 @Composable
 fun LoginScreen(
-    navigateTProfile: () -> Unit,
+    navigateToProfile: () -> Unit,
     popBackStack: () -> Boolean,
     viewModel: LoginViewModel,
     cameraViewModel: CameraViewModel,
@@ -79,7 +81,7 @@ fun LoginScreen(
         cameraViewModel.profilePicture.clear()
     }
     println("THE LOGIN SCREEN HAS LOADED AGAIN. WHY?!")
-    viewModel.setCurrentUser(applicationViewModel.currentUser)
+//    viewModel.setCurrentUser(applicationViewModel.currentUser)
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val token = stringResource(com.firebase.ui.auth.R.string.default_web_client_id)
@@ -99,8 +101,9 @@ fun LoginScreen(
                 val credential = GoogleAuthProvider.getCredential(account?.idToken, null)
                 Firebase.auth.signInWithCredential(credential).addOnCompleteListener {
                     account = GoogleSignIn.getLastSignedInAccount(context)
+                    viewModel.changeProfileSettings(navigateToProfile)
                     Toast.makeText(context, "Signed in!", Toast.LENGTH_SHORT).show()
-                    navigateTProfile()
+//                    navigateToProfile()
                 }
             } catch (e: ApiException) {
                 Log.w("Google", "Google sign in failed", e)
@@ -113,9 +116,6 @@ fun LoginScreen(
     val passwordFieldState = remember {
         mutableStateOf("")
     }
-    val reEnterPasswordState = remember {
-        mutableStateOf("")
-    }
     val userName = remember {
         mutableStateOf("")
     }
@@ -123,11 +123,15 @@ fun LoginScreen(
         mutableStateOf(true)
     }
 
+    val userNameChecked = remember {
+        mutableStateOf(false)
+    }
+
     when (state) {
         LoginScreenState.SignIn -> {
             println("Current state is ${state}")
             SignInScreen(
-                navigateTProfile,
+                navigateToProfile,
                 context,
                 launcher,
                 googleSignInClient,
@@ -139,7 +143,11 @@ fun LoginScreen(
         }
         LoginScreenState.Loading -> {
             println("Current state is ${state}")
-            CircularProgressIndicator()
+            Surface(Modifier.fillMaxSize()) {
+                Box(contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(Modifier.scale(1.2f))
+                }
+            }
         }
         LoginScreenState.CreateAccount -> {
             CreateAccountScreen(
@@ -147,56 +155,202 @@ fun LoginScreen(
                 context,
                 emailFieldState,
                 passwordFieldState,
-                navigateTProfile,
+                navigateToProfile,
                 launcher,
                 googleSignInClient,
                 userName,
                 cameraViewModel,
                 popBackStack,
-                userNameAvailable
+                userNameAvailable,
+                userNameChecked
             )
             println("Current state is ${state}")
         }
         LoginScreenState.LandingScreen -> {
 //            Image by <a href="https://www.freepik.com/free-vector/hand-drawn-korean-bbq-illustration_31216894.htm#query=illustrations%20korean%20bbq&position=0&from_view=search">Freepik</a>
-            Box {
-                IconButton(modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(4.dp),
-                    onClick = {
-                        popBackStack()
-                    }) {
-                    Icon(Icons.Rounded.ArrowBack, null)
-                }
-                Column(Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally) {
-                    Image(modifier = Modifier
-                        .scale(0.7f)
-                        .weight(1f),
-                        painter = painterResource(id = R.drawable.landing_page_image),
-                        contentDescription = null)
-                    Column(Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "Hey! Welcome", style = MaterialTheme.typography.h6)
-
-                        Button(onClick = { viewModel.changeToCreate() }) {
-                            Text("Get started")
-                        }
-                        TextButton(onClick = { viewModel.changeToSignIn() }) {
-                            Text("Already have an account?")
-                        }
-                    }
-                }
-            }
+            LandScreenContent(popBackStack, viewModel)
         }
-        LoginScreenState.Camera -> {
-            ProfileCamera(cameraViewModel = cameraViewModel, viewModel = viewModel)
+        LoginScreenState.CreateAccCamera -> {
+            ProfileCamera(cameraViewModel = cameraViewModel) { viewModel.changeToCreate() }
+        }
+        LoginScreenState.ChangeSettingCamera -> {
+            ProfileCamera(cameraViewModel = cameraViewModel) { viewModel.simpleChangeToProfileSetting() }
+        }
+        LoginScreenState.ChangeProfileSettings -> {
+            AdjustProfileSettings(cameraViewModel,
+                context,
+                viewModel,
+                userNameAvailable,
+                userNameChecked,
+                navigateToProfile)
         }
     }
     BackHandler() {
         popBackStack()
+    }
+}
+
+@Composable
+private fun AdjustProfileSettings(
+    cameraViewModel: CameraViewModel,
+    context: Context,
+    viewModel: LoginViewModel,
+    userNameAvailable: MutableState<Boolean>,
+    userNameChecked: MutableState<Boolean>,
+    navigateToProfile: () -> Unit,
+) {
+    val profileViewModel = ProfileViewModel()
+    Box(Modifier.fillMaxSize()) {
+        Column(modifier = Modifier
+            .padding(horizontal = 16.dp, vertical = 40.dp)
+            .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceEvenly) {
+            val profilePhoto = cameraViewModel.getProfilePhoto()
+            val avatarUrl = profileViewModel.setAvatar()
+            val userNameState = remember {
+                mutableStateOf("")
+            }
+            val currentCharCount = remember { mutableStateOf(0) }
+
+            Box(Modifier
+                .padding(top = 20.dp, bottom = 10.dp)
+                .fillMaxWidth(0.4f)
+                .aspectRatio(1f)
+                .clip(CircleShape)
+                .border(4.dp, Color.Cyan, CircleShape)) {
+                AsyncImage(modifier = Modifier.fillMaxSize(),
+                    model = ImageRequest.Builder(context)
+                        .data(profilePhoto?.localUri ?: avatarUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop
+                )
+                Row(Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(Color.White.copy(0.4f)),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { viewModel.changeToSettingsCamera() }) {
+                        Icon(
+                            Icons.Rounded.PhotoCamera,
+                            "Take profile picture",
+                            tint = Color.Black,
+                            modifier = Modifier.scale(1.3f)
+                        )
+                    }
+                }
+            }
+            val maxChars = 15
+            TextField(
+                value = userNameState.value,
+                onValueChange = { newValue ->
+                    if (newValue.length <= maxChars) {
+                        currentCharCount.value = newValue.length
+                        viewModel.onTextFieldChange(
+                            userNameState,
+                            newValue
+                        )
+                    } else {
+                        Toast.makeText(context, "Shorten name.", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                leadingIcon = { Icon(Icons.Rounded.DriveFileRenameOutline, null) },
+                trailingIcon = {
+                    IconButton(onClick = {
+                        userNameAvailable.value =
+                            viewModel.checkUserNameAvailability(userNameState.value,
+                                userNameAvailable,
+                                context)
+                        if (!userNameAvailable.value) {
+                            userNameChecked.value = true
+                        }
+                    }) {
+                        Icon(Icons.Rounded.PersonSearch, null)
+                    }
+                },
+                modifier = Modifier
+                    .padding()
+                    .border(
+                        BorderStroke(width = 2.dp,
+                            color = if (userNameAvailable.value) Purple500 else Color.Red),
+                        shape = RoundedCornerShape(50)
+                    )
+                    .fillMaxWidth(),
+                placeholder = {
+                    Text(
+                        text = "Profile name",
+                        color = Color.LightGray,
+                        style = MaterialTheme.typography.subtitle1
+                    )
+                },
+                maxLines = 1,
+                singleLine = true,
+                colors = TextFieldDefaults.textFieldColors(
+                    backgroundColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                )
+            )
+            val currentUser = Firebase.auth.currentUser
+            Button(enabled = userNameState.value != "", onClick = {
+                if (profilePhoto != null) {
+                    viewModel.createNewAccount(currentUser = currentUser,
+                        userName = userNameState.value,
+                        context = context,
+                        profilePhoto = profilePhoto,
+                        navigateToHome = navigateToProfile)
+                } else {
+                    viewModel.createNewAccount(currentUser = currentUser,
+                        userName = userNameState.value,
+                        context = context,
+                        profilePhoto = Photo(localUri = avatarUrl),
+                        navigateToHome = navigateToProfile)
+                }
+            }) {
+                Text("Complete sign in")
+            }
+        }
+    }
+}
+
+@Composable
+private fun LandScreenContent(
+    popBackStack: () -> Boolean,
+    viewModel: LoginViewModel,
+) {
+    Box {
+        IconButton(modifier = Modifier
+            .align(Alignment.TopStart)
+            .padding(4.dp),
+            onClick = {
+                popBackStack()
+            }) {
+            Icon(Icons.Rounded.Close, null)
+        }
+        Column(Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            Image(modifier = Modifier
+                .scale(0.7f)
+                .weight(1f),
+                painter = painterResource(id = R.drawable.landing_page_image),
+                contentDescription = null)
+            Column(Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = "Hey! Welcome", style = MaterialTheme.typography.h6)
+
+                Button(onClick = { viewModel.changeToCreate() }) {
+                    Text("Get started")
+                }
+                TextButton(onClick = { viewModel.changeToSignIn() }) {
+                    Text("Already have an account?")
+                }
+            }
+        }
     }
 }
 
@@ -223,7 +377,7 @@ private fun SignInScreen(
             IconButton(
                 modifier = Modifier.align(Alignment.CenterStart),
                 onClick = { popBackStack() }) {
-                Icon(Icons.Rounded.Cancel, null, tint = Color.DarkGray)
+                Icon(Icons.Rounded.Close, null, tint = Color.DarkGray)
             }
         }
 
@@ -244,7 +398,7 @@ private fun SignInScreen(
             Spacer(Modifier.weight(0.1f))
             Divider()
             Spacer(Modifier.weight(0.1f))
-            FacebookSignInDefault(navigateToHome, context)
+            FacebookSignInDefault(navigateToHome, context, viewModel)
             GoogleSignIn(launcher, googleSignInClient, viewModel)
             Spacer(modifier = Modifier.weight(0.1f))
         }
@@ -265,6 +419,7 @@ private fun CreateAccountScreen(
     cameraViewModel: CameraViewModel,
     popBackStack: () -> Boolean,
     userNameAvailable: MutableState<Boolean>,
+    userNameChecked: MutableState<Boolean>,
 ) {
     val scrollState = rememberScrollState()
     val profilePhoto = cameraViewModel.getProfilePhoto()
@@ -276,7 +431,7 @@ private fun CreateAccountScreen(
             IconButton(
                 modifier = Modifier.align(Alignment.CenterStart),
                 onClick = { popBackStack() }) {
-                Icon(Icons.Rounded.Cancel, null, tint = Color.DarkGray)
+                Icon(Icons.Rounded.Close, null, tint = Color.DarkGray)
             }
         }
 
@@ -309,7 +464,7 @@ private fun CreateAccountScreen(
                     .background(Color.White.copy(0.4f)),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { viewModel.changeToCamera() }) {
+                    IconButton(onClick = { viewModel.changeToCreateAccCamera() }) {
                         Icon(
                             Icons.Rounded.PhotoCamera, "Take profile picture", tint = Color.Black,
                             modifier = Modifier.scale(1.3f)
@@ -329,6 +484,7 @@ private fun CreateAccountScreen(
                 viewModel = viewModel,
                 userName = userName,
                 userNameAvailable = userNameAvailable,
+                userNameChecked = userNameChecked,
                 currentCharCount = currentCharCount,
                 profilePhoto = profilePhoto,
                 navigateToHome = navigateToHome
@@ -336,7 +492,7 @@ private fun CreateAccountScreen(
             Spacer(Modifier.weight(0.1f))
             Divider()
             Spacer(Modifier.weight(0.1f))
-            FacebookSignInDefault(navigateToHome, context)
+            FacebookSignInDefault(navigateToHome, context, viewModel = viewModel)
             GoogleSignIn(launcher, googleSignInClient, viewModel = viewModel)
             Spacer(modifier = Modifier.weight(0.1f))
         }
@@ -368,14 +524,17 @@ private fun GoogleSignIn(
 private fun FacebookSignInDefault(
     navigateToHome: () -> Unit,
     context: Context,
+    viewModel: LoginViewModel,
 ) {
+    val currentUser = Firebase.auth.currentUser
     SignInButton(
         onSignedIn = {
-            navigateToHome()
+            viewModel.changeProfileSettings(navigateToHome)
             Toast.makeText(context, "Signed in!", Toast.LENGTH_SHORT).show()
         },
         onSignInFailed = {
-            Toast.makeText(context, "Try again later.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Try again later. ${it.localizedMessage}", Toast.LENGTH_SHORT)
+                .show()
         }
     )
 }
@@ -392,7 +551,9 @@ fun CreateAccountInfo(
     currentCharCount: MutableState<Int>,
     profilePhoto: Photo?,
     navigateToHome: () -> Unit,
+    userNameChecked: MutableState<Boolean>,
 ) {
+    val focusManager = LocalFocusManager.current
     val context = LocalContext.current
     val auth = Firebase.auth
     val createAccountLauncher =
@@ -437,6 +598,9 @@ fun CreateAccountInfo(
                 )
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            keyboardActions = KeyboardActions {
+                focusManager.moveFocus(FocusDirection.Down)
+            },
             maxLines = 1,
             singleLine = true,
             colors = TextFieldDefaults.textFieldColors(
@@ -464,7 +628,12 @@ fun CreateAccountInfo(
             trailingIcon = {
                 IconButton(onClick = {
                     userNameAvailable.value =
-                        viewModel.checkUserNameAvailability(userName.value, userNameAvailable)
+                        viewModel.checkUserNameAvailability(userName.value,
+                            userNameAvailable,
+                            context)
+                    if (!userNameAvailable.value) {
+                        userNameChecked.value = true
+                    }
                 }) {
                     Icon(Icons.Rounded.PersonSearch, null)
                 }
@@ -483,6 +652,9 @@ fun CreateAccountInfo(
                     color = Color.LightGray,
                     style = MaterialTheme.typography.subtitle1
                 )
+            },
+            keyboardActions = KeyboardActions {
+                focusManager.moveFocus(FocusDirection.Down)
             },
             maxLines = 1,
             singleLine = true,
@@ -695,25 +867,4 @@ fun SignInButton(
             })
         }
     })
-}
-
-@Composable
-fun rememberFirebaseAuthLauncher(
-    onAuthComplete: (AuthResult) -> Unit,
-    onAuthError: (ApiException) -> Unit,
-): ManagedActivityResultLauncher<Intent, ActivityResult> {
-    val scope = rememberCoroutineScope()
-    return rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-        try {
-            val account = task.getResult(ApiException::class.java)!!
-            val credential = GoogleAuthProvider.getCredential(account.idToken!!, null)
-            scope.launch {
-                val authResult = Firebase.auth.signInWithCredential(credential).await()
-                onAuthComplete(authResult)
-            }
-        } catch (e: ApiException) {
-            onAuthError(e)
-        }
-    }
 }

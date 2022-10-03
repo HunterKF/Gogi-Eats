@@ -5,6 +5,7 @@ import android.location.Address
 import android.location.Geocoder
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -28,6 +29,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.util.*
 
 sealed class ProfileScreenState {
@@ -38,6 +40,8 @@ sealed class ProfileScreenState {
     ) : ProfileScreenState()
 
     object SignInRequired : ProfileScreenState()
+    object Settings : ProfileScreenState()
+    object Camera : ProfileScreenState()
 }
 
 val TAG = "Profile"
@@ -66,6 +70,14 @@ class ProfileViewModel : ViewModel() {
                 )
             }
         }
+    }
+
+    fun changeToSettings() = viewModelScope.launch {
+        mutableState.emit(ProfileScreenState.Settings)
+    }
+
+    fun backToProfile() = viewModelScope.launch {
+        observePosts(currentUser!!)
     }
 
     var post = mutableStateOf(
@@ -165,63 +177,53 @@ class ProfileViewModel : ViewModel() {
     fun setDisplayName(): String {
         var displayName = ""
         firebaseUser?.let {
-            displayName = if (it.displayName == null || it.displayName == "") {
-
-                Log.d(TAG, "Attempting to run if statement: ${it.displayName.toString()}")
-                getEmailName()
-                emailUserName.value
-            } else {
-                println("If failed, now running else: ${it.displayName.toString()}")
-                it.displayName.toString()
-            }
-
+            getEmailName()
+            displayName = emailUserName.value
         }
         return displayName
     }
 
     private fun getEmailName() {
         val db = Firebase.firestore
-        db.collection("users").whereEqualTo("user_id", currentUser!!.uid).get()
-            .addOnSuccessListener { result ->
-                if (result == null || result.isEmpty) {
-                    Log.d(TAG, "Failed to get user name for email.")
+        currentUser?.let {
+            db.collection("users").whereEqualTo("user_id", currentUser!!.uid).get()
+                .addOnSuccessListener { result ->
+                    if (result == null || result.isEmpty) {
+                        Log.d(TAG, "Failed to get user name for email.")
 
-                } else {
-                    val data = result.documents
-                    val s = data[0].data?.get("user_name").toString()
-                    emailUserName.value = data[0].data?.get("user_name").toString()
-                    println("EMAIL USER NAME: $s")
+                    } else {
+                        val data = result.documents
+                        val s = data[0].data?.get("user_name").toString()
+                        emailUserName.value = data[0].data?.get("user_name").toString()
+                        println("EMAIL USER NAME: $s")
+                    }
                 }
-            }
+        }
     }
 
     fun setAvatar(): String {
         var avatarUrl = ""
         currentUser?.let {
             for (item in it.providerData) {
-                println("1: ${item.providerId}")
-                println("2: ${item.uid}")
-                println("3: ${item.displayName}")
-                println("4: ${item.isEmailVerified}")
-                println("5: ${item.email}")
-                println("6: ${item.photoUrl}")
                 when (item.providerId) {
                     "facebook.com" -> {
                         Log.d(TAG, "It's logged in with facebook")
-                        avatarUrl = getFBAvatar(currentUser!!)
+                        getAvatar("facebook.com", it.photoUrl.toString())
+                        avatarUrl = emailAvatarPhoto.value
                     }
                     "google.com" -> {
                         Log.d(TAG, "It's logged in with gmail")
-                        avatarUrl = it.photoUrl.toString()
+                        getAvatar("google.com", it.photoUrl.toString())
+                        avatarUrl = emailAvatarPhoto.value
                     }
                     "password" -> {
                         Log.d(TAG, "It's logged in with gmail")
-                        getEmailAvatar(currentUser!!)
+                        getAvatar("password", it.photoUrl.toString())
                         avatarUrl = emailAvatarPhoto.value
                     }
                     else -> {
                         Log.d(TAG, "We failed")
-
+                        return@let
                     }
                 }
             }
@@ -229,18 +231,43 @@ class ProfileViewModel : ViewModel() {
         return avatarUrl
     }
 
-    private fun getEmailAvatar(firebaseUser: FirebaseUser) {
+    /*WORKING ON THIS SOMETIMES RETURNS AS NULL!!!*/
+    private fun getAvatar(s: String, googlePhotoUrl: String) {
         val db = Firebase.firestore
         db.collection("users").whereEqualTo("user_id", currentUser!!.uid).get()
             .addOnSuccessListener { result ->
-                if (result == null || result.isEmpty) {
-                    Log.d(TAG, "Failed to get avatar photo for email.")
-
-                } else {
-                    val data = result.documents
-                    val profileAvatar3 = data[0].data?.get("profile_avatar").toString()
-                    emailAvatarPhoto.value = data[0].data?.get("profile_avatar").toString()
-                    println("3: $profileAvatar3")
+                val data = result.documents
+                val profileAvatar3 = data[0].data?.get("profile_avatar").toString()
+                when (s) {
+                    "facebook.com" -> {
+                        if (profileAvatar3 == "null" || profileAvatar3 == "") {
+                            Log.d(TAG, "Failed to get avatar photo for email.")
+                            emailAvatarPhoto.value = getFBAvatar(currentUser!!)
+                            println("1: $profileAvatar3")
+                        } else {
+                            emailAvatarPhoto.value = data[0].data?.get("profile_avatar").toString()
+                            println("3: $profileAvatar3")
+                        }
+                    }
+                    "google.com" -> {
+                        if (profileAvatar3 == "null" || profileAvatar3 == "") {
+                            Log.d(TAG, "Failed to get avatar photo for email.")
+                            emailAvatarPhoto.value = googlePhotoUrl
+                            println("1: $profileAvatar3")
+                        } else {
+                            emailAvatarPhoto.value = data[0].data?.get("profile_avatar").toString()
+                            println("3: $profileAvatar3")
+                        }
+                    }
+                    "password" -> {
+                        if (result == null || result.isEmpty) {
+                            Log.d(TAG, "Failed to get avatar photo for email.")
+                            println("1: $profileAvatar3")
+                        } else {
+                            emailAvatarPhoto.value = data[0].data?.get("profile_avatar").toString()
+                            println("3: $profileAvatar3")
+                        }
+                    }
                 }
             }
     }
@@ -522,7 +549,7 @@ class ProfileViewModel : ViewModel() {
                 val downloadUrl = imageRef.downloadUrl
                 downloadUrl.addOnSuccessListener { remoteUri ->
                     photo.remoteUri = remoteUri.toString()
-                    updatePhotoData(photo, id)
+                    updatePostPhotoData(photo, id)
                 }
             }
             uploadTask.addOnFailureListener {
@@ -532,7 +559,7 @@ class ProfileViewModel : ViewModel() {
     }
 
 
-    private fun updatePhotoData(photo: Photo, id: String) {
+    private fun updatePostPhotoData(photo: Photo, id: String) {
         val localUri = photo.localUri
         val remoteUri = photo.remoteUri
         val listIndex = photo.listIndex
@@ -565,5 +592,96 @@ class ProfileViewModel : ViewModel() {
             checkIfSignedIn()
         }
         Log.d("ProfileVM", "The user has been changed. ${currentUser?.uid}")
+    }
+
+    fun changeToSettingsCamera() {
+        viewModelScope.launch {
+            mutableState.emit(ProfileScreenState.Camera)
+        }
+    }
+
+    fun onTextFieldChange(userNameState: MutableState<String>, newValue: String) {
+        userNameState.value = newValue
+    }
+
+    fun checkUserNameAvailability(
+        userName: String,
+        value: MutableState<Boolean>,
+        context: Context,
+    ): Boolean {
+        viewModelScope.launch(Dispatchers.IO) {
+            val db = Firebase.firestore.collection("users")
+            db.whereEqualTo("user_name_lowercase", userName.lowercase()).get()
+                .addOnSuccessListener { result ->
+                    if (result.isEmpty) {
+                        println("Nothing to report here. It was empty")
+                        value.value = true
+                        Toast.makeText(context, "User name available.", Toast.LENGTH_SHORT).show()
+                        println("I changed the value - ${value.value}")
+                    } else {
+                        value.value = false
+                        Toast.makeText(context, "Try another name.", Toast.LENGTH_SHORT).show()
+                    }
+
+                }.await()
+        }
+        return value.value
+    }
+
+    fun updateAccount(
+        currentUser: FirebaseUser?,
+        userName: String,
+        profilePhoto: Photo?,
+        navigateToHome: () -> Unit,
+    ) {
+        val db = Firebase.firestore
+        val queryAccount = db.collection("users").document(currentUser!!.uid)
+        viewModelScope.launch(Dispatchers.IO) {
+            queryAccount.update("user_name", userName)
+            queryAccount.update("user_name_lowercase", userName.lowercase())
+            profilePhoto?.let {
+                uploadProfileAvatar(profilePhoto, currentUser!!.uid)
+                deleteSinglePhoto(profilePhoto)
+            }
+            navigateToHome()
+        }
+    }
+
+    private fun uploadProfileAvatar(profilePhoto: Photo, id: String) {
+        val storageReference = FirebaseStorage.getInstance().reference
+        viewModelScope.launch(Dispatchers.IO) {
+            val uri = Uri.parse(profilePhoto.localUri)
+            val imageRef =
+                storageReference.child("images/${uri.lastPathSegment}")
+            val uploadTask = imageRef.putFile(uri)
+            uploadTask.addOnSuccessListener {
+                Log.d("Firebase Image", "Image uploaded $imageRef")
+                val downloadUrl = imageRef.downloadUrl
+                downloadUrl.addOnSuccessListener { remoteUri ->
+                    profilePhoto.remoteUri = remoteUri.toString()
+                    updateProfileAvatarPhoto(profilePhoto, id)
+                }
+            }
+            uploadTask.addOnFailureListener {
+                Log.e("Firebase Image", it.message ?: "No message")
+            }
+        }
+    }
+
+    private fun updateProfileAvatarPhoto(profilePhoto: Photo, id: String) {
+        val remoteUri = profilePhoto.remoteUri
+        viewModelScope.launch(Dispatchers.IO) {
+            Firebase.firestore.collection("users").whereEqualTo("user_id", id).get()
+                .addOnSuccessListener { result ->
+                    if (result.isEmpty) {
+                        println("Error in updating the photo")
+                        return@addOnSuccessListener
+                    } else {
+                        result.documents.forEach {
+                            it.reference.update("profile_avatar", remoteUri)
+                        }
+                    }
+                }
+        }
     }
 }

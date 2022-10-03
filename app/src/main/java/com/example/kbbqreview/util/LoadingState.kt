@@ -5,7 +5,9 @@ sealed class LoginScreenState {
     object LandingScreen : LoginScreenState()
     object SignIn : LoginScreenState()
     object CreateAccount : LoginScreenState()
-    object Camera : LoginScreenState()
+    object CreateAccCamera : LoginScreenState()
+    object ChangeSettingCamera : LoginScreenState()
+    object ChangeProfileSettings : LoginScreenState()
     data class Error(
         val error: String
     ) : LoginScreenState()

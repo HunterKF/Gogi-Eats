@@ -97,7 +97,7 @@ fun Navigation(
         composable(Screen.Login.route) {
             LoginScreen(
                 applicationViewModel = applicationViewModel,
-                navigateTProfile = {
+                navigateToProfile = {
                     navController.navigate(Screen.Profile.route) {
                         popUpTo(Screen.Login.route) {
                             inclusive = true
@@ -117,13 +117,13 @@ fun Navigation(
                 navController = navController
             )
         }
-        composable(Screen.ProfileCamera.route) {
+        /*composable(Screen.ProfileCamera.route) {
             ProfileCamera(
                 Modifier.fillMaxSize(),
                 cameraViewModel = cameraViewModel,
                 viewModel = LoginViewModel
             )
-        }
+        }*/
         composable(Screen.FromAddChooseLocation.route) {
             location?.let { location ->
                 FromAddChooseLocation(

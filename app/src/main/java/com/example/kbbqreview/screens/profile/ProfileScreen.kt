@@ -1,6 +1,8 @@
 package com.example.kbbqreview.screens.HomeScreen
 
+import android.content.Context
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,11 +12,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -36,16 +41,22 @@ import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.items
 import com.example.kbbqreview.screens.EditReview
 import com.example.kbbqreview.screens.camera.CameraViewModel
+import com.example.kbbqreview.screens.camera.ProfileCamera
 import com.example.kbbqreview.screens.login.LoadingScreen
+import com.example.kbbqreview.screens.login.LoginViewModel
 import com.example.kbbqreview.screens.map.location.LocationDetails
 import com.example.kbbqreview.screens.profile.ProfilePostCard
 import com.example.kbbqreview.screens.profile.ProfileScreenState
 import com.example.kbbqreview.screens.profile.ProfileViewModel
+import com.example.kbbqreview.ui.theme.Purple500
+import com.facebook.internal.Mutable
 import com.google.accompanist.flowlayout.FlowMainAxisAlignment
 import com.google.accompanist.flowlayout.FlowRow
 import com.google.accompanist.flowlayout.SizeMode
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.rememberPagerState
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -61,6 +72,14 @@ fun ProfileScreen(
     val state by profileViewModel.state.collectAsState()
     val user by applicationViewModel.liveDateUser.observeAsState()
     val editing = profileViewModel.editingState
+    val context = LocalContext.current
+    val userNameAvailable = remember {
+        mutableStateOf(true)
+    }
+    val userNameChecked = remember {
+        mutableStateOf(false)
+    }
+
     println("THE PAGE HAS LOADED!!! HOLD YOUR BUNS!!!")
     println("Current state of profile state: ${state}")
     LaunchedEffect(key1 = user) {
@@ -107,11 +126,14 @@ fun ProfileScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            val displayName = profileViewModel.setDisplayName()
+            val userNameState = remember {
+                mutableStateOf(displayName)
+            }
             when (state) {
                 is ProfileScreenState.Loaded -> {
                     val loaded = state as ProfileScreenState.Loaded
-                    val displayName = profileViewModel.setDisplayName()
-                    val avatarUrl = profileViewModel.setAvatar()
+
                     if (editing.value) {
                         EditReview(
                             navController = navController,
@@ -136,7 +158,19 @@ fun ProfileScreen(
                     }
 
                 }
-
+                ProfileScreenState.Camera -> {
+                    ProfileCamera(cameraViewModel = cameraViewModel, stateChange = { profileViewModel.changeToSettings()})
+                }
+                ProfileScreenState.Settings -> {
+                    ProfileSettings(
+                        cameraViewModel,
+                        context,
+                        viewModel = profileViewModel,
+                        userNameAvailable,
+                        userNameChecked,
+                        userNameState
+                    ) { profileViewModel.checkIfSignedIn() }
+                }
                 ProfileScreenState.Loading -> LoadingScreen()
                 ProfileScreenState.SignInRequired -> LaunchedEffect(key1 = Unit) {
                     if (profileViewModel.currentUser == null) {
@@ -181,27 +215,62 @@ fun ProfileContent(
                     modifier = Modifier.align(Alignment.TopCenter),
                     onClick = { scope.launch { sheetState.collapse() } }) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_baseline_more),
-                        contentDescription = "Close sheet"
+                        Icons.Rounded.HorizontalRule,
+                        contentDescription = "Close sheet",
+                        modifier = Modifier
+                            .scale(1.5f)
+                            .offset(y = (-10).dp),
+                        tint = Color.LightGray
                     )
                 }
 
-                Column(modifier = Modifier.align(Alignment.Center)) {
+                Column(modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(top = 8.dp)) {
                     Row(
                         Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        Text("Sign Out")
-                        IconButton(onClick = {
-                            onSignOut()
-                        }) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_outline_cancel),
-                                tint = Color.Red,
-                                contentDescription = "Sign out"
-                            )
+                        TextButton(onClick = { onSignOut() }) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center) {
+                                Text(text = "Sign out")
+                                Spacer(modifier = Modifier.padding(5.dp))
+                                Icon(
+                                    Icons.Rounded.Logout,
+                                    tint = Purple500,
+                                    contentDescription = "Sign out"
+                                )
+
+                            }
                         }
+
+                    }
+                    Divider(Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp))
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        TextButton(onClick = { profileViewModel.changeToSettings() }) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center) {
+                                Text(text = "Account settings")
+                                Spacer(modifier = Modifier.padding(5.dp))
+                                Icon(
+                                    Icons.Rounded.Settings,
+                                    tint = Purple500,
+                                    contentDescription = "Account settings"
+                                )
+
+                            }
+                        }
+
                     }
                 }
             }
@@ -417,6 +486,249 @@ private fun UserBar(
                 painter = painterResource(id = R.drawable.ic_baseline_more),
                 contentDescription = "Options"
             )
+        }
+    }
+}
+
+@Composable
+private fun AdjustProfileSettings(
+    cameraViewModel: CameraViewModel,
+    context: Context,
+    viewModel: LoginViewModel,
+    userNameAvailable: MutableState<Boolean>,
+    userNameChecked: MutableState<Boolean>,
+    navigateToProfile: () -> Unit,
+) {
+    val profileViewModel = ProfileViewModel()
+    Box(Modifier.fillMaxSize()) {
+        Column(modifier = Modifier
+            .padding(horizontal = 16.dp, vertical = 40.dp)
+            .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceEvenly) {
+            val profilePhoto = cameraViewModel.getProfilePhoto()
+            val avatarUrl = profileViewModel.setAvatar()
+            val userNameState = remember {
+                mutableStateOf("")
+            }
+            val currentCharCount = remember { mutableStateOf(0) }
+
+            Box(Modifier
+                .padding(top = 20.dp, bottom = 10.dp)
+                .fillMaxWidth(0.4f)
+                .aspectRatio(1f)
+                .clip(CircleShape)
+                .border(4.dp, Color.Cyan, CircleShape)) {
+                AsyncImage(modifier = Modifier.fillMaxSize(),
+                    model = ImageRequest.Builder(context)
+                        .data(profilePhoto?.localUri ?: avatarUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop
+                )
+                Row(Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(Color.White.copy(0.4f)),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { viewModel.changeToSettingsCamera() }) {
+                        Icon(
+                            Icons.Rounded.PhotoCamera,
+                            "Take profile picture",
+                            tint = Color.Black,
+                            modifier = Modifier.scale(1.3f)
+                        )
+                    }
+                }
+            }
+            val maxChars = 15
+            TextField(
+                value = userNameState.value,
+                onValueChange = { newValue ->
+                    if (newValue.length <= maxChars) {
+                        currentCharCount.value = newValue.length
+                        viewModel.onTextFieldChange(
+                            userNameState,
+                            newValue
+                        )
+                    } else {
+                        Toast.makeText(context, "Shorten name.", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                leadingIcon = { Icon(Icons.Rounded.DriveFileRenameOutline, null) },
+                trailingIcon = {
+                    IconButton(onClick = {
+                        userNameAvailable.value =
+                            viewModel.checkUserNameAvailability(userNameState.value,
+                                userNameAvailable,
+                                context)
+                        if (!userNameAvailable.value) {
+                            userNameChecked.value = true
+                        }
+                    }) {
+                        Icon(Icons.Rounded.PersonSearch, null)
+                    }
+                },
+                modifier = Modifier
+                    .padding()
+                    .border(
+                        BorderStroke(width = 2.dp,
+                            color = if (userNameAvailable.value) com.example.kbbqreview.screens.camera.ui.theme.Purple500 else Color.Red),
+                        shape = RoundedCornerShape(50)
+                    )
+                    .fillMaxWidth(),
+                placeholder = {
+                    Text(
+                        text = "Profile name",
+                        color = Color.LightGray,
+                        style = MaterialTheme.typography.subtitle1
+                    )
+                },
+                maxLines = 1,
+                singleLine = true,
+                colors = TextFieldDefaults.textFieldColors(
+                    backgroundColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                )
+            )
+            val currentUser = Firebase.auth.currentUser
+            Button(enabled = userNameState.value != "", onClick = {
+                if (profilePhoto != null) {
+                    viewModel.createNewAccount(currentUser = currentUser,
+                        userName = userNameState.value,
+                        context = context,
+                        profilePhoto = profilePhoto,
+                        navigateToHome = navigateToProfile)
+                } else {
+                    viewModel.createNewAccount(currentUser = currentUser,
+                        userName = userNameState.value,
+                        context = context,
+                        profilePhoto = Photo(localUri = avatarUrl),
+                        navigateToHome = navigateToProfile)
+                }
+            }) {
+                Text("Complete sign in")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileSettings(
+    cameraViewModel: CameraViewModel,
+    context: Context,
+    viewModel: ProfileViewModel,
+    userNameAvailable: MutableState<Boolean>,
+    userNameChecked: MutableState<Boolean>,
+    userNameState: MutableState<String>,
+    navigateToProfile: () -> Unit,
+) {
+    val profileViewModel = ProfileViewModel()
+    Box(Modifier.fillMaxSize()) {
+        Column(modifier = Modifier
+            .padding(horizontal = 16.dp, vertical = 40.dp)
+            .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceEvenly) {
+            val profilePhoto = cameraViewModel.getProfilePhoto()
+            val avatarUrl = profileViewModel.setAvatar()
+            val currentCharCount = remember { mutableStateOf(0) }
+
+            Box(Modifier
+                .padding(top = 20.dp, bottom = 10.dp)
+                .fillMaxWidth(0.4f)
+                .aspectRatio(1f)
+                .clip(CircleShape)
+                .border(4.dp, Color.Cyan, CircleShape)) {
+                AsyncImage(modifier = Modifier.fillMaxSize(),
+                    model = ImageRequest.Builder(context)
+                        .data(profilePhoto?.localUri ?: avatarUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop
+                )
+                Row(Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(Color.White.copy(0.4f)),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { viewModel.changeToSettingsCamera() }) {
+                        Icon(
+                            Icons.Rounded.PhotoCamera,
+                            "Take profile picture",
+                            tint = Color.Black,
+                            modifier = Modifier.scale(1.3f)
+                        )
+                    }
+                }
+            }
+            val maxChars = 15
+            TextField(
+                value = userNameState.value,
+                onValueChange = { newValue ->
+                    if (newValue.length <= maxChars) {
+                        currentCharCount.value = newValue.length
+                        viewModel.onTextFieldChange(
+                            userNameState,
+                            newValue
+                        )
+                    } else {
+                        Toast.makeText(context, "Shorten name.", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                leadingIcon = { Icon(Icons.Rounded.DriveFileRenameOutline, null) },
+                trailingIcon = {
+                    IconButton(onClick = {
+                        userNameAvailable.value =
+                            viewModel.checkUserNameAvailability(userNameState.value,
+                                userNameAvailable,
+                                context)
+                        if (!userNameAvailable.value) {
+                            userNameChecked.value = true
+                        }
+                    }) {
+                        Icon(Icons.Rounded.PersonSearch, null)
+                    }
+                },
+                modifier = Modifier
+                    .padding()
+                    .border(
+                        BorderStroke(width = 2.dp,
+                            color = if (userNameAvailable.value) com.example.kbbqreview.screens.camera.ui.theme.Purple500 else Color.Red),
+                        shape = RoundedCornerShape(50)
+                    )
+                    .fillMaxWidth(),
+                placeholder = {
+                    Text(
+                        text = "Profile name",
+                        color = Color.LightGray,
+                        style = MaterialTheme.typography.subtitle1
+                    )
+                },
+                maxLines = 1,
+                singleLine = true,
+                colors = TextFieldDefaults.textFieldColors(
+                    backgroundColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                )
+            )
+            val currentUser = Firebase.auth.currentUser
+            Button(enabled = userNameState.value != "", onClick = {
+                    viewModel.updateAccount(
+                        currentUser = currentUser,
+                        userName = userNameState.value,
+                        profilePhoto = profilePhoto,
+                        navigateToHome = navigateToProfile
+                    )
+            }) {
+                Text("Update")
+            }
         }
     }
 }

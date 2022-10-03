@@ -30,12 +30,13 @@ import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.camera.gallery.GallerySelectMultiple
 import com.example.kbbqreview.screens.camera.gallery.GallerySelectSingle
 import com.example.kbbqreview.screens.login.LoginViewModel
+import kotlinx.coroutines.Job
 
 @Composable
 fun ProfileCamera(
     modifier: Modifier = Modifier,
     cameraViewModel: CameraViewModel,
-    viewModel: LoginViewModel
+    stateChange: () -> Job
 ) {
     val TAG = "CAMERA TAG"
     var imageUri by remember { mutableStateOf(cameraViewModel.EMPTY_IMAGE_URI) }
@@ -62,7 +63,7 @@ fun ProfileCamera(
                     onClick = {
                         cameraViewModel.profilePicture.add(Photo(localUri = imageUri.toString()))
                         cameraViewModel.showPhotoRow.value = true
-                        viewModel.changeToCreate()
+                        stateChange()
                         imageUri = cameraViewModel.EMPTY_IMAGE_URI
                     }
                 ) {
@@ -93,7 +94,7 @@ fun ProfileCamera(
                     showGallerySelect.value = false
 
                     cameraViewModel.showPhotoRow.value = true
-                    viewModel.changeToCreate()
+                    stateChange()
                 }
             )
         } else {
@@ -111,6 +112,6 @@ fun ProfileCamera(
         }
     }
     BackHandler() {
-        viewModel.changeToCreate()
+        stateChange()
     }
 }

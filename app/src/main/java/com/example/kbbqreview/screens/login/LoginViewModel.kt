@@ -5,13 +5,12 @@ import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.MutableState
-import androidx.compose.ui.res.stringResource
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.util.LoginScreenState
-import com.firebase.ui.auth.R
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
@@ -41,7 +40,7 @@ class LoginViewModel : ViewModel() {
                 loadingState.emit(LoginScreenState.Loading)
                 Firebase.auth.createUserWithEmailAndPassword(email, password).await()
                 val currentUser = Firebase.auth.currentUser
-                createFirestoreUser(currentUser, userName, profilePhoto, navigateToHome, context)
+                createNewAccount(currentUser, userName, profilePhoto, navigateToHome, context)
             } catch (e: Exception) {
                 loadingState.emit(LoginScreenState.Error(e.localizedMessage))
             }
@@ -51,8 +50,11 @@ class LoginViewModel : ViewModel() {
         loadingState.emit(LoginScreenState.CreateAccount)
     }
 
-    fun changeToCamera() = viewModelScope.launch {
-        loadingState.emit(LoginScreenState.Camera)
+    fun changeToCreateAccCamera() = viewModelScope.launch {
+        loadingState.emit(LoginScreenState.CreateAccCamera)
+    }
+    fun changeToSettingsCamera() = viewModelScope.launch {
+        loadingState.emit(LoginScreenState.CreateAccCamera)
     }
 
     fun backToLanding() = viewModelScope.launch {
@@ -62,8 +64,30 @@ class LoginViewModel : ViewModel() {
     fun changeToSignIn() = viewModelScope.launch {
         loadingState.emit(LoginScreenState.SignIn)
     }
+    fun simpleChangeToProfileSetting() = viewModelScope.launch {
+        loadingState.emit(LoginScreenState.ChangeProfileSettings)
+    }
 
-    private fun createFirestoreUser(
+    fun changeProfileSettings(navigateToProfile: () -> Unit) = viewModelScope.launch {
+        val db = Firebase.firestore.collection("users")
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        db.whereEqualTo("user_id", currentUser?.uid).get().addOnSuccessListener {
+            result ->
+            println("Checking firebase for user")
+            if (result.isEmpty) {
+                println("User was not found. Attempting to change state.")
+                    viewModelScope.launch {
+                        println("State is being changed.")
+                        loadingState.emit(LoginScreenState.ChangeProfileSettings)
+                    }
+            } else {
+                println("User was found, navigating to profile screen.")
+                navigateToProfile()
+            }
+        }
+    }
+
+    fun createNewAccount(
         currentUser: FirebaseUser?,
         userName: String,
         profilePhoto: Photo?,
@@ -72,27 +96,49 @@ class LoginViewModel : ViewModel() {
     ) {
 
         viewModelScope.launch {
-            val handle = Firebase.firestore.collection("users")
-                .add(
-                    hashMapOf(
-                        "user_id" to currentUser!!.uid,
-                        "user_name" to userName,
-                        "user_name_lowercase" to userName.lowercase(),
-                    )
-                )
-            handle.addOnSuccessListener {
-                println("Successfully stored a user")
-                Toast.makeText(context, "Signed in!", Toast.LENGTH_SHORT).show()
-            }
-            handle.addOnFailureListener {
-                println("Failed to store user. ${it.localizedMessage}")
-                println("Failed to store user. ${it.message}")
-                Toast.makeText(context, "Failed to sign in.", Toast.LENGTH_SHORT).show()
-            }
+            createFirebaseUser(currentUser, userName, context)
             uploadPhotos(profilePhoto!!, currentUser!!.uid)
             navigateToHome()
         }
+    }
 
+
+
+    private fun createFirebaseUser(
+        currentUser: FirebaseUser?,
+        userName: String,
+        context: Context,
+    ) {
+        val handle = Firebase.firestore.collection("users")
+            .add(
+                hashMapOf(
+                    "user_id" to currentUser!!.uid,
+                    "user_name" to userName,
+                    "user_name_lowercase" to userName.lowercase(),
+                )
+            )
+        handle.addOnSuccessListener {
+            println("Successfully stored a user")
+            Toast.makeText(context, "Signed in!", Toast.LENGTH_SHORT).show()
+        }
+        handle.addOnFailureListener {
+            println("Failed to store user. ${it.localizedMessage}")
+            println("Failed to store user. ${it.message}")
+            Toast.makeText(context, "Failed to sign in.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun onSignIn(context: Context) {
+        val currentUser = Firebase.auth.currentUser
+        viewModelScope.launch(Dispatchers.IO) {
+            val db = Firebase.firestore.collection("users")
+            db.whereEqualTo("user_id", currentUser?.uid).get().addOnSuccessListener {
+                result ->
+                if (result.isEmpty) {
+                    createFirebaseUser(currentUser, currentUser!!.displayName!!, context)
+                }
+            }
+        }
     }
 
     fun signInWithEmailAndPassword(
@@ -114,16 +160,18 @@ class LoginViewModel : ViewModel() {
         }
     }
 
-    fun checkUserNameAvailability(userName: String, value: MutableState<Boolean>): Boolean {
+    fun checkUserNameAvailability(userName: String, value: MutableState<Boolean>, context: Context): Boolean {
         viewModelScope.launch(Dispatchers.IO) {
             val db = Firebase.firestore.collection("users")
             db.whereEqualTo("user_name_lowercase", userName.lowercase()).get().addOnSuccessListener { result ->
                 if (result.isEmpty) {
                     println("Nothing to report here. It was empty")
                     value.value = true
+                    Toast.makeText(context, "User name available.", Toast.LENGTH_SHORT).show()
                     println("I changed the value - ${value.value}")
                 } else {
                     value.value = false
+                    Toast.makeText(context, "Try another name.", Toast.LENGTH_SHORT).show()
                 }
 
             }.await()
@@ -172,18 +220,19 @@ class LoginViewModel : ViewModel() {
                 }
         }
     }
+    fun setDisplayName(): String {
+        var displayName = "2"
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        currentUser?.let {
+                displayName = it.displayName.toString()
+        }
+        return displayName
+    }
 
     fun setCurrentUser(currentUser: FirebaseUser?) = viewModelScope.launch {
         if (currentUser != null) {
             loadingState.emit(LoginScreenState.SignIn)
         }
-    }
-    fun googleSignIn(context: Context, token: String) {
-        val gso =
-            GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestIdToken(token)
-                .requestEmail().build()
-        val googleSignInClient = com.google.android.gms.auth.api.signin.GoogleSignIn.getClient(context, gso)
-
     }
     fun forgotPassword(email: String, context: Context) {
         Firebase.auth.sendPasswordResetEmail(email).addOnSuccessListener {
