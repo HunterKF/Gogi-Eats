@@ -33,13 +33,14 @@ class LoginViewModel : ViewModel() {
         userName: String,
         profilePhoto: Photo?,
         navigateToHome: () -> Unit,
-        context: Context
+        context: Context,
     ) =
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 loadingState.emit(LoginScreenState.Loading)
                 Firebase.auth.createUserWithEmailAndPassword(email, password).await()
                 val currentUser = Firebase.auth.currentUser
+                Log.d("create account", "It started creating an account...")
                 createNewAccount(currentUser, userName, profilePhoto, navigateToHome, context)
             } catch (e: Exception) {
                 loadingState.emit(LoginScreenState.Error(e.localizedMessage))
@@ -47,14 +48,18 @@ class LoginViewModel : ViewModel() {
         }
 
     fun changeToCreate() = viewModelScope.launch {
+        println("I AM CHANGING")
         loadingState.emit(LoginScreenState.CreateAccount)
     }
 
     fun changeToCreateAccCamera() = viewModelScope.launch {
+        println("NO I AM CHANGING")
         loadingState.emit(LoginScreenState.CreateAccCamera)
     }
+
     fun changeToSettingsCamera() = viewModelScope.launch {
-        loadingState.emit(LoginScreenState.CreateAccCamera)
+        println("I HAVE THREE WAYS OF CHANING??")
+        loadingState.emit(LoginScreenState.ChangeSettingCamera)
     }
 
     fun backToLanding() = viewModelScope.launch {
@@ -64,22 +69,23 @@ class LoginViewModel : ViewModel() {
     fun changeToSignIn() = viewModelScope.launch {
         loadingState.emit(LoginScreenState.SignIn)
     }
+
     fun simpleChangeToProfileSetting() = viewModelScope.launch {
         loadingState.emit(LoginScreenState.ChangeProfileSettings)
     }
 
     fun changeProfileSettings(navigateToProfile: () -> Unit) = viewModelScope.launch {
+        loadingState.emit(LoginScreenState.Loading)
         val db = Firebase.firestore.collection("users")
         val currentUser = FirebaseAuth.getInstance().currentUser
-        db.whereEqualTo("user_id", currentUser?.uid).get().addOnSuccessListener {
-            result ->
+        db.whereEqualTo("user_id", currentUser?.uid).get().addOnSuccessListener { result ->
             println("Checking firebase for user")
             if (result.isEmpty) {
                 println("User was not found. Attempting to change state.")
-                    viewModelScope.launch {
-                        println("State is being changed.")
-                        loadingState.emit(LoginScreenState.ChangeProfileSettings)
-                    }
+                viewModelScope.launch {
+                    println("State is being changed.")
+                    loadingState.emit(LoginScreenState.ChangeProfileSettings)
+                }
             } else {
                 println("User was found, navigating to profile screen.")
                 navigateToProfile()
@@ -94,14 +100,18 @@ class LoginViewModel : ViewModel() {
         navigateToHome: () -> Unit,
         context: Context,
     ) {
-
+        val accountTag = "Account"
+        Log.d(accountTag, "Create accounted has started")
         viewModelScope.launch {
+            Log.d(accountTag, "1 Scope has launched")
             createFirebaseUser(currentUser, userName, context)
+            Log.d(accountTag, "2 Starting photo upload")
             uploadPhotos(profilePhoto!!, currentUser!!.uid)
+            Log.d(accountTag, "3 Navigating to home")
             navigateToHome()
+            Log.d(accountTag, "4 All functions have been processed.")
         }
     }
-
 
 
     private fun createFirebaseUser(
@@ -132,8 +142,7 @@ class LoginViewModel : ViewModel() {
         val currentUser = Firebase.auth.currentUser
         viewModelScope.launch(Dispatchers.IO) {
             val db = Firebase.firestore.collection("users")
-            db.whereEqualTo("user_id", currentUser?.uid).get().addOnSuccessListener {
-                result ->
+            db.whereEqualTo("user_id", currentUser?.uid).get().addOnSuccessListener { result ->
                 if (result.isEmpty) {
                     createFirebaseUser(currentUser, currentUser!!.displayName!!, context)
                 }
@@ -145,7 +154,7 @@ class LoginViewModel : ViewModel() {
         context: Context,
         email: String,
         password: String,
-        navigateToHome: () -> Unit
+        navigateToHome: () -> Unit,
     ) = viewModelScope.launch {
         try {
             println("Trying to login...")
@@ -160,21 +169,26 @@ class LoginViewModel : ViewModel() {
         }
     }
 
-    fun checkUserNameAvailability(userName: String, value: MutableState<Boolean>, context: Context): Boolean {
+    fun checkUserNameAvailability(
+        userName: String,
+        value: MutableState<Boolean>,
+        context: Context,
+    ): Boolean {
         viewModelScope.launch(Dispatchers.IO) {
             val db = Firebase.firestore.collection("users")
-            db.whereEqualTo("user_name_lowercase", userName.lowercase()).get().addOnSuccessListener { result ->
-                if (result.isEmpty) {
-                    println("Nothing to report here. It was empty")
-                    value.value = true
-                    Toast.makeText(context, "User name available.", Toast.LENGTH_SHORT).show()
-                    println("I changed the value - ${value.value}")
-                } else {
-                    value.value = false
-                    Toast.makeText(context, "Try another name.", Toast.LENGTH_SHORT).show()
-                }
+            db.whereEqualTo("user_name_lowercase", userName.lowercase()).get()
+                .addOnSuccessListener { result ->
+                    if (result.isEmpty) {
+                        println("Nothing to report here. It was empty")
+                        value.value = true
+                        Toast.makeText(context, "User name available.", Toast.LENGTH_SHORT).show()
+                        println("I changed the value - ${value.value}")
+                    } else {
+                        value.value = false
+                        Toast.makeText(context, "Try another name.", Toast.LENGTH_SHORT).show()
+                    }
 
-            }.await()
+                }.await()
         }
         return value.value
     }
@@ -206,6 +220,7 @@ class LoginViewModel : ViewModel() {
 
     private fun updatePhotoData(photo: Photo, id: String) {
         val remoteUri = photo.remoteUri
+        val localUri = photo.localUri
         viewModelScope.launch(Dispatchers.IO) {
             Firebase.firestore.collection("users").whereEqualTo("user_id", id).get()
                 .addOnSuccessListener { result ->
@@ -214,17 +229,19 @@ class LoginViewModel : ViewModel() {
                         return@addOnSuccessListener
                     } else {
                         result.documents.forEach {
-                            it.reference.update("profile_avatar", remoteUri)
+                            it.reference.update("profile_avatar_remote_uri", remoteUri)
+                            it.reference.update("profile_avatar_local_uri", localUri)
                         }
                     }
                 }
         }
     }
+
     fun setDisplayName(): String {
         var displayName = "2"
         val currentUser = FirebaseAuth.getInstance().currentUser
         currentUser?.let {
-                displayName = it.displayName.toString()
+            displayName = it.displayName.toString()
         }
         return displayName
     }
@@ -234,12 +251,15 @@ class LoginViewModel : ViewModel() {
             loadingState.emit(LoginScreenState.SignIn)
         }
     }
+
     fun forgotPassword(email: String, context: Context) {
         Firebase.auth.sendPasswordResetEmail(email).addOnSuccessListener {
             println("Email was sent!")
         }.addOnFailureListener {
             println("A problem occurred: ${it.localizedMessage}")
-            Toast.makeText(context, "An error has occurred: ${it.localizedMessage}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context,
+                "An error has occurred: ${it.localizedMessage}",
+                Toast.LENGTH_SHORT).show()
         }
     }
 

@@ -35,7 +35,7 @@ import java.util.*
 sealed class ProfileScreenState {
     object Loading : ProfileScreenState()
     data class Loaded(
-        val avatarUrl: String,
+        val avatarUrl: Photo?,
         val posts: List<Post>,
     ) : ProfileScreenState()
 
@@ -58,7 +58,7 @@ class ProfileViewModel : ViewModel() {
     val state = mutableState.asStateFlow()
     var currentUser = Firebase.auth.currentUser
 
-    private val emailAvatarPhoto = mutableStateOf("")
+    private val emailAvatarPhoto = mutableStateOf(Photo())
     private val emailUserName = mutableStateOf("")
 
     fun checkIfSignedIn() {
@@ -202,12 +202,10 @@ class ProfileViewModel : ViewModel() {
         }
     }
 
-    fun setAvatar(): String {
-        var avatarUrl = ""
-        val user = setUser()
+    fun setAvatar(): Photo {
+        var avatarUrl = Photo("", "", "", 0)
         firebaseUser?.let {
             for (item in it.providerData) {
-
                 when (it.providerData[1].providerId) {
                     "facebook.com" -> {
                         Log.d(TAG, "It's logged in with facebook")
@@ -220,7 +218,7 @@ class ProfileViewModel : ViewModel() {
                         avatarUrl = emailAvatarPhoto.value
                     }
                     "password" -> {
-                        Log.d(TAG, "It's logged in with gmail")
+                        Log.d(TAG, "It's logged in with email")
                         getAvatar("password", it.photoUrl.toString())
                         avatarUrl = emailAvatarPhoto.value
                     }
@@ -232,48 +230,68 @@ class ProfileViewModel : ViewModel() {
                 }
             }
         }
+        println("RETURNING AVATAR URL: $avatarUrl")
         return avatarUrl
     }
 
     /*WORKING ON THIS SOMETIMES RETURNS AS NULL!!!*/
     private fun getAvatar(s: String, googlePhotoUrl: String) {
         val db = Firebase.firestore
-        db.collection("users").whereEqualTo("user_id", currentUser!!.uid).get()
-            .addOnSuccessListener { result ->
-                val data = result.documents
-                val profileAvatar3 = data[0].data?.get("profile_avatar").toString()
-                when (s) {
-                    "facebook.com" -> {
-                        if (profileAvatar3 == "null" || profileAvatar3 == "") {
-                            Log.d(TAG, "Failed to get avatar photo for email.")
-                            emailAvatarPhoto.value = getFBAvatar(currentUser!!)
-                            println("1: $profileAvatar3")
-                        } else {
-                            emailAvatarPhoto.value = data[0].data?.get("profile_avatar").toString()
-                            println("3: $profileAvatar3")
+        currentUser?.let {
+            db.collection("users").whereEqualTo("user_id", currentUser!!.uid).get()
+                .addOnSuccessListener { result ->
+                    if (result.isEmpty || result == null) {
+                        println("It was null")
+                    } else {
+                        val data = result.documents
+                        val profileAvatar3 =
+                            data[0].data?.get("profile_avatar_remote_uri").toString()
+                        when (s) {
+                            "facebook.com" -> {
+                                if (profileAvatar3 == "null" || profileAvatar3 == "") {
+                                    Log.d(TAG, "Failed to get avatar photo for email.")
+                                    emailAvatarPhoto.value.remoteUri = getFBAvatar(currentUser!!)
+                                    println("1: $profileAvatar3")
+                                } else {
+                                    emailAvatarPhoto.value.remoteUri =
+                                        data[0].data?.get("profile_avatar_remote_uri").toString()
+                                    emailAvatarPhoto.value.localUri =
+                                        data[0].data?.get("profile_avatar_local_uri").toString()
+                                    println("3: $profileAvatar3")
+                                }
+                            }
+                            "google.com" -> {
+                                if (profileAvatar3 == "null" || profileAvatar3 == "") {
+                                    Log.d(TAG, "Failed to get avatar photo for email.")
+                                    emailAvatarPhoto.value.remoteUri = googlePhotoUrl
+                                    println("1: $profileAvatar3")
+                                } else {
+                                    emailAvatarPhoto.value.remoteUri =
+                                        data[0].data?.get("profile_avatar_remote_uri").toString()
+                                    emailAvatarPhoto.value.localUri =
+                                        data[0].data?.get("profile_avatar_local_uri").toString()
+                                    println("3: $profileAvatar3")
+                                }
+                            }
+                            "password" -> {
+                                if (result == null || result.isEmpty) {
+                                    Log.d(TAG, "Failed to get avatar photo for email.")
+                                    println("1: $profileAvatar3")
+                                } else {
+                                    emailAvatarPhoto.value.remoteUri =
+                                        data[0].data?.get("profile_avatar_remote_uri").toString()
+                                    emailAvatarPhoto.value.localUri =
+                                        data[0].data?.get("profile_avatar_local_uri").toString()
+                                    println("3: $profileAvatar3")
+                                    println("4: ${emailAvatarPhoto.value}")
+                                }
+                            }
                         }
                     }
-                    "google.com" -> {
-                        if (profileAvatar3 == "null" || profileAvatar3 == "") {
-                            Log.d(TAG, "Failed to get avatar photo for email.")
-                            emailAvatarPhoto.value = googlePhotoUrl
-                            println("1: $profileAvatar3")
-                        } else {
-                            emailAvatarPhoto.value = data[0].data?.get("profile_avatar").toString()
-                            println("3: $profileAvatar3")
-                        }
-                    }
-                    "password" -> {
-                        if (result == null || result.isEmpty) {
-                            Log.d(TAG, "Failed to get avatar photo for email.")
-                            println("1: $profileAvatar3")
-                        } else {
-                            emailAvatarPhoto.value = data[0].data?.get("profile_avatar").toString()
-                            println("3: $profileAvatar3")
-                        }
-                    }
+
                 }
-            }
+        }
+
     }
 
     private fun getFBAvatar(currentUser: FirebaseUser): String {
@@ -285,7 +303,7 @@ class ProfileViewModel : ViewModel() {
         //mapping it into the homescreenstate
         observePosts().map { posts ->
             ProfileScreenState.Loaded(
-                avatarUrl = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=987&q=80",
+                avatarUrl = emailAvatarPhoto.value,
                 posts = posts
             )
         }.collect {
@@ -635,20 +653,30 @@ class ProfileViewModel : ViewModel() {
     fun updateAccount(
         currentUser: FirebaseUser?,
         userName: String,
-        profilePhoto: Photo?,
         navigateToHome: () -> Unit,
+        newPhoto: Photo?,
+        oldPhoto: Photo,
     ) {
         val db = Firebase.firestore
-        val queryAccount = db.collection("users").document(currentUser!!.uid)
         viewModelScope.launch(Dispatchers.IO) {
-            queryAccount.update("user_name", userName)
-            queryAccount.update("user_name_lowercase", userName.lowercase())
-            profilePhoto?.let {
-                uploadProfileAvatar(profilePhoto, currentUser!!.uid)
-                deleteSinglePhoto(profilePhoto)
-            }
-            navigateToHome()
+            val queryAccount =
+                db.collection("users").whereEqualTo("user_id", currentUser!!.uid).get()
+                    .addOnSuccessListener { result ->
+                        result.forEach {
+                            it.reference.update("user_name", userName)
+                            it.reference.update("user_name_lowercase", userName.lowercase())
+                        }
+                        if (newPhoto != null) {
+                            uploadProfileAvatar(newPhoto!!, currentUser!!.uid)
+                            deleteSinglePhoto(photo = oldPhoto)
+                        }
+                    }
+                    .addOnFailureListener {
+                        println("UPDATE ACCOUNT HAS FAILED.")
+                    }
         }
+        println("Feeling good, so close to being done. I said this back in September though. HAH")
+        navigateToHome()
     }
 
     private fun uploadProfileAvatar(profilePhoto: Photo, id: String) {
@@ -674,6 +702,7 @@ class ProfileViewModel : ViewModel() {
 
     private fun updateProfileAvatarPhoto(profilePhoto: Photo, id: String) {
         val remoteUri = profilePhoto.remoteUri
+        val localUri = profilePhoto.localUri
         viewModelScope.launch(Dispatchers.IO) {
             Firebase.firestore.collection("users").whereEqualTo("user_id", id).get()
                 .addOnSuccessListener { result ->
@@ -682,7 +711,8 @@ class ProfileViewModel : ViewModel() {
                         return@addOnSuccessListener
                     } else {
                         result.documents.forEach {
-                            it.reference.update("profile_avatar", remoteUri)
+                            it.reference.update("profile_avatar_remote_uri", remoteUri)
+                            it.reference.update("profile_avatar_local_uri", localUri)
                         }
                     }
                 }

@@ -178,12 +178,14 @@ fun LoginScreen(
         }
         LoginScreenState.ChangeProfileSettings -> {
             println("CHANGE PROFILE SETTINGS HAS BEEN ACTIVATED")
-            AdjustProfileSettings(cameraViewModel,
+            AdjustProfileSettings(
+                cameraViewModel,
                 context,
                 viewModel,
                 userNameAvailable,
                 userNameChecked,
-                navigateToProfile)
+                navigateToProfile
+            )
         }
     }
     BackHandler() {
@@ -296,18 +298,20 @@ private fun AdjustProfileSettings(
                 )
             )
             val currentUser = Firebase.auth.currentUser
-            Button(enabled = userNameState.value != "", onClick = {
+            Button(enabled = userNameState.value != "" && profilePhoto != null, onClick = {
                 if (profilePhoto != null) {
-                    viewModel.createNewAccount(currentUser = currentUser,
+                    viewModel.createNewAccount(
+                        currentUser = currentUser,
                         userName = userNameState.value,
                         context = context,
                         profilePhoto = profilePhoto,
-                        navigateToHome = navigateToProfile)
+                        navigateToHome = navigateToProfile
+                    )
                 } else {
                     viewModel.createNewAccount(currentUser = currentUser,
                         userName = userNameState.value,
                         context = context,
-                        profilePhoto = Photo(localUri = avatarUrl),
+                        profilePhoto = Photo(localUri = avatarUrl.localUri),
                         navigateToHome = navigateToProfile)
                 }
             }) {
@@ -527,7 +531,6 @@ private fun FacebookSignInDefault(
     context: Context,
     viewModel: LoginViewModel,
 ) {
-    val currentUser = Firebase.auth.currentUser
     SignInButton(
         onSignedIn = {
             viewModel.changeProfileSettings(navigateToHome)
@@ -702,7 +705,7 @@ fun CreateAccountInfo(
         Button(modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = padding),
-            enabled = emailFieldState.value.isNotEmpty() && passwordFieldState.value.isNotEmpty() && userName.value.isNotEmpty(),
+            enabled = emailFieldState.value.isNotEmpty() && passwordFieldState.value.isNotEmpty() && userName.value.isNotEmpty() && profilePhoto != null,
             onClick = {
                 viewModel.createAccount(
                     emailFieldState.value,

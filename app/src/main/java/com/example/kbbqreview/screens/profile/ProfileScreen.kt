@@ -2,6 +2,7 @@ package com.example.kbbqreview.screens.HomeScreen
 
 import android.content.Context
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -43,13 +44,11 @@ import com.example.kbbqreview.screens.EditReview
 import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.screens.camera.ProfileCamera
 import com.example.kbbqreview.screens.login.LoadingScreen
-import com.example.kbbqreview.screens.login.LoginViewModel
 import com.example.kbbqreview.screens.map.location.LocationDetails
 import com.example.kbbqreview.screens.profile.ProfilePostCard
 import com.example.kbbqreview.screens.profile.ProfileScreenState
 import com.example.kbbqreview.screens.profile.ProfileViewModel
 import com.example.kbbqreview.ui.theme.Purple500
-import com.facebook.internal.Mutable
 import com.google.accompanist.flowlayout.FlowMainAxisAlignment
 import com.google.accompanist.flowlayout.FlowRow
 import com.google.accompanist.flowlayout.SizeMode
@@ -130,6 +129,10 @@ fun ProfileScreen(
             val userNameState = remember {
                 mutableStateOf(displayName)
             }
+            val avatarUrl = profileViewModel.setAvatar()
+            val profilePhotoState = remember {
+                mutableStateOf(avatarUrl)
+            }
             when (state) {
                 is ProfileScreenState.Loaded -> {
                     val loaded = state as ProfileScreenState.Loaded
@@ -144,7 +147,7 @@ fun ProfileScreen(
                     } else {
                         ProfileContent(
                             posts = loaded.posts,
-                            avatarUrl = profileViewModel.setAvatar(),
+                            avatarUrl = avatarUrl,
                             displayName = displayName,
                             profileViewModel = profileViewModel,
                             onEditClick = {
@@ -163,13 +166,15 @@ fun ProfileScreen(
                 }
                 ProfileScreenState.Settings -> {
                     ProfileSettings(
-                        cameraViewModel,
-                        context,
+                        cameraViewModel = cameraViewModel,
+                        context = context,
+                        avatarPhoto = avatarUrl,
                         viewModel = profileViewModel,
-                        userNameAvailable,
-                        userNameChecked,
-                        userNameState
-                    ) { profileViewModel.checkIfSignedIn() }
+                        userNameAvailable = userNameAvailable,
+                        userNameChecked = userNameChecked,
+                        displayName = displayName,
+                        navigateToProfile = { profileViewModel.checkIfSignedIn() }
+                    )
                 }
                 ProfileScreenState.Loading -> LoadingScreen()
                 ProfileScreenState.SignInRequired -> LaunchedEffect(key1 = Unit) {
@@ -188,7 +193,7 @@ fun ProfileScreen(
 @Composable
 fun ProfileContent(
     posts: List<Post>,
-    avatarUrl: String,
+    avatarUrl: Photo,
     onSignOut: () -> Unit,
     displayName: String,
     onEditClick: () -> Unit,
@@ -449,7 +454,7 @@ private fun UserBar(
     scope: CoroutineScope,
     sheetState: BottomSheetState,
     userName: String,
-    avatarUrl: String,
+    avatarUrl: Photo,
 ) {
     val context = LocalContext.current
     Box(
@@ -458,14 +463,15 @@ private fun UserBar(
             .background(Color.White)
     ) {
         IconButton(modifier = Modifier.padding(8.dp), onClick = {
-            Toast.makeText(context, avatarUrl, Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, avatarUrl.remoteUri, Toast.LENGTH_SHORT).show()
         }) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(avatarUrl)
+                    .data(avatarUrl.remoteUri)
                     .placeholder(R.drawable.profile)
                     .crossfade(true)
                     .build(), contentDescription = null,
+                contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .size(40.dp)
@@ -490,7 +496,7 @@ private fun UserBar(
     }
 }
 
-@Composable
+/*@Composable
 private fun AdjustProfileSettings(
     cameraViewModel: CameraViewModel,
     context: Context,
@@ -614,7 +620,7 @@ private fun AdjustProfileSettings(
             }
         }
     }
-}
+}*/
 
 @Composable
 private fun ProfileSettings(
@@ -623,18 +629,29 @@ private fun ProfileSettings(
     viewModel: ProfileViewModel,
     userNameAvailable: MutableState<Boolean>,
     userNameChecked: MutableState<Boolean>,
-    userNameState: MutableState<String>,
     navigateToProfile: () -> Unit,
+    avatarPhoto: Photo,
+    displayName: String,
 ) {
-    val profileViewModel = ProfileViewModel()
+    val userNameState = remember {
+        mutableStateOf(displayName)
+    }
+
     Box(Modifier.fillMaxSize()) {
+        IconButton(modifier = Modifier
+            .align(Alignment.TopStart)
+            .padding(4.dp),
+            onClick = {
+                navigateToProfile()
+            }) {
+            Icon(Icons.Rounded.Close, null)
+        }
         Column(modifier = Modifier
             .padding(horizontal = 16.dp, vertical = 40.dp)
             .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceEvenly) {
             val profilePhoto = cameraViewModel.getProfilePhoto()
-            val avatarUrl = profileViewModel.setAvatar()
             val currentCharCount = remember { mutableStateOf(0) }
 
             Box(Modifier
@@ -645,7 +662,7 @@ private fun ProfileSettings(
                 .border(4.dp, Color.Cyan, CircleShape)) {
                 AsyncImage(modifier = Modifier.fillMaxSize(),
                     model = ImageRequest.Builder(context)
-                        .data(profilePhoto?.localUri ?: avatarUrl)
+                        .data(profilePhoto?.localUri ?: avatarPhoto.remoteUri)
                         .crossfade(true)
                         .build(),
                     contentDescription = null,
@@ -723,13 +740,17 @@ private fun ProfileSettings(
                     viewModel.updateAccount(
                         currentUser = currentUser,
                         userName = userNameState.value,
-                        profilePhoto = profilePhoto,
+                        newPhoto = profilePhoto,
+                        oldPhoto = avatarPhoto,
                         navigateToHome = navigateToProfile
                     )
             }) {
                 Text("Update")
             }
         }
+    }
+    BackHandler() {
+        navigateToProfile()
     }
 }
 

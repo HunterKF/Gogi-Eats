@@ -162,7 +162,7 @@ class ReviewViewModel : ViewModel() {
         }
     }
 
-    fun uploadPhotos(selectImages: SnapshotStateList<Photo>, id: String) {
+    private fun uploadPhotos(selectImages: SnapshotStateList<Photo>, id: String) {
         val storageReference = FirebaseStorage.getInstance().reference
         viewModelScope.launch(Dispatchers.IO) {
             var listIndex = 0
