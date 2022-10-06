@@ -5,7 +5,7 @@
     <external-files-path
         name="my_debug_images"
         path="/storage/emulated/0/Android/data/app.kbbqreview/files/Pictures/"/>
-    <external-files-path
-        name="my_root_images"
-        path="/"/>
+    <external-path
+        name="external_files"
+        path="."/>
 </paths>

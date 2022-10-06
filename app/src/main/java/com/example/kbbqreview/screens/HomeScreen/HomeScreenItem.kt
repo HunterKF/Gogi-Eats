@@ -94,7 +94,12 @@ fun HomePostCard(state: PagerState, post: Post) {
                     post.restaurantName,
                     address,
                     bitmap = bitmap.asAndroidBitmap())
-                context.startActivity(intent)
+                try {
+                    context.startActivity(intent)
+                } catch (e: Exception) {
+                    println(e.message)
+                    println(e.localizedMessage)
+                }
                 /*val path = MediaStore.Images.Media.insertImage(context.contentResolver,
                     bitmap.asAndroidBitmap(), "Design", null)
 
@@ -118,7 +123,10 @@ fun HomePostCard(state: PagerState, post: Post) {
             }
 
             if (error != null) {
-                // Error occurred. Handle it!
+               Toast.makeText(context, error.localizedMessage, Toast.LENGTH_SHORT).show()
+                println(error.localizedMessage)
+                println(error.message)
+                println(error.cause)
             }
         }
     ) {
