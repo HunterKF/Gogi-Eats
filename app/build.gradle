@@ -145,6 +145,8 @@ dependencies {
     //Facebook
     implementation 'com.facebook.android:facebook-android-sdk:14.1.0'
 
+    //Capture - For taking a bitmap capture of the review
+    implementation "dev.shreyaspatil:capturable:1.0.3"
 
 
 }
