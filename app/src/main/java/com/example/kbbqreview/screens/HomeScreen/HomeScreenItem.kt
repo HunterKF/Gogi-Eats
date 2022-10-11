@@ -38,6 +38,7 @@ import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
 import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.example.kbbqreview.HomeScreenViewModel
 import com.example.kbbqreview.data.firestore.Post
@@ -78,7 +79,7 @@ fun HomePostCard(state: PagerState, post: Post) {
         mutableStateOf(false)
     }
     val viewModel = HomeScreenViewModel()
-    var bitmap2: ImageBitmap
+    var bitmap2: Uri? = null
 
     Capturable(
         controller = captureController,
@@ -90,50 +91,30 @@ fun HomePostCard(state: PagerState, post: Post) {
                     post.location!!.latitude,
                     post.location.longitude)
                 Toast.makeText(context, "Captured!", Toast.LENGTH_SHORT).show()
-                val intent = ShareUtils.shareImageToOthers(context,
-                    post.restaurantName,
-                    address,
-                    bitmap = bitmap.asAndroidBitmap())
+                val intent = ShareUtils.genericShare(
+                    context = context,
+                    text = post.restaurantName,
+                    address = address,
+                    photoUri = post.photoList.first().remoteUri
+                )
+                showBitmap.value = true
                 try {
                     context.startActivity(intent)
                 } catch (e: Exception) {
                     println(e.message)
                     println(e.localizedMessage)
                 }
-                /*val path = MediaStore.Images.Media.insertImage(context.contentResolver,
-                    bitmap.asAndroidBitmap(), "Design", null)
-
-                val type = "text/plain"
-                val subject = post.restaurantName
-                val extraText = AddressMap.getAddressFromLocation(
-                    context,
-                    post.location!!.latitude,
-                    post.location.longitude
-                )
-                val shareWith = "ShareWith"
-
-                val intent = Intent(Intent.ACTION_SEND)
-                intent.type = type
-                intent.putExtra(Intent.EXTRA_SUBJECT, subject)
-                intent.putExtra(Intent.EXTRA_TEXT, extraText)
-                showBitmap.value = true
-                bitmap2 = bitmap
-                viewModel.shareImageToOthers(context, "bitmap", bitmap = bitmap)
-*/
             }
 
             if (error != null) {
-               Toast.makeText(context, error.localizedMessage, Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, error.localizedMessage, Toast.LENGTH_SHORT).show()
                 println(error.localizedMessage)
                 println(error.message)
                 println(error.cause)
             }
         }
     ) {
-        if (showBitmap.value) {
 
-//            Image(bitmap = bitmap2)
-        }
         Surface(Modifier.background(Color.White)) {
             Column(
                 modifier = Modifier
@@ -145,7 +126,7 @@ fun HomePostCard(state: PagerState, post: Post) {
                 ) {
                     TopRow(post)
                 }
-                PhotoHolder(state, post)
+                    PhotoHolder(state, post)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()

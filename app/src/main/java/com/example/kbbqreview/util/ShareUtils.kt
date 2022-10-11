@@ -5,31 +5,41 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.MediaStore
+import android.util.LruCache
+import androidx.camera.core.impl.utils.ContextUtil.getBaseContext
+import androidx.core.app.ShareCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
+import java.net.URL
 
 
 class ShareUtils {
 
     companion object {
-        fun saveBitmapAndGetUri(context: Context, bitmap: Bitmap): Uri {
-            val path: String = context.externalCacheDir.toString() + "/filename.jpg"
+        fun saveBitmapAndGetUri(context: Context, bitmap: Bitmap): Uri? {
+
+            val path: String = context.externalCacheDir.toString() + "/123.jpg"
+            println(path)
             var out: OutputStream? = null
             val file = File(path)
             try {
                 out = FileOutputStream(file)
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 50, out)
                 out.flush()
                 out.close()
+                println("this has fired")
             } catch (e: Exception) {
                 e.printStackTrace()
+                println(e.localizedMessage)
             }
+            val fileOut =
+                FileProvider.getUriForFile(context, context.packageName + ".util.provider", file)
             return FileProvider.getUriForFile(
-                context, "com.example.kbbqreview.util.provider", file
+                context, context.packageName + ".util.provider", file
             )
         }
 
@@ -40,17 +50,17 @@ class ShareUtils {
             bitmap: Bitmap?,
         ): Intent {
             println("Starting the function...")
-            val imageUri: Uri? = bitmap?.let { saveBitmapAndGetUri(context, it) }
-            println("1")
-            val chooserIntent2 = Intent.createChooser(Intent().apply {
-                action = Intent.ACTION_SEND
-                putExtra(Intent.EXTRA_SUBJECT, text)
-                putExtra(Intent.EXTRA_TEXT, address)
-                putExtra(Intent.EXTRA_STREAM, imageUri)
-                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-            }, null)
 
-            return chooserIntent2
+            val imageUri: Uri? = bitmap?.let { saveBitmapAndGetUri(context, it) }
+
+            val intent = ShareCompat.IntentBuilder(context)
+            intent.setText("$text - $address")
+            intent.setType("*/*")
+            val share = Intent.createChooser(Intent().apply {
+                action = Intent.ACTION_SEND
+                putExtra(Intent.EXTRA_TEXT, "$text - $address")
+            }, null)
+            return share
 
 
             /*try {
@@ -62,5 +72,30 @@ class ShareUtils {
             }*/
         }
 
+        fun genericShare(
+            context: Context,
+            text: String?,
+            address: String,
+            photoUri: String,
+        ): Intent {
+            val chooserIntent = Intent.createChooser(Intent().apply {
+                action = Intent.ACTION_SEND
+                putExtra(Intent.EXTRA_SUBJECT, "$text - $address")
+                putExtra(Intent.EXTRA_TEXT, photoUri)
+                type = "text/*"
+            }, null)
+            return chooserIntent
+        }
+
+        private fun getImageUri(inContext: Context, inImage: Bitmap): Uri? {
+            val bytes = ByteArrayOutputStream()
+            inImage.compress(Bitmap.CompressFormat.JPEG, 100, bytes)
+            val path: String =
+                MediaStore.Images.Media.insertImage(inContext.contentResolver,
+                    inImage,
+                    "Title",
+                    null)
+            return Uri.parse(path)
+        }
     }
 }

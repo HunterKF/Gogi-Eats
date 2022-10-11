@@ -525,23 +525,7 @@ private fun GoogleSignIn(
     }
 }
 
-@Composable
-private fun FacebookSignInDefault(
-    navigateToHome: () -> Unit,
-    context: Context,
-    viewModel: LoginViewModel,
-) {
-    SignInButton(
-        onSignedIn = {
-            viewModel.changeProfileSettings(navigateToHome)
-            Toast.makeText(context, "Signed in!", Toast.LENGTH_SHORT).show()
-        },
-        onSignInFailed = {
-            Toast.makeText(context, "Try again later. ${it.localizedMessage}", Toast.LENGTH_SHORT)
-                .show()
-        }
-    )
-}
+
 
 @Composable
 fun CreateAccountInfo(
@@ -832,6 +816,23 @@ fun EmailSignIn(
     }
 }
 
+@Composable
+private fun FacebookSignInDefault(
+    navigateToHome: () -> Unit,
+    context: Context,
+    viewModel: LoginViewModel,
+) {
+    SignInButton(
+        onSignedIn = {
+            viewModel.changeProfileSettings(navigateToHome)
+            Toast.makeText(context, "Signed in!", Toast.LENGTH_SHORT).show()
+        },
+        onSignInFailed = {
+            Toast.makeText(context, "Try again later. ${it.localizedMessage}", Toast.LENGTH_SHORT)
+                .show()
+        }
+    )
+}
 //FACEBOOK SIGN IN
 @Composable
 fun SignInButton(
@@ -839,36 +840,44 @@ fun SignInButton(
     onSignedIn: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    AndroidView(factory = { context ->
-        LoginButton(context).apply {
-            setPermissions("email", "public_profile")
-            val callbackManager = CallbackManager.Factory.create()
-            registerCallback(callbackManager, object : FacebookCallback<LoginResult> {
-                override fun onCancel() {
-                    //do nothing
-                }
+    Row(Modifier.fillMaxWidth().background(Color.Red)) {
+        Box(modifier = Modifier.fillMaxWidth().background(Color.Black)) {
 
-                override fun onError(error: FacebookException) {
-                    onSignInFailed(error)
-                    println("An error occurred: $error")
-                }
-
-                override fun onSuccess(result: LoginResult) {
-                    scope.launch {
-                        val token = result.accessToken.token
-                        val credential = FacebookAuthProvider.getCredential(token)
-                        val authResult = Firebase.auth.signInWithCredential(credential).await()
-                        if (authResult.user != null) {
-                            onSignedIn()
-                        } else {
-                            println("Could not sign in with Firebase.")
-                            onSignInFailed(RuntimeException("Could not sign in with Firebase."))
+        }
+        Box(Modifier.background(Color.White)) {
+            AndroidView(factory = { context ->
+                LoginButton(context).apply {
+                    setPermissions("email", "public_profile")
+                    val callbackManager = CallbackManager.Factory.create()
+                    registerCallback(callbackManager, object : FacebookCallback<LoginResult> {
+                        override fun onCancel() {
+                            //do nothing
                         }
-                    }
 
+                        override fun onError(error: FacebookException) {
+                            onSignInFailed(error)
+                            println("An error occurred: $error")
+                        }
+
+                        override fun onSuccess(result: LoginResult) {
+                            scope.launch {
+                                val token = result.accessToken.token
+                                val credential = FacebookAuthProvider.getCredential(token)
+                                val authResult =
+                                    Firebase.auth.signInWithCredential(credential).await()
+                                if (authResult.user != null) {
+                                    onSignedIn()
+                                } else {
+                                    println("Could not sign in with Firebase.")
+                                    onSignInFailed(RuntimeException("Could not sign in with Firebase."))
+                                }
+                            }
+
+                        }
+
+                    })
                 }
-
             })
         }
-    })
+    }
 }
