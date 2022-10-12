@@ -400,12 +400,12 @@ private fun SignInScreen(
                 viewModel = viewModel,
                 navigateToHome = navigateToHome
             )
-            Spacer(Modifier.weight(0.1f))
+            Spacer(Modifier.weight(0.05f))
             Divider()
-            Spacer(Modifier.weight(0.1f))
-            FacebookSignInDefault(navigateToHome, context, viewModel)
+            Spacer(Modifier.weight(0.05f))
+//            FacebookSignInDefault(navigateToHome, context, viewModel)
             GoogleSignIn(launcher, googleSignInClient, viewModel)
-            Spacer(modifier = Modifier.weight(0.1f))
+            Spacer(modifier = Modifier.weight(0.15f))
         }
 
     }
@@ -494,12 +494,12 @@ private fun CreateAccountScreen(
                 profilePhoto = profilePhoto,
                 navigateToHome = navigateToHome
             )
-            Spacer(Modifier.weight(0.1f))
+            Spacer(Modifier.weight(0.05f))
             Divider()
-            Spacer(Modifier.weight(0.1f))
-            FacebookSignInDefault(navigateToHome, context, viewModel = viewModel)
+            Spacer(Modifier.weight(0.05f))
+//            FacebookSignInDefault(navigateToHome, context, viewModel = viewModel)
             GoogleSignIn(launcher, googleSignInClient, viewModel = viewModel)
-            Spacer(modifier = Modifier.weight(0.1f))
+            Spacer(modifier = Modifier.weight(0.15f))
         }
     }
 }

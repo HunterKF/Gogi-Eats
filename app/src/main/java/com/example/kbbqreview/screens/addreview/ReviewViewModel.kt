@@ -11,6 +11,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kbbqreview.data.photos.Photo
+import com.example.kbbqreview.screens.profile.TAG
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
@@ -20,6 +21,7 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import okhttp3.internal.wait
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -111,6 +113,8 @@ class ReviewViewModel : ViewModel() {
         selectImages.clear()
     }
 
+     val displayName = mutableStateOf("No good")
+
     fun onSubmitButton(selectImages: SnapshotStateList<Photo>) {
         val SUBMITTAG = "Submit"
         viewModelScope.launch(Dispatchers.IO) {
@@ -128,11 +132,12 @@ class ReviewViewModel : ViewModel() {
             val postAmenities = valueAmenities.value
             val postAtmosphere = valueAtmosphere.value
             val userId = setUser()
+            val displayName = setDisplayName()
 
             val handle = Firebase.firestore.collection("reviews")
                 .add(
                     hashMapOf(
-                        "author_id" to currentUser.displayName.orEmpty(),
+                        "author_id" to displayName,
                         "user_id" to userId,
                         "date_posted" to Date(),
                         "restaurant_name" to restaurantName,
@@ -153,6 +158,39 @@ class ReviewViewModel : ViewModel() {
                 Log.e(SUBMITTAG, "Saved failed $it")
             }
         }
+    }
+
+
+     fun getName(){
+        val db = Firebase.firestore
+        val currentUser = Firebase.auth.currentUser
+        currentUser?.let {
+            db.collection("users").whereEqualTo("user_id", currentUser!!.uid).get()
+                .addOnSuccessListener { result ->
+                    if (result == null || result.isEmpty) {
+                        Log.d(TAG, "Failed to get user name for email.")
+
+                    } else {
+                        val data = result.documents
+                        val s = data[0].data?.get("user_name").toString()
+                        displayName.value = s
+                        println("EMAIL USER NAME: $s")
+                        println("Inside getName: ${displayName.value}")
+                    }
+                }
+                .addOnFailureListener {
+                    e -> println("${e.localizedMessage}")
+                }
+        }
+    }
+    private fun setDisplayName(): String {
+        var displayName1 = ""
+        firebaseUser?.let {
+            getName()
+            println("Inside setDisplayName: ${displayName.value}")
+            displayName1 = displayName.value
+        }
+        return displayName1
     }
 
     private fun updateReview(id: String) {

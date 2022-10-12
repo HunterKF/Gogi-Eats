@@ -12,7 +12,7 @@ class EditingPost(
     val authorDisplayName: String,
     val authorText: MutableState<String>,
     var restaurantName: MutableState<String>,
-    val location: GeoPoint?,
+    var location: GeoPoint?,
     var valueMeat: MutableState<Int>,
     var valueSideDishes:MutableState<Int>,
     var valueAtmosphere:MutableState<Int>,

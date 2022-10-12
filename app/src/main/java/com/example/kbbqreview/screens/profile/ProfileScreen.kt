@@ -3,13 +3,11 @@ package com.example.kbbqreview.screens.HomeScreen
 import android.content.Context
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
@@ -27,6 +25,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -57,6 +56,7 @@ import com.google.accompanist.pager.rememberPagerState
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 @Composable
@@ -162,7 +162,8 @@ fun ProfileScreen(
 
                 }
                 ProfileScreenState.Camera -> {
-                    ProfileCamera(cameraViewModel = cameraViewModel, stateChange = { profileViewModel.changeToSettings()})
+                    ProfileCamera(cameraViewModel = cameraViewModel,
+                        stateChange = { profileViewModel.changeToSettings() })
                 }
                 ProfileScreenState.Settings -> {
                     ProfileSettings(
@@ -286,10 +287,13 @@ fun ProfileContent(
 
     ) {
         val size = posts.size
+        val lazyColumnState = rememberLazyListState()
+        val scope = rememberCoroutineScope()
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth(),
-            contentPadding = PaddingValues(bottom = 40.dp)
+            contentPadding = PaddingValues(bottom = 40.dp),
+            state = lazyColumnState
         ) {
             stickyHeader {
                 UserBar(scope, sheetState, displayName, avatarUrl)
@@ -309,18 +313,30 @@ fun ProfileContent(
                         mainAxisAlignment = FlowMainAxisAlignment.SpaceBetween
                     ) {
                         val itemSize: Dp = (LocalConfiguration.current.screenWidthDp.dp / 2)
-                        GridViewCard(
-                            Modifier
-                                .size(itemSize)
-                                .padding(8.dp)
-                                .clip(RoundedCornerShape(5.dp))
-                                .aspectRatio(1f),
-                            posts
-                        )
+                        var defaultIndex = 2
+                        val context = LocalContext.current
+                        posts.forEach { post ->
+                            val index = defaultIndex
+                            GridViewCard(
+                                Modifier
+                                    .size(itemSize)
+                                    .padding(8.dp)
+                                    .clip(RoundedCornerShape(5.dp))
+                                    .aspectRatio(1f),
+                                post
+                            ) {
+                                gridLayoutState.value = false
+                                scope.launch {
+                                    lazyColumnState.scrollToItem(index, 0)
+                                    Toast.makeText(context, "Index: $index", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            defaultIndex++
+                        }
                     }
                 }
             } else {
-                items(posts) { post ->
+                itemsIndexed(posts) { index, post ->
                     SingleViewCard(post, onEditClick, profileViewModel = profileViewModel)
                 }
             }
@@ -330,47 +346,46 @@ fun ProfileContent(
 
 
 @Composable
-private fun GridViewCard(modifier: Modifier, post: List<Post>) {
-    post.forEach { post ->
-        Box(
-            modifier = modifier
+private fun GridViewCard(modifier: Modifier, post: Post, onClick: () -> Job) {
 
-        ) {
-            val photoList by remember {
-                mutableStateOf(post.photoList)
-            }
-            val emptyPhoto = Photo(
-                "",
-                "",
-                "",
-                0
-            )
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(
-                        data = if (photoList.isNotEmpty()) photoList[0].remoteUri else emptyPhoto
-                    )
-                    .placeholder(R.drawable.ic_image_placeholder)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = "",
-                Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-            Scrim(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .align(Alignment.BottomCenter)
-            )
-            Text(
-                modifier = Modifier
-                    .padding(6.dp)
-                    .align(Alignment.BottomStart),
-                text = post.restaurantName,
-                color = Color.White
-            )
+    Box(
+        modifier = modifier.clickable { onClick() }
+
+    ) {
+        val photoList by remember {
+            mutableStateOf(post.photoList)
         }
+        val emptyPhoto = Photo(
+            "",
+            "",
+            "",
+            0
+        )
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(
+                    data = if (photoList.isNotEmpty()) photoList[0].remoteUri else emptyPhoto
+                )
+                .placeholder(R.drawable.ic_image_placeholder)
+                .crossfade(true)
+                .build(),
+            contentDescription = "",
+            Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+        Scrim(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .align(Alignment.BottomCenter)
+        )
+        Text(
+            modifier = Modifier
+                .padding(6.dp)
+                .align(Alignment.BottomStart),
+            text = post.restaurantName,
+            color = Color.White
+        )
     }
 }
 
@@ -420,32 +435,25 @@ private fun StatsBar(size: Int) {
         horizontalAlignment = Alignment.CenterHorizontally,
 
         ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Reviews",
-                style = MaterialTheme.typography.body1
-            )
-            Text("Locations")
-
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(size.toString())
-            IconButton(onClick = { /*TODO*/ }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_outline_map),
-                    contentDescription = "Open map of location"
-                )
-            }
-        }
+        Text(
+            text = "Total Reviews",
+            style = MaterialTheme.typography.body1
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Divider(Modifier
+            .width(60.dp)
+            .height(2.dp)
+            .clip(RoundedCornerShape(2.dp)))
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(size.toString(),
+            style = MaterialTheme.typography.h6)
     }
+}
+
+@Preview(showSystemUi = true)
+@Composable
+fun StatsPreview() {
+    StatsBar(size = 5)
 }
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -737,13 +745,13 @@ private fun ProfileSettings(
             )
             val currentUser = Firebase.auth.currentUser
             Button(enabled = userNameState.value != "", onClick = {
-                    viewModel.updateAccount(
-                        currentUser = currentUser,
-                        userName = userNameState.value,
-                        newPhoto = profilePhoto,
-                        oldPhoto = avatarPhoto,
-                        navigateToHome = navigateToProfile
-                    )
+                viewModel.updateAccount(
+                    currentUser = currentUser,
+                    userName = userNameState.value,
+                    newPhoto = profilePhoto,
+                    oldPhoto = avatarPhoto,
+                    navigateToHome = navigateToProfile
+                )
             }) {
                 Text("Update")
             }

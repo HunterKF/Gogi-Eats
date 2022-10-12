@@ -718,4 +718,8 @@ class ProfileViewModel : ViewModel() {
                 }
         }
     }
+
+    fun changePostAddress(): GeoPoint? {
+        return GeoPoint(restaurantLat.value, restaurantLng.value)
+    }
 }

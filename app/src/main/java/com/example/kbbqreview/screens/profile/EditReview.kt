@@ -43,6 +43,7 @@ import com.example.kbbqreview.ui.theme.spacing
 import com.google.accompanist.flowlayout.FlowMainAxisAlignment
 import com.google.accompanist.flowlayout.FlowRow
 import com.google.accompanist.flowlayout.SizeMode
+import com.google.firebase.firestore.GeoPoint
 
 @Composable
 fun EditReview(
@@ -121,6 +122,7 @@ fun EditReview(
                     profileViewModel,
                     location = location,
                     modifier = Modifier.padding(horizontal = 8.dp),
+                    post = post,
                     onClick = { focusManager.clearFocus() },
                     onNavigate = {
                         navController.navigate(
@@ -177,6 +179,7 @@ fun EditReview(
             item {
                 UpdateButton(modifier = Modifier.fillMaxWidth()) {
                     post.photoList = photoList
+                    post.location = profileViewModel.changePostAddress()
                     profileViewModel.updateReview(
                         post.firebaseId,
                         post,
@@ -428,7 +431,8 @@ fun EditAddress(
     location: LocationDetails?,
     onClick: () -> Unit,
     onNavigate: () -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
+    post: EditingPost
 ) {
     val context = LocalContext.current
 
@@ -457,6 +461,8 @@ fun EditAddress(
                     location!!.longitude,
                     context = context
                 )
+                post.location = GeoPoint(location!!.latitude, location.longitude)
+
 
             }) {
             Icon(

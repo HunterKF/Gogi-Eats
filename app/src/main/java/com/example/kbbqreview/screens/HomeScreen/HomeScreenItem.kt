@@ -1,12 +1,8 @@
 package com.example.kbbqreview.screens.HomeScreen
 
 import android.content.Intent
-import android.graphics.Bitmap
 import android.net.Uri
-import android.provider.MediaStore
-import android.widget.Toast
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,8 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -35,10 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.createBitmap
 import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.example.kbbqreview.HomeScreenViewModel
 import com.example.kbbqreview.data.firestore.Post
@@ -51,7 +42,6 @@ import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.PagerState
 import com.google.accompanist.pager.rememberPagerState
-import dev.shreyaspatil.capturable.Capturable
 import dev.shreyaspatil.capturable.controller.rememberCaptureController
 
 
@@ -73,82 +63,39 @@ fun HomeScreenItem(storyItem: Post) {
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun HomePostCard(state: PagerState, post: Post) {
-    val captureController = rememberCaptureController()
-    val context = LocalContext.current
-    val showBitmap = remember {
-        mutableStateOf(false)
-    }
-    val viewModel = HomeScreenViewModel()
-    var bitmap2: Uri? = null
-
-    Capturable(
-        controller = captureController,
-        onCaptured = { bitmap, error ->
-            // This is captured bitmap of a content inside Capturable Composable.
-            if (bitmap != null) {
-                // Bitmap is captured successfully. Do something with it!
-                val address = AddressMap.getAddressFromLocation(context,
-                    post.location!!.latitude,
-                    post.location.longitude)
-                Toast.makeText(context, "Captured!", Toast.LENGTH_SHORT).show()
-                val intent = ShareUtils.genericShare(
-                    context = context,
-                    text = post.restaurantName,
-                    address = address,
-                    photoUri = post.photoList.first().remoteUri
-                )
-                showBitmap.value = true
-                try {
-                    context.startActivity(intent)
-                } catch (e: Exception) {
-                    println(e.message)
-                    println(e.localizedMessage)
-                }
+    Surface(Modifier.background(Color.White)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                TopRow(post)
             }
-
-            if (error != null) {
-                Toast.makeText(context, error.localizedMessage, Toast.LENGTH_SHORT).show()
-                println(error.localizedMessage)
-                println(error.message)
-                println(error.cause)
-            }
-        }
-    ) {
-
-        Surface(Modifier.background(Color.White)) {
-            Column(
+            PhotoHolder(state, post)
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    TopRow(post)
-                }
-                    PhotoHolder(state, post)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    PointIcon(R.drawable.meat_icon, post.valueMeat)
-                    PointIcon(R.drawable.side_dishes_icon, post.valueSideDishes)
-                    PointIcon(R.drawable.amenities_icon, post.valueAmenities)
-                    PointIcon(R.drawable.atmosphere_icon, post.valueAtmosphere)
-                }
-                Column(modifier = Modifier.padding(horizontal = 12.dp)) {
-                    ReviewComment(
-                        post = post
-                    )
-                    AddressBar(post) { captureController.capture() }
-                }
+                PointIcon(R.drawable.meat_icon, post.valueMeat)
+                PointIcon(R.drawable.side_dishes_icon, post.valueSideDishes)
+                PointIcon(R.drawable.amenities_icon, post.valueAmenities)
+                PointIcon(R.drawable.atmosphere_icon, post.valueAtmosphere)
+            }
+            Column(modifier = Modifier.padding(horizontal = 12.dp)) {
+                ReviewComment(
+                    post = post
+                )
+                AddressBar(post)
             }
         }
     }
-
 }
+
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
@@ -379,40 +326,42 @@ fun ReviewComment(post: Post) {
 }
 
 @Composable
-fun AddressBar(review: Post, capture: () -> Unit) {
+fun AddressBar(post: Post) {
     val reviewViewModel = ReviewViewModel()
 
     val photoList by remember {
-        mutableStateOf(review.photoList)
+        mutableStateOf(post.photoList)
     }
+    val context = LocalContext.current
     val emptyPhoto = Photo(
         "",
         "",
         "",
         0
     )
-    val context = LocalContext.current
+    val address = AddressMap.getAddressFromLocation(context,
+        post.location!!.latitude,
+        post.location.longitude)
+    val shareIntent = ShareUtils.genericShare(
+        context = context,
+        text = post.restaurantName,
+        address = address,
+        photoUri = if (post.photoList.isEmpty()) emptyPhoto.remoteUri else post.photoList.first().remoteUri
+    )
     val mapIntent: Intent = Uri.parse(
-        "geo:${review.location!!.latitude},${review.location!!.longitude}?z=8"
+        "geo:${post.location!!.latitude},${post.location!!.longitude}?z=8"
     ).let { location ->
         // Or map point based on latitude/longitude
         // val location: Uri = Uri.parse("geo:37.422219,-122.08364?z=14") // z param is zoom level
         Intent(Intent.ACTION_VIEW, location)
     }
-    val uri: Uri = Uri.parse(checkPhoto(photoList, emptyPhoto).toString())
-    val sendIntent: Intent = Intent().apply {
-        action = Intent.ACTION_SEND
-        putExtra(Intent.EXTRA_SUBJECT, review.restaurantName)
-    }
-    val shareIntent = Intent.createChooser(sendIntent, null)
-
 
     val type = "text/plain"
-    val subject = review.restaurantName
+    val subject = post.restaurantName
     val extraText = reviewViewModel.getAddressFromLocation(
         context,
-        review.location!!.latitude,
-        review.location.longitude
+        post.location!!.latitude,
+        post.location.longitude
     )
     val shareWith = "ShareWith"
 
@@ -420,28 +369,23 @@ fun AddressBar(review: Post, capture: () -> Unit) {
     intent.type = type
     intent.putExtra(Intent.EXTRA_SUBJECT, subject)
     intent.putExtra(Intent.EXTRA_TEXT, extraText)
-    if (review.photoList.isNotEmpty()) {
-        intent.putExtra(Intent.EXTRA_STREAM, review.photoList.first().remoteUri)
+    if (post.photoList.isNotEmpty()) {
+        intent.putExtra(Intent.EXTRA_STREAM, post.photoList.first().remoteUri)
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             modifier = Modifier.weight(6f),
             text = reviewViewModel.getAddressFromLocation(
                 context,
-                review.location!!.latitude,
-                review.location.longitude
+                post.location!!.latitude,
+                post.location.longitude
             ),
             fontWeight = FontWeight.SemiBold
         )
         IconButton(
             modifier = Modifier.weight(1f),
             onClick = {
-                capture()
-                /*ContextCompat.startActivity(
-                    context,
-                    Intent.createChooser(intent, shareWith),
-                    null
-                )*/
+                context.startActivity(shareIntent)
             }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_baseline_send_24),

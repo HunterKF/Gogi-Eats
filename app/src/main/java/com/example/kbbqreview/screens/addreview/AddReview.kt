@@ -451,7 +451,8 @@ fun SubmitButton(
                 Toast.makeText(context, "Add a name!", Toast.LENGTH_SHORT).show()
             }
             else -> {
-//                reviewViewModel.uploadPhotos(selectImages = cameraViewModel.selectImages)
+                reviewViewModel.getName()
+                println("CURRENT NAME: ${reviewViewModel.displayName.value}")
                 reviewViewModel.onSubmitButton(selectImages = cameraViewModel.selectImages)
 
                 Toast.makeText(context, "Review saved!", Toast.LENGTH_SHORT).show()
