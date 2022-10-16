@@ -439,7 +439,6 @@ fun SubmitButton(
 
     ) {
     Button(modifier = Modifier, onClick = {
-
         when {
             reviewViewModel.restaurantLng.value == 0.0 && reviewViewModel.restaurantLat.value == 0.0 -> {
                 Toast.makeText(context, "Add location!", Toast.LENGTH_SHORT).show()
@@ -451,7 +450,6 @@ fun SubmitButton(
                 Toast.makeText(context, "Add a name!", Toast.LENGTH_SHORT).show()
             }
             else -> {
-                reviewViewModel.getName()
                 println("CURRENT NAME: ${reviewViewModel.displayName.value}")
                 reviewViewModel.onSubmitButton(selectImages = cameraViewModel.selectImages)
 

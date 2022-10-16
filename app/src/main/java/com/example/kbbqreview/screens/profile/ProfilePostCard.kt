@@ -36,6 +36,7 @@ import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.HomeScreen.Scrim
 import com.example.kbbqreview.screens.addreview.ReviewViewModel
+import com.example.kbbqreview.util.AddressMap
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.PagerState
@@ -321,7 +322,6 @@ fun ReviewComment(post: Post) {
 
 @Composable
 fun AddressBar(review: Post) {
-    val reviewViewModel = ReviewViewModel()
 
     val photoList by remember {
         mutableStateOf(review.photoList)
@@ -354,7 +354,7 @@ fun AddressBar(review: Post) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             modifier = Modifier.weight(6f),
-            text = reviewViewModel.getAddressFromLocation(
+            text = AddressMap.getAddressFromLocation(
                 context,
                 review.location!!.latitude,
                 review.location.longitude

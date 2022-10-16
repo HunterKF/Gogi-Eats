@@ -35,26 +35,24 @@ import com.example.kbbqreview.HomeScreenViewModel
 import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.R
 import com.example.kbbqreview.data.photos.Photo
-import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.example.kbbqreview.util.AddressMap
 import com.example.kbbqreview.util.ShareUtils
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.PagerState
 import com.google.accompanist.pager.rememberPagerState
-import dev.shreyaspatil.capturable.controller.rememberCaptureController
 
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun HomeScreenItem(storyItem: Post) {
+fun HomeScreenItem(storyItem: Post, photoList: List<Photo>) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colors.background
     ) {
         val state = rememberPagerState()
         Column {
-            HomePostCard(state, storyItem)
+            HomePostCard(state, storyItem, photoList)
             Spacer(modifier = Modifier.padding(4.dp))
         }
     }
@@ -62,7 +60,8 @@ fun HomeScreenItem(storyItem: Post) {
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun HomePostCard(state: PagerState, post: Post) {
+fun HomePostCard(state: PagerState, post: Post, photoList: List<Photo>) {
+
     Surface(Modifier.background(Color.White)) {
         Column(
             modifier = Modifier
@@ -74,7 +73,7 @@ fun HomePostCard(state: PagerState, post: Post) {
             ) {
                 TopRow(post)
             }
-            PhotoHolder(state, post)
+            PhotoHolder(state, photoList)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -101,11 +100,9 @@ fun HomePostCard(state: PagerState, post: Post) {
 @Composable
 private fun PhotoHolder(
     state: PagerState,
-    post: Post,
+    photoList: List<Photo>,
 ) {
-    val photoList by remember {
-        mutableStateOf(post.photoList)
-    }
+
     val emptyPhoto = Photo(
         "",
         "",
@@ -114,7 +111,12 @@ private fun PhotoHolder(
     )
     Box(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .clickable {
+                println(photoList[0].remoteUri)
+                println(photoList.size)
+                println("Checking the photo list")
+            },
         contentAlignment = Alignment.Center
     ) {
 
@@ -327,7 +329,6 @@ fun ReviewComment(post: Post) {
 
 @Composable
 fun AddressBar(post: Post) {
-    val reviewViewModel = ReviewViewModel()
 
     val photoList by remember {
         mutableStateOf(post.photoList)
@@ -358,7 +359,7 @@ fun AddressBar(post: Post) {
 
     val type = "text/plain"
     val subject = post.restaurantName
-    val extraText = reviewViewModel.getAddressFromLocation(
+    val extraText = AddressMap.getAddressFromLocation(
         context,
         post.location!!.latitude,
         post.location.longitude
@@ -375,7 +376,7 @@ fun AddressBar(post: Post) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             modifier = Modifier.weight(6f),
-            text = reviewViewModel.getAddressFromLocation(
+            text = AddressMap.getAddressFromLocation(
                 context,
                 post.location!!.latitude,
                 post.location.longitude

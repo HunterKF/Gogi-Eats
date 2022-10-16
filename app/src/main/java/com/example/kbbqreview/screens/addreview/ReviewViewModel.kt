@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.profile.TAG
+import com.example.kbbqreview.util.AddressMap
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
@@ -32,7 +33,7 @@ class ReviewViewModel : ViewModel() {
     private fun setUser(): String {
         var user = ""
         firebaseUser?.let {
-             user = it.uid
+            user = it.uid
         }
         return user
     }
@@ -67,37 +68,7 @@ class ReviewViewModel : ViewModel() {
     fun changeLocation(latitude: Double, longitude: Double, context: Context) {
         restaurantLat.value = latitude
         restaurantLng.value = longitude
-        address.value = getAddressFromLocation(context, latitude, longitude)
-    }
-
-    fun addValues() {
-        valueTotal.value =
-            valueMeat.value + valueAmenities.value + valueAtmosphere.value + sideDishes.value
-    }
-
-    fun getAddressFromLocation(context: Context, lat: Double, long: Double): String {
-        val geocoder = Geocoder(context, Locale.getDefault())
-        var addresses: List<Address>? = null
-        val address: Address?
-        var addressText = ""
-
-        try {
-            addresses = geocoder.getFromLocation(
-                lat,
-                long,
-                1
-            )
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-        }
-
-        address = addresses?.get(0)
-        addressText = address?.getAddressLine(0) ?: ""
-        stateLng.value = address?.longitude.toString()
-        stateLat.value = address?.latitude.toString()
-
-
-        return addressText
+        address.value = AddressMap.getAddressFromLocation(context, latitude, longitude)
     }
 
     fun clearValues(selectImages: SnapshotStateList<Photo>) {
@@ -110,10 +81,11 @@ class ReviewViewModel : ViewModel() {
         restaurantLng.value = 0.0
         stateLat.value = ""
         stateLng.value = ""
+        address.value = ""
         selectImages.clear()
     }
 
-     val displayName = mutableStateOf("No good")
+    val displayName = mutableStateOf("No good")
 
     fun onSubmitButton(selectImages: SnapshotStateList<Photo>) {
         val SUBMITTAG = "Submit"
@@ -132,7 +104,7 @@ class ReviewViewModel : ViewModel() {
             val postAmenities = valueAmenities.value
             val postAtmosphere = valueAtmosphere.value
             val userId = setUser()
-            val displayName = setDisplayName()
+            val displayName = getName()
 
             val handle = Firebase.firestore.collection("reviews")
                 .add(
@@ -161,9 +133,10 @@ class ReviewViewModel : ViewModel() {
     }
 
 
-     fun getName(){
+    fun getName(): String {
         val db = Firebase.firestore
         val currentUser = Firebase.auth.currentUser
+        var name = ""
         currentUser?.let {
             db.collection("users").whereEqualTo("user_id", currentUser!!.uid).get()
                 .addOnSuccessListener { result ->
@@ -174,16 +147,20 @@ class ReviewViewModel : ViewModel() {
                         val data = result.documents
                         val s = data[0].data?.get("user_name").toString()
                         displayName.value = s
+                        name = s
                         println("EMAIL USER NAME: $s")
                         println("Inside getName: ${displayName.value}")
                     }
                 }
-                .addOnFailureListener {
-                    e -> println("${e.localizedMessage}")
+                .addOnFailureListener { e ->
+                    println("${e.localizedMessage}")
+                    name = "Not bad"
                 }
         }
+        return name
     }
-    private fun setDisplayName(): String {
+
+    /*fun setDisplayName(): String {
         var displayName1 = ""
         firebaseUser?.let {
             getName()
@@ -191,7 +168,7 @@ class ReviewViewModel : ViewModel() {
             displayName1 = displayName.value
         }
         return displayName1
-    }
+    }*/
 
     private fun updateReview(id: String) {
         val db = Firebase.firestore.collection("reviews").document(id)
@@ -225,6 +202,7 @@ class ReviewViewModel : ViewModel() {
                     Log.e("Firebase Image", it.message ?: "No message")
                 }
             }
+            clearValues(selectImages = selectImages)
         }
     }
 

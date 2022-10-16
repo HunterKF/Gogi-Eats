@@ -68,17 +68,16 @@ fun HomeScreen(
 
 @Composable
 fun HomeScreenContents(posts: List<Post>) {
-    /*val isRefreshing by applicationViewModel.isRefreshing.collectAsState()
-    SwipeRefresh(
-        state = rememberSwipeRefreshState(isRefreshing),
-        onRefresh = { applicationViewModel.refresh() }) {*/
     LazyColumn(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
         contentPadding = PaddingValues(bottom = 100.dp)
     ) {
         items(posts) { post ->
-            HomeScreenItem(post)
+            val photoList by remember {
+                mutableStateOf(post.photoList)
+            }
+            HomeScreenItem(post, photoList)
         }
 
     }

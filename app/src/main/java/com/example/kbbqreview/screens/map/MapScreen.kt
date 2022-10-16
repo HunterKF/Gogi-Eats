@@ -52,7 +52,7 @@ import kotlinx.coroutines.launch
 fun MapScreen(
     location: LocationDetails,
     navController: NavHostController,
-    reviewViewModel: ReviewViewModel
+    reviewViewModel: ReviewViewModel,
 ) {
 
     val context = LocalContext.current
@@ -196,7 +196,7 @@ private fun SheetContent(
     posts: State<List<Post>>,
     location: LocationDetails,
     showSinglePost: Boolean,
-    viewModel: MapViewModel
+    viewModel: MapViewModel,
 ) {
     Box(
         modifier = Modifier
@@ -218,7 +218,11 @@ private fun SheetContent(
             if (showSinglePost) {
                 item {
                     val state = rememberPagerState()
-                    HomePostCard(state = state, post = viewModel.singlePost.value)
+                    HomePostCard(
+                        state = state,
+                        post = viewModel.singlePost.value,
+                        photoList = viewModel.singlePost.value.photoList
+                    )
                 }
             } else {
                 itemsIndexed(posts.value.sortedByDescending { it.distance.toDouble() }
@@ -341,7 +345,7 @@ private fun ValueBar(restaurant: Post) {
 @Composable
 private fun Heading(restaurant: Post) {
     val totalValue =
-        restaurant.valueAmenities + restaurant.valueMeat+ restaurant.valueAtmosphere + restaurant.valueSideDishes
+        restaurant.valueAmenities + restaurant.valueMeat + restaurant.valueAtmosphere + restaurant.valueSideDishes
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
@@ -428,7 +432,7 @@ fun MapMarker(
     @DrawableRes iconResourceId: Int,
     post: Post,
     viewModel: MapViewModel,
-    onInfoClick: () -> Unit
+    onInfoClick: () -> Unit,
 ) {
     val viewModel = MapViewModel()
     val icon = viewModel.bitmapDescriptorFromVector(

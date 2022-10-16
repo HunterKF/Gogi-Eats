@@ -24,8 +24,7 @@ class AddressMap {
             }
 
             address = addresses?.get(0)
-            addressText = address?.getAddressLine(0) ?: ""
-
+            addressText = "${address!!.subThoroughfare} ${address.thoroughfare}, ${address.subLocality}, ${address.adminArea}"
 
             return addressText
         }
