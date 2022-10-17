@@ -69,6 +69,7 @@ fun AddReview(
     val application = context.applicationContext as Application
     val TAG = "CAMERA TAG"
     val allPhotos = cameraViewModel.getAllPhotos()
+    addReviewViewModel.setDisplayName()
 
     Log.d(TAG, "Current value from AddReview of showRow is: ${cameraViewModel.showPhotoRow.value}")
 
@@ -202,7 +203,7 @@ fun AddReview(
                             )
                             Toast.makeText(
                                 context,
-                                "The value for user is: ${applicationViewModel.currentUser}",
+                                "The value for user is: ${addReviewViewModel.displayName.value}",
                                 Toast.LENGTH_LONG
                             ).show()
                         }) {

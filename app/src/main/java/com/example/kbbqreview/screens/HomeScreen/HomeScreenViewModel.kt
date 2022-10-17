@@ -5,15 +5,24 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.data.photos.Photo
+import com.example.kbbqreview.screens.HomeScreen.HomeScreenState
+import com.example.kbbqreview.screens.profile.ProfileScreenState
+import com.example.kbbqreview.util.LoginScreenState
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -23,7 +32,29 @@ import java.util.*
 val TAG = "HomeScreenVM"
 
 class HomeScreenViewModel : ViewModel() {
-    fun observePosts(): Flow<List<Post>> {
+    val loadingState = MutableStateFlow<HomeScreenState>(HomeScreenState.Loading)
+
+    val state = loadingState.asStateFlow()
+
+    fun getPosts(){
+        viewModelScope.launch(Dispatchers.IO) {
+            observePosts2()
+        }
+    }
+    private suspend fun observePosts2() {
+        //mapping it into the homescreenstate
+
+        observePosts().map { posts ->
+            HomeScreenState.Loaded(
+                posts = posts
+            )
+        }.collect {
+            Thread.sleep(1000)
+            loadingState.emit(it)
+            println("Emitting state! State is changing!!")
+        }
+    }
+    private fun observePosts(): Flow<List<Post>> {
         return callbackFlow {
             val listener = Firebase.firestore
                 .collection("reviews").addSnapshotListener { value, error ->
@@ -52,12 +83,39 @@ class HomeScreenViewModel : ViewModel() {
                             )
                         }.sortedByDescending { it.timestamp }
                         trySend(posts)
-                        //TODO Handle posts
                     }
                 }
             awaitClose {
                 listener.remove()
             }
+        }
+    }
+    private fun saveBitmapAndGetUri(context: Context, bitmap: Bitmap): Uri? {
+        val path: String = context.externalCacheDir.toString() + "/testImg.jpg"
+        var out: OutputStream? = null
+        val file = File(path)
+        try {
+            out = FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+            out.flush()
+            out.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return FileProvider.getUriForFile(
+            context, context.packageName + ".com.vips.jetcapture.provider", file
+        )
+    }
+    fun shareImageToOthers(context: Context, text: String?, bitmap: Bitmap?) {
+        val imageUri: Uri? = bitmap?.let { saveBitmapAndGetUri(context, it) }
+        val chooserIntent = Intent(Intent.ACTION_SEND)
+        chooserIntent.type = "image/*"
+        chooserIntent.putExtra(Intent.EXTRA_TEXT, text)
+        chooserIntent.putExtra(Intent.EXTRA_STREAM, imageUri)
+        chooserIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        try {
+            context.startActivity(chooserIntent)
+        } catch (ex: Exception) {
         }
     }
 
@@ -95,7 +153,7 @@ class HomeScreenViewModel : ViewModel() {
 
     fun sendMail(to: String, subject: String): Intent {
         val intent = Intent(Intent.ACTION_SEND)
-        intent.type = "vnd.android.cursor.item/email" // or "message/rfc822"
+        intent.type = "vnd.android.cursor.item/email"
         intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(to))
         intent.putExtra(Intent.EXTRA_SUBJECT, subject)
         return intent

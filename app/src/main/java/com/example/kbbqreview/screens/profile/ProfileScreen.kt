@@ -327,8 +327,7 @@ fun ProfileContent(
                             ) {
                                 gridLayoutState.value = false
                                 scope.launch {
-                                    lazyColumnState.scrollToItem(index, 0)
-                                    Toast.makeText(context, "Index: $index", Toast.LENGTH_SHORT).show()
+                                    lazyColumnState.scrollToItem(index, -220)
                                 }
                             }
                             defaultIndex++

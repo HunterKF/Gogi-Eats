@@ -1,13 +1,11 @@
 package com.example.kbbqreview
 
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -18,16 +16,16 @@ import com.example.kbbqreview.screens.map.currentLocation.FromAddChooseLocation
 import com.example.kbbqreview.screens.HomeScreen.AddReview
 import com.example.kbbqreview.screens.HomeScreen.ProfileScreen
 import com.example.kbbqreview.screens.HomeScreen.HomeScreen
-import com.example.kbbqreview.screens.camera.ProfileCamera
 import com.example.kbbqreview.screens.login.LoginScreen
 import com.example.kbbqreview.screens.login.LoginViewModel
+import com.example.kbbqreview.screens.map.MapViewModel
 import com.example.kbbqreview.screens.map.currentLocation.FromEditChooseLocation
 import com.example.kbbqreview.screens.profile.ProfileViewModel
 
 @Composable
 fun Navigation(
     navController: NavHostController,
-    applicationViewModel: ApplicationViewModel
+    applicationViewModel: ApplicationViewModel,
 ) {
     val focusManager = LocalFocusManager.current
     val location by applicationViewModel.getLocationLiveData().observeAsState()
@@ -40,6 +38,7 @@ fun Navigation(
     val reviewViewModel = ReviewViewModel()
     val profileViewModel = ProfileViewModel()
     val LoginViewModel = LoginViewModel()
+    val mapViewModel = viewModel<MapViewModel>()
 
 
     NavHost(
@@ -47,25 +46,24 @@ fun Navigation(
         startDestination = startDestination.value,
     ) {
         composable(Screen.MapScreen.route) {
+            val posts = mapViewModel.observePosts().collectAsState(initial = emptyList())
+
             location?.let { location ->
+                mapViewModel.newMarkerPositionLat.value = location.latitude
+                mapViewModel.newMarkerPositionLng.value = location.longitude
                 MapScreen(
                     location = location,
                     navController = navController,
-                    reviewViewModel = reviewViewModel
+                    posts = posts,
+                    mapViewModel = mapViewModel
                 )
             }
         }
         composable(Screen.HomeScreen.route) {
             HomeScreen(
-                navController = navController,
-                applicationViewModel = applicationViewModel
-            ) {
-                navController.navigate("signin") {
-                    popUpTo("home") {
-                        inclusive = true
-                    }
-                }
-            }
+                navController = navController
+            )
+
         }
         composable(Screen.AddReview.route) {
             AddReview(
@@ -85,7 +83,7 @@ fun Navigation(
                 profileViewModel = profileViewModel,
                 applicationViewModel = applicationViewModel,
                 cameraViewModel = cameraViewModel,
-                ) {
+            ) {
                 navController.navigate(Screen.Login.route) {
                     popUpTo(Screen.Profile.route) {
                         inclusive = true

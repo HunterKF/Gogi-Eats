@@ -14,6 +14,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Report
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.MutableLiveData
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.kbbqreview.HomeScreenViewModel
@@ -45,7 +47,12 @@ import com.google.accompanist.pager.rememberPagerState
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun HomeScreenItem(storyItem: Post, photoList: List<Photo>) {
+fun HomeScreenItem(
+    storyItem: Post,
+    photoList: List<Photo>,
+) {
+
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colors.background
@@ -56,11 +63,17 @@ fun HomeScreenItem(storyItem: Post, photoList: List<Photo>) {
             Spacer(modifier = Modifier.padding(4.dp))
         }
     }
+
+
 }
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun HomePostCard(state: PagerState, post: Post, photoList: List<Photo>) {
+fun HomePostCard(
+    state: PagerState,
+    post: Post,
+    photoList: List<Photo>,
+) {
 
     Surface(Modifier.background(Color.White)) {
         Column(

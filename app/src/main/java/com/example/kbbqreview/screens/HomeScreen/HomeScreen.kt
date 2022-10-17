@@ -6,6 +6,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -14,16 +16,18 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.kbbqreview.*
 import com.example.kbbqreview.data.firestore.Post
+import com.example.kbbqreview.screens.profile.ProfileScreenState
 
 @Composable
 fun HomeScreen(
     navController: NavHostController,
-    applicationViewModel: ApplicationViewModel,
-    navigationToSignIn: () -> Unit
 ) {
-
     val viewModel = viewModel<HomeScreenViewModel>()
-    val posts = viewModel.observePosts().collectAsState(initial = emptyList())
+    val state by viewModel.state.collectAsState()
+
+    LaunchedEffect(key1 = Unit) {
+        viewModel.getPosts()
+    }
 
     Scaffold(
         bottomBar = {
@@ -55,16 +59,28 @@ fun HomeScreen(
             }
         }
     ) { innerPadding ->
-        HomeScreenContents(
-            posts = posts.value
-        )
         val innerPadding = innerPadding
-
+        when (state) {
+            is HomeScreenState.Loaded -> {
+                val loaded = state as HomeScreenState.Loaded
+                HomeScreenContents(
+                    posts = loaded.posts
+                )
+            }
+            HomeScreenState.Loading -> {
+                println("Current state is ${state}")
+                Surface(Modifier.fillMaxSize()) {
+                    Box(contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(Modifier.scale(1.2f))
+                    }
+                }
+            }
+        }
 
 
     }
-
 }
+
 
 @Composable
 fun HomeScreenContents(posts: List<Post>) {
@@ -77,6 +93,7 @@ fun HomeScreenContents(posts: List<Post>) {
             val photoList by remember {
                 mutableStateOf(post.photoList)
             }
+
             HomeScreenItem(post, photoList)
         }
 

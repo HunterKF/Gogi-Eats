@@ -62,8 +62,6 @@ class ReviewViewModel : ViewModel() {
     val stateLng = mutableStateOf("")
     val address = mutableStateOf("")
 
-    val sdf = SimpleDateFormat("yyyy/MM/dd hh:mm:ss")
-    val currentDate = sdf.format(Date())
 
     fun changeLocation(latitude: Double, longitude: Double, context: Context) {
         restaurantLat.value = latitude
@@ -73,6 +71,7 @@ class ReviewViewModel : ViewModel() {
 
     fun clearValues(selectImages: SnapshotStateList<Photo>) {
         restaurantNameText.value = ""
+        restaurantReviewText.value = ""
         valueMeat.value = 2
         sideDishes.value = 2
         valueAtmosphere.value = 2
@@ -104,7 +103,7 @@ class ReviewViewModel : ViewModel() {
             val postAmenities = valueAmenities.value
             val postAtmosphere = valueAtmosphere.value
             val userId = setUser()
-            val displayName = getName()
+            val displayName = displayName.value
 
             val handle = Firebase.firestore.collection("reviews")
                 .add(
@@ -133,7 +132,7 @@ class ReviewViewModel : ViewModel() {
     }
 
 
-    fun getName(): String {
+    private fun getName(): String {
         val db = Firebase.firestore
         val currentUser = Firebase.auth.currentUser
         var name = ""
@@ -160,15 +159,14 @@ class ReviewViewModel : ViewModel() {
         return name
     }
 
-    /*fun setDisplayName(): String {
+    fun setDisplayName() {
         var displayName1 = ""
         firebaseUser?.let {
             getName()
             println("Inside setDisplayName: ${displayName.value}")
             displayName1 = displayName.value
         }
-        return displayName1
-    }*/
+    }
 
     private fun updateReview(id: String) {
         val db = Firebase.firestore.collection("reviews").document(id)
@@ -222,10 +220,6 @@ class ReviewViewModel : ViewModel() {
                 )
         }
 
-    }
-
-    fun updateSelectedSliderValue(value: MutableState<Int>, sliderPosition: Float) {
-        value.value = sliderPosition.toInt()
     }
 
 }

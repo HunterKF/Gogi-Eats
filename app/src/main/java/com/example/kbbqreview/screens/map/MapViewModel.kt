@@ -12,6 +12,7 @@ import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.TAG
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.map.location.LocationDetails
+import com.facebook.internal.Mutable
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
@@ -29,13 +30,7 @@ import java.util.*
 class MapViewModel : ViewModel() {
 
 
-    private val cameraPosition = mutableStateOf(LatLng(0.0, 0.0))
 
-    fun changeCameraPosition(location: LocationDetails?) {
-        location?.let {
-            cameraPosition.value = LatLng(location.latitude, location.longitude)
-        }
-    }
 
     val newMarkerPositionLat = mutableStateOf(0.0)
     val newMarkerPositionLng = mutableStateOf(0.0)
@@ -49,7 +44,7 @@ class MapViewModel : ViewModel() {
             authorDisplayName = "",
             authorText =  "",
             restaurantName =  "",
-            location = GeoPoint(0.0, 0.0),
+            location = GeoPoint(32.0, 123.0),
             valueMeat = 0,
             valueSideDishes =0,
             valueAtmosphere =0,
@@ -80,9 +75,12 @@ class MapViewModel : ViewModel() {
                                     .orEmpty(),
                                 location = documentSnapshot.getGeoPoint("location"),
                                 valueMeat = documentSnapshot.getLong("value_meat")!!.toInt(),
-                                valueSideDishes = documentSnapshot.getLong("value_side_dishes")!!.toInt(),
-                                valueAtmosphere = documentSnapshot.getLong("value_atmosphere")!!.toInt(),
-                                valueAmenities = documentSnapshot.getLong("value_amenities")!!.toInt(),
+                                valueSideDishes = documentSnapshot.getLong("value_side_dishes")!!
+                                    .toInt(),
+                                valueAtmosphere = documentSnapshot.getLong("value_atmosphere")!!
+                                    .toInt(),
+                                valueAmenities = documentSnapshot.getLong("value_amenities")!!
+                                    .toInt(),
                                 photoList = getPhotos(firebaseId),
                                 distance = 0.0
                             )
@@ -94,12 +92,13 @@ class MapViewModel : ViewModel() {
             awaitClose {
                 listener.remove()
             }
+
         }
     }
 
     private fun getPhotos(firebaseId: String): List<Photo> {
-        Log.d(TAG, "Captain, we who are about to start salute you! Onward, to the photos!")
-        Log.d(TAG, "Before we depart, we would like to check our id... ID: $firebaseId")
+        Log.d(TAG, "MapVM")
+        Log.d(TAG, "MapVM: Before we depart, we would like to check our id... ID: $firebaseId")
 
         val photoList = mutableListOf<Photo>()
         val db = Firebase.firestore
@@ -150,25 +149,7 @@ class MapViewModel : ViewModel() {
         return addressText
     }
 
-    fun bitmapDescriptorFromVector(
-        context: Context,
-        vectorResId: Int
-    ): BitmapDescriptor? {
 
-        // retrieve the actual drawable
-        val drawable = ContextCompat.getDrawable(context, vectorResId) ?: return null
-        drawable.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
-        val bm = Bitmap.createBitmap(
-            drawable.intrinsicWidth,
-            drawable.intrinsicHeight,
-            Bitmap.Config.ARGB_8888
-        )
-
-        // draw it onto the bitmap
-        val canvas = android.graphics.Canvas(bm)
-        drawable.draw(canvas)
-        return BitmapDescriptorFactory.fromBitmap(bm)
-    }
 
     fun distanceInKm(distInMeters: Float): Double {
         val distInKilometers = distInMeters / 1000
@@ -176,6 +157,6 @@ class MapViewModel : ViewModel() {
         df.roundingMode = RoundingMode.CEILING
         return df.format(distInKilometers).toDouble()
     }
-
-
 }
+
+

@@ -134,7 +134,7 @@ class ProfileViewModel : ViewModel() {
         )
     }
 
-    private fun converEditingPostToPost(
+    private fun convertEditingPostToPost(
         editingPost: EditingPost,
     ): Post {
         return Post(
@@ -347,7 +347,6 @@ class ProfileViewModel : ViewModel() {
                             )
                         }.sortedByDescending { it.timestamp }
                         trySend(posts)
-                        //TODO Handle posts
                     }
                 }
             awaitClose {
@@ -475,7 +474,7 @@ class ProfileViewModel : ViewModel() {
         post: EditingPost,
         editPhotoList: SnapshotStateList<Photo>,
     ) {
-        val convertedPost = converEditingPostToPost(post)
+        val convertedPost = convertEditingPostToPost(post)
         val db = Firebase.firestore
 
         val queryReview = db.collection("reviews").document(firebaseId)

@@ -6,7 +6,9 @@ import android.content.Intent
 import android.location.Location
 import android.net.Uri
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,8 +25,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -34,10 +36,10 @@ import coil.request.ImageRequest
 import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.HomeScreen.HomePostCard
-import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.example.kbbqreview.screens.map.MapStyle
 import com.example.kbbqreview.screens.map.MapViewModel
 import com.example.kbbqreview.screens.map.location.LocationDetails
+import com.example.kbbqreview.util.BitmapHandler
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.rememberPagerState
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -52,20 +54,26 @@ import kotlinx.coroutines.launch
 fun MapScreen(
     location: LocationDetails,
     navController: NavHostController,
-    reviewViewModel: ReviewViewModel,
+    mapViewModel: MapViewModel,
+    posts: State<List<Post>>,
 ) {
+
 
     val context = LocalContext.current
     val application = context.applicationContext as Application
-    val viewModel = viewModel<MapViewModel>()
+
+
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(LatLng(location.latitude, location.longitude), 17f)
+        position = CameraPosition.fromLatLngZoom(
+            LatLng(
+                mapViewModel.newMarkerPositionLat.value,
+                mapViewModel.newMarkerPositionLng.value
+            ), 15f)
     }
     val uiSettings = remember {
-        MapUiSettings(zoomControlsEnabled = false)
+        MapUiSettings(zoomControlsEnabled = false, mapToolbarEnabled = false)
     }
 
-    val posts = viewModel.observePosts().collectAsState(initial = emptyList())
     posts.value.forEach { post ->
         val result = FloatArray(10)
         Location.distanceBetween(
@@ -75,45 +83,74 @@ fun MapScreen(
             location.longitude,
             result
         )
-        val distanceInKilometers = viewModel.distanceInKm(result[0])
+        val distanceInKilometers = mapViewModel.distanceInKm(result[0])
         post.distance = distanceInKilometers
     }
     val sheetState = rememberBottomSheetState(initialValue = BottomSheetValue.Collapsed)
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = sheetState
     )
-    LaunchedEffect(key1 = Unit) {
-        viewModel.newMarkerPositionLat.value = location!!.latitude
-        viewModel.newMarkerPositionLng.value = location!!.longitude
-    }
-    var showSinglePost by remember {
+    var showSinglePost = remember {
         mutableStateOf(false)
     }
     val scope = rememberCoroutineScope()
+    var expand by remember {
+        mutableStateOf(false)
+    }
+
+    when {
+        sheetState.isExpanded -> expand = true
+        sheetState.isCollapsed -> expand = false
+    }
+    val offsetAnimation: Dp by animateDpAsState(
+        if (expand) 100.dp else 0.dp,
+        tween(200)
+    )
+    val offsetSizeAnimation: Float by animateFloatAsState(
+        if (expand) 0.4f else 1.0f,
+        spring(dampingRatio = Spring.DampingRatioLowBouncy)
+    )
+    val mapSizeAnimation: Float by animateFloatAsState(
+        if (expand) 0.4f else 1.0f,
+        tween(200)
+    )
     Scaffold(
         floatingActionButton = {
             Column() {
-                FloatingActionButton(onClick = {
-                    cameraPositionState.move(
-                        CameraUpdateFactory.newLatLngZoom(
-                            LatLng(
-                                location.latitude,
-                                location.longitude
-                            ), 15f
+                FloatingActionButton(
+                    modifier = Modifier
+                        .offset(offsetAnimation)
+                        .scale(offsetSizeAnimation),
+                    onClick = {
+                        cameraPositionState.move(
+                            CameraUpdateFactory.newLatLngZoom(
+                                LatLng(
+                                    location.latitude,
+                                    location.longitude
+                                ), 15f
+                            )
                         )
-                    )
-                }) {
+                    }) {
                     Icon(
                         Icons.Rounded.MyLocation,
+                        modifier = Modifier.scale(offsetSizeAnimation),
                         contentDescription = "My Location"
                     )
                 }
                 Spacer(Modifier.size(4.dp))
-                FloatingActionButton(onClick = {
-                    scope.launch { sheetState.expand() }
-                }) {
+                FloatingActionButton(
+                    modifier = Modifier
+                        .offset(offsetAnimation)
+                        .scale(offsetSizeAnimation),
+                    onClick = {
+                        scope.launch {
+                            expand = true
+                            sheetState.expand()
+                        }
+                    }) {
                     Icon(
                         Icons.Rounded.ViewList,
+                        modifier = Modifier.scale(offsetSizeAnimation),
                         contentDescription = "List"
                     )
                 }
@@ -129,18 +166,22 @@ fun MapScreen(
                         label = { Text(screen.label) },
                         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                         onClick = {
-                            navController.navigate(screen.route) {
-                                // Pop up to the start destination of the graph to
-                                // avoid building up a large stack of destinations
-                                // on the back stack as users select items
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+                            if (screen.route == Screen.MapScreen.route) {
+                                //Do nothing - This prevents it from resetting back to LatLng(0.0, 0.0). Idk why it's doing that.
+                            } else {
+                                navController.navigate(screen.route) {
+                                    // Pop up to the start destination of the graph to
+                                    // avoid building up a large stack of destinations
+                                    // on the back stack as users select items
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    // Avoid multiple copies of the same destination when
+                                    // reselecting the same item
+                                    launchSingleTop = true
+                                    // Restore state when reselecting a previously selected item
+                                    restoreState = true
                                 }
-                                // Avoid multiple copies of the same destination when
-                                // reselecting the same item
-                                launchSingleTop = true
-                                // Restore state when reselecting a previously selected item
-                                restoreState = true
                             }
                         }
                     )
@@ -149,36 +190,47 @@ fun MapScreen(
         }
     ) { innerPadding ->
 
+
+        if (sheetState.isAnimationRunning) {
+            println(sheetState.currentValue)
+            println(sheetState.progress)
+            println(sheetState.direction)
+        }
         BottomSheetScaffold(
             scaffoldState = scaffoldState,
             sheetContent = {
-                SheetContent(scope, sheetState, posts, location, showSinglePost, viewModel)
+                SheetContent(scope, sheetState, posts, location, showSinglePost, mapViewModel)
             },
             sheetPeekHeight = 0.dp,
             sheetGesturesEnabled = true,
-            sheetShape = RoundedCornerShape(topEnd = 5.dp, topStart = 5.dp)
+            sheetShape = RoundedCornerShape(topEnd = 10.dp, topStart = 10.dp)
 
         ) {
             GoogleMap(
-                modifier = Modifier.padding(innerPadding),
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .fillMaxHeight(mapSizeAnimation)
+                    .fillMaxWidth(),
                 cameraPositionState = cameraPositionState,
                 uiSettings = uiSettings,
                 properties = MapProperties(
                     mapStyleOptions = MapStyleOptions(MapStyle.json)
-                )
+                ),
+                onMapClick = { showSinglePost.value = false}
             ) {
                 Marker(position = LatLng(location.latitude, location.longitude), flat = true)
 
                 posts.value.forEach { post ->
+                    val total = post.valueMeat + post.valueAmenities + post.valueAtmosphere + post.valueSideDishes
                     MapMarker(
                         LocalContext.current,
                         LatLng(post.location!!.latitude, post.location.longitude),
                         post.restaurantName,
-                        R.drawable.ic_baseline_star_rate_24,
-                        post,
-                        viewModel
+                        R.drawable.map_marker__2_,
+                        total = total
                     ) {
-                        showSinglePost = true
+                        showSinglePost.value = true
+                        mapViewModel.singlePost.value = post
                         scope.launch { sheetState.expand() }
                     }
                 }
@@ -195,40 +247,61 @@ private fun SheetContent(
     sheetState: BottomSheetState,
     posts: State<List<Post>>,
     location: LocationDetails,
-    showSinglePost: Boolean,
+    showSinglePost: MutableState<Boolean>,
     viewModel: MapViewModel,
 ) {
+
+    var expand by remember {
+        mutableStateOf(false)
+    }
+    val offsetAnimation: Float by animateFloatAsState(
+        if (expand) 1.0f else 0.8f,
+        tween(200)
+    )
     Box(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
+            .fillMaxHeight(offsetAnimation)
     ) {
 
+        val state = rememberLazyListState()
 
-        LazyColumn(contentPadding = PaddingValues(top = 10.dp, bottom = 60.dp)) {
-            item {
-                IconButton(
-                    modifier = Modifier.align(Alignment.TopCenter),
-                    onClick = { scope.launch { sheetState.collapse() } }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_baseline_more),
-                        contentDescription = "Close sheet"
-                    )
-                }
+        LazyColumn(contentPadding = PaddingValues(top = 15.dp, bottom = 60.dp), state = state) {
+            when {
+                (state.firstVisibleItemScrollOffset >= 3) -> expand = true
+                sheetState.isCollapsed -> expand = false
+
             }
-            if (showSinglePost) {
+           item {
+               Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
+                   IconButton(
+                       onClick = { scope.launch { if (sheetState.isCollapsed) sheetState.expand() else sheetState.collapse() } }) {
+                       Icon(
+                           Icons.Rounded.HorizontalRule,
+                           contentDescription = "Close sheet",
+                           modifier = Modifier
+                               .scale(1.5f)
+                               .offset(y = (-10).dp),
+                           tint = Color.LightGray
+                       )
+                   }
+               }
+           }
+            if (showSinglePost.value) {
                 item {
                     val state = rememberPagerState()
-                    HomePostCard(
-                        state = state,
+                    HomePostCard(state = state,
                         post = viewModel.singlePost.value,
-                        photoList = viewModel.singlePost.value.photoList
-                    )
+                        photoList = viewModel.singlePost.value.photoList)
                 }
             } else {
                 itemsIndexed(posts.value.sortedByDescending { it.distance.toDouble() }
                     .reversed()) { index, restaurant ->
                     Spacer(Modifier.size(10.dp))
-                    RestaurantCard(restaurant, location)
+                    RestaurantCard(restaurant, location) {
+                        viewModel.singlePost.value = restaurant
+                        showSinglePost.value = true
+                    }
                     Spacer(Modifier.size(10.dp))
                     if (index != posts.value.size - 1) {
                         Divider(
@@ -244,7 +317,7 @@ private fun SheetContent(
 }
 
 @Composable
-fun RestaurantCard(restaurant: Post, currentLocation: LocationDetails) {
+fun RestaurantCard(restaurant: Post, currentLocation: LocationDetails, onClick: () -> Unit) {
     val photoList by remember {
         mutableStateOf(restaurant.photoList)
     }
@@ -265,7 +338,7 @@ fun RestaurantCard(restaurant: Post, currentLocation: LocationDetails) {
             Box(Modifier.fillMaxWidth()) {
                 PhotoDisplay(photoList)
             }
-            Heading(restaurant)
+            Heading(restaurant, onClick)
             Distance(restaurant.location, currentLocation)
             Address(location, restaurant.location)
             ValueBar(restaurant)
@@ -343,11 +416,11 @@ private fun ValueBar(restaurant: Post) {
 }
 
 @Composable
-private fun Heading(restaurant: Post) {
+private fun Heading(restaurant: Post, onClick: () -> Unit) {
     val totalValue =
         restaurant.valueAmenities + restaurant.valueMeat + restaurant.valueAtmosphere + restaurant.valueSideDishes
     Row(
-        Modifier.fillMaxWidth(),
+        Modifier.fillMaxWidth().clickable { onClick() },
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -430,22 +503,24 @@ fun MapMarker(
     position: LatLng,
     title: String,
     @DrawableRes iconResourceId: Int,
-    post: Post,
-    viewModel: MapViewModel,
+    total: Int,
     onInfoClick: () -> Unit,
 ) {
-    val viewModel = MapViewModel()
-    val icon = viewModel.bitmapDescriptorFromVector(
+    val icon = BitmapHandler.bitmapDescriptorFromVector(
         context, iconResourceId
     )
+    fun getEmojiByUnicode(unicode: Int): String {
+        return  String(Character.toChars(unicode));
+    }
+    val text = "${getEmojiByUnicode(0x2B50)} $total"
     Marker(
         position = position,
         title = title,
         icon = icon,
-        snippet = "Hello",
+        snippet = text,
         onInfoWindowClick = {
             onInfoClick()
-            viewModel.singlePost.value = post
+
         }
     )
 }
