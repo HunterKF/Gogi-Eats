@@ -1,10 +1,12 @@
 package com.example.kbbqreview
 
+import android.Manifest
 import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.location.Location
 import android.net.Uri
+import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.border
@@ -42,6 +44,8 @@ import com.example.kbbqreview.screens.map.location.LocationDetails
 import com.example.kbbqreview.util.BitmapHandler
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.rememberPagerState
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.*
 import com.google.firebase.firestore.GeoPoint
@@ -49,7 +53,7 @@ import com.google.maps.android.compose.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalPermissionsApi::class)
 @Composable
 fun MapScreen(
     location: LocationDetails,
@@ -58,6 +62,7 @@ fun MapScreen(
     posts: State<List<Post>>,
 ) {
 
+    val permissionState = rememberPermissionState(permission = Manifest.permission.ACCESS_FINE_LOCATION)
 
     val context = LocalContext.current
     val application = context.applicationContext as Application
@@ -114,129 +119,143 @@ fun MapScreen(
         if (expand) 0.4f else 1.0f,
         tween(200)
     )
-    Scaffold(
-        floatingActionButton = {
-            Column() {
-                FloatingActionButton(
-                    modifier = Modifier
-                        .offset(offsetAnimation)
-                        .scale(offsetSizeAnimation),
-                    onClick = {
-                        cameraPositionState.move(
-                            CameraUpdateFactory.newLatLngZoom(
-                                LatLng(
-                                    location.latitude,
-                                    location.longitude
-                                ), 15f
+    when {
+        permissionState.hasPermission -> {
+            Scaffold(
+                floatingActionButton = {
+                    Column() {
+                        FloatingActionButton(
+                            modifier = Modifier
+                                .offset(offsetAnimation)
+                                .scale(offsetSizeAnimation),
+                            onClick = {
+                                cameraPositionState.move(
+                                    CameraUpdateFactory.newLatLngZoom(
+                                        LatLng(
+                                            location.latitude,
+                                            location.longitude
+                                        ), 15f
+                                    )
+                                )
+                            }) {
+                            Icon(
+                                Icons.Rounded.MyLocation,
+                                modifier = Modifier.scale(offsetSizeAnimation),
+                                contentDescription = "My Location"
                             )
-                        )
-                    }) {
-                    Icon(
-                        Icons.Rounded.MyLocation,
-                        modifier = Modifier.scale(offsetSizeAnimation),
-                        contentDescription = "My Location"
-                    )
-                }
-                Spacer(Modifier.size(4.dp))
-                FloatingActionButton(
-                    modifier = Modifier
-                        .offset(offsetAnimation)
-                        .scale(offsetSizeAnimation),
-                    onClick = {
-                        scope.launch {
-                            expand = true
-                            sheetState.expand()
                         }
-                    }) {
-                    Icon(
-                        Icons.Rounded.ViewList,
-                        modifier = Modifier.scale(offsetSizeAnimation),
-                        contentDescription = "List"
-                    )
-                }
-            }
-        },
-        bottomBar = {
-            BottomNavigation {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination = navBackStackEntry?.destination
-                items.forEach { screen ->
-                    BottomNavigationItem(
-                        icon = { Icon(screen.vector, contentDescription = null) },
-                        label = { Text(screen.label) },
-                        selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
-                        onClick = {
-                            if (screen.route == Screen.MapScreen.route) {
-                                //Do nothing - This prevents it from resetting back to LatLng(0.0, 0.0). Idk why it's doing that.
-                            } else {
-                                navController.navigate(screen.route) {
-                                    // Pop up to the start destination of the graph to
-                                    // avoid building up a large stack of destinations
-                                    // on the back stack as users select items
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    // Avoid multiple copies of the same destination when
-                                    // reselecting the same item
-                                    launchSingleTop = true
-                                    // Restore state when reselecting a previously selected item
-                                    restoreState = true
+                        Spacer(Modifier.size(4.dp))
+                        FloatingActionButton(
+                            modifier = Modifier
+                                .offset(offsetAnimation)
+                                .scale(offsetSizeAnimation),
+                            onClick = {
+                                scope.launch {
+                                    expand = true
+                                    sheetState.expand()
                                 }
+                            }) {
+                            Icon(
+                                Icons.Rounded.ViewList,
+                                modifier = Modifier.scale(offsetSizeAnimation),
+                                contentDescription = "List"
+                            )
+                        }
+                    }
+                },
+                bottomBar = {
+                    BottomNavigation {
+                        val navBackStackEntry by navController.currentBackStackEntryAsState()
+                        val currentDestination = navBackStackEntry?.destination
+                        items.forEach { screen ->
+                            BottomNavigationItem(
+                                icon = { Icon(screen.vector, contentDescription = null) },
+                                label = { Text(screen.label) },
+                                selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                                onClick = {
+                                    if (screen.route == Screen.MapScreen.route) {
+                                        //Do nothing - This prevents it from resetting back to LatLng(0.0, 0.0). Idk why it's doing that.
+                                    } else {
+                                        navController.navigate(screen.route) {
+                                            // Pop up to the start destination of the graph to
+                                            // avoid building up a large stack of destinations
+                                            // on the back stack as users select items
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            // Avoid multiple copies of the same destination when
+                                            // reselecting the same item
+                                            launchSingleTop = true
+                                            // Restore state when reselecting a previously selected item
+                                            restoreState = true
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            ) { innerPadding ->
+
+
+                if (sheetState.isAnimationRunning) {
+                    println(sheetState.currentValue)
+                    println(sheetState.progress)
+                    println(sheetState.direction)
+                }
+                BottomSheetScaffold(
+                    scaffoldState = scaffoldState,
+                    sheetContent = {
+                        SheetContent(scope, sheetState, posts, location, showSinglePost, mapViewModel)
+                    },
+                    sheetPeekHeight = 0.dp,
+                    sheetGesturesEnabled = true,
+                    sheetShape = RoundedCornerShape(topEnd = 10.dp, topStart = 10.dp)
+
+                ) {
+                    GoogleMap(
+                        modifier = Modifier
+                            .padding(innerPadding)
+                            .fillMaxHeight(mapSizeAnimation)
+                            .fillMaxWidth(),
+                        cameraPositionState = cameraPositionState,
+                        uiSettings = uiSettings,
+                        properties = MapProperties(
+                            mapStyleOptions = MapStyleOptions(MapStyle.json)
+                        ),
+                        onMapClick = { showSinglePost.value = false}
+                    ) {
+                        Marker(position = LatLng(location.latitude, location.longitude), flat = true)
+
+                        posts.value.forEach { post ->
+                            val total = post.valueMeat + post.valueAmenities + post.valueAtmosphere + post.valueSideDishes
+                            MapMarker(
+                                LocalContext.current,
+                                LatLng(post.location!!.latitude, post.location.longitude),
+                                post.restaurantName,
+                                R.drawable.map_marker__2_,
+                                total = total
+                            ) {
+                                showSinglePost.value = true
+                                mapViewModel.singlePost.value = post
+                                scope.launch { sheetState.expand() }
                             }
                         }
-                    )
-                }
-            }
-        }
-    ) { innerPadding ->
-
-
-        if (sheetState.isAnimationRunning) {
-            println(sheetState.currentValue)
-            println(sheetState.progress)
-            println(sheetState.direction)
-        }
-        BottomSheetScaffold(
-            scaffoldState = scaffoldState,
-            sheetContent = {
-                SheetContent(scope, sheetState, posts, location, showSinglePost, mapViewModel)
-            },
-            sheetPeekHeight = 0.dp,
-            sheetGesturesEnabled = true,
-            sheetShape = RoundedCornerShape(topEnd = 10.dp, topStart = 10.dp)
-
-        ) {
-            GoogleMap(
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .fillMaxHeight(mapSizeAnimation)
-                    .fillMaxWidth(),
-                cameraPositionState = cameraPositionState,
-                uiSettings = uiSettings,
-                properties = MapProperties(
-                    mapStyleOptions = MapStyleOptions(MapStyle.json)
-                ),
-                onMapClick = { showSinglePost.value = false}
-            ) {
-                Marker(position = LatLng(location.latitude, location.longitude), flat = true)
-
-                posts.value.forEach { post ->
-                    val total = post.valueMeat + post.valueAmenities + post.valueAtmosphere + post.valueSideDishes
-                    MapMarker(
-                        LocalContext.current,
-                        LatLng(post.location!!.latitude, post.location.longitude),
-                        post.restaurantName,
-                        R.drawable.map_marker__2_,
-                        total = total
-                    ) {
-                        showSinglePost.value = true
-                        mapViewModel.singlePost.value = post
-                        scope.launch { sheetState.expand() }
                     }
                 }
             }
         }
+        permissionState.shouldShowRationale -> {
+            Column() {
+                Text("Location permission is required to access the map.")
+            }
+        }
+        !permissionState.hasPermission && !permissionState.shouldShowRationale -> {
+            Toast.makeText(context, "Enable permission location permission in app settings.", Toast.LENGTH_SHORT).show()
+            navController.navigate(Screen.HomeScreen.route)
+        }
     }
+
 
 }
 
@@ -420,7 +439,9 @@ private fun Heading(restaurant: Post, onClick: () -> Unit) {
     val totalValue =
         restaurant.valueAmenities + restaurant.valueMeat + restaurant.valueAtmosphere + restaurant.valueSideDishes
     Row(
-        Modifier.fillMaxWidth().clickable { onClick() },
+        Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -19,14 +19,6 @@ sealed class Screen(val route: String, val label: String, val vector: ImageVecto
     object CapturedPhotoView : Screen("captured_photo_view", "Photo", Icons.Rounded.PhotoLibrary)
 
 
-    fun withArgs(vararg args: String): String {
-        return buildString {
-            append(route)
-            args.forEach { arg ->
-                append("/$arg")
-            }
-        }
-    }
 }
 val items = listOf(
     Screen.MapScreen,

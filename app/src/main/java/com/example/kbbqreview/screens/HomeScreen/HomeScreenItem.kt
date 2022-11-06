@@ -194,7 +194,7 @@ fun TopRow(post: Post) {
     val context = LocalContext.current
     val openDialog = remember { mutableStateOf(false) }
     val viewModel = HomeScreenViewModel()
-    if (openDialog.value == true) {
+    if (openDialog.value) {
         AlertDialog(onDismissRequest = { openDialog.value = false },
             title = {
                 Row(

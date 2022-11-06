@@ -5,17 +5,12 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
-import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.HomeScreen.HomeScreenState
-import com.example.kbbqreview.screens.profile.ProfileScreenState
-import com.example.kbbqreview.util.LoginScreenState
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -32,16 +27,16 @@ import java.util.*
 val TAG = "HomeScreenVM"
 
 class HomeScreenViewModel : ViewModel() {
-    val loadingState = MutableStateFlow<HomeScreenState>(HomeScreenState.Loading)
+    private val loadingState = MutableStateFlow<HomeScreenState>(HomeScreenState.Loading)
 
     val state = loadingState.asStateFlow()
 
     fun getPosts(){
         viewModelScope.launch(Dispatchers.IO) {
-            observePosts2()
+            startObersevePosts()
         }
     }
-    private suspend fun observePosts2() {
+    private suspend fun startObersevePosts() {
         //mapping it into the homescreenstate
 
         observePosts().map { posts ->

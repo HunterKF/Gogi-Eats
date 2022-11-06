@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import com.example.kbbqreview.data.user.User
 import com.example.kbbqreview.ui.theme.KBBQReviewTheme
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
@@ -39,7 +40,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         auth.addAuthStateListener { auth ->
             applicationViewModel.setCurrentUser(auth.currentUser)
-            Log.d("Current USer", "The current user has been signed in. ${applicationViewModel.currentUser?.uid}")
+            Log.d("Current USer",
+                "The current user has been signed in. ${applicationViewModel.currentUser?.uid}")
         }
         setContent {
 
@@ -56,8 +58,10 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
+
+
             requestCameraPermission()
-            prepLocationUpdates()
+//            prepLocationUpdates()
 
         }
     }
@@ -118,8 +122,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    fun hasCameraPermission() = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-    fun hasExternalStoragePermission() =
+    private fun hasCameraPermission() =
+        ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+
+    private fun hasExternalStoragePermission() =
         ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
 
     private fun requestCameraPermission() {
@@ -127,8 +133,18 @@ class MainActivity : ComponentActivity() {
             ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED -> {
+            ) == PackageManager.PERMISSION_GRANTED
+                    &&
+                    ContextCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                    &&
+                    ContextCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED
+            -> {
                 Log.i("Permission", "Permission previously granted")
+                prepLocationUpdates()
             }
 
             ActivityCompat.shouldShowRequestPermissionRationale(
@@ -136,7 +152,12 @@ class MainActivity : ComponentActivity() {
                 Manifest.permission.CAMERA
             ) -> Log.i("Permission", "Show camera permissions dialog")
 
-            else -> requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+            else -> {
+                requestMultiplePermissions.launch(arrayOf(
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION))
+            }
         }
     }
 
@@ -148,7 +169,7 @@ class MainActivity : ComponentActivity() {
             requestMultiplePermissions.launch(
                 arrayOf(
                     Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                    Manifest.permission.CAMERA
+                    Manifest.permission.CAMERA,
                 )
             )
         }

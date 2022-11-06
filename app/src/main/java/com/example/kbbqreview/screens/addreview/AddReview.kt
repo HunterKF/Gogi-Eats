@@ -1,6 +1,5 @@
 package com.example.kbbqreview.screens.HomeScreen
 
-import android.app.Application
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
@@ -15,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.MyLocation
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -30,6 +30,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
@@ -61,12 +62,11 @@ fun AddReview(
     cameraViewModel: CameraViewModel,
     location: LocationDetails?,
     applicationViewModel: ApplicationViewModel,
-    addReviewViewModel: ReviewViewModel
+    addReviewViewModel: ReviewViewModel,
 ) {
     val focusRequester = FocusRequester()
 
     val context = LocalContext.current
-    val application = context.applicationContext as Application
     val TAG = "CAMERA TAG"
     val allPhotos = cameraViewModel.getAllPhotos()
     addReviewViewModel.setDisplayName()
@@ -107,7 +107,6 @@ fun AddReview(
 
 
         val intent = (context as MainActivity).intent
-        val photoUri = intent.getStringExtra("image")
 
         val lazyState = rememberLazyListState()
         val currentCharCount = remember { mutableStateOf(0) }
@@ -151,25 +150,29 @@ fun AddReview(
                     ReviewBar(
                         value = addReviewViewModel.valueMeat, title = "Meat",
                         focusManager = focusManager,
-                        R.drawable.meat_icon
+                        R.drawable.meat_icon,
+                        R.string.description_meat
                     )
                     ReviewBar(
                         value = addReviewViewModel.sideDishes,
                         title = "Banchan",
                         focusManager = focusManager,
-                        R.drawable.side_dishes_icon
+                        R.drawable.side_dishes_icon,
+                        R.string.description_side_dishes
                     )
                     ReviewBar(
                         value = addReviewViewModel.valueAmenities,
                         title = "Amenities",
                         focusManager = focusManager,
-                        R.drawable.amenities_icon
+                        R.drawable.amenities_icon,
+                        R.string.description_amenities
                     )
                     ReviewBar(
                         value = addReviewViewModel.valueAtmosphere,
                         title = "Atmosphere",
                         focusManager = focusManager,
-                        R.drawable.atmosphere_icon
+                        R.drawable.atmosphere_icon,
+                        R.string.description_atmosphere
                     )
                 }
                 item {
@@ -232,7 +235,7 @@ fun AddReview(
 fun CameraPhotos(
     modifier: Modifier,
     navController: NavHostController,
-    allPhotos: SnapshotStateList<Photo>
+    allPhotos: SnapshotStateList<Photo>,
 ) {
     Spacer(Modifier.height(8.dp))
     FlowRow(
@@ -301,7 +304,7 @@ fun PhotoCard(allPhotos: SnapshotStateList<Photo>, modifier: Modifier) {
 @Composable
 private fun InputRestaurantName(
     focusRequester: FocusRequester,
-    addReviewViewModel: ReviewViewModel
+    addReviewViewModel: ReviewViewModel,
 ) {
     OutlinedTextField(
         modifier = Modifier
@@ -334,7 +337,7 @@ private fun InputRestaurantName(
 fun ReviewTextfield(
     reviewViewModel: ReviewViewModel,
     modifier: Modifier,
-    currentCharCount: MutableState<Int>
+    currentCharCount: MutableState<Int>,
 ) {
     val context = LocalContext.current
     val maxChars = 1000
@@ -379,15 +382,20 @@ fun ReviewBar(
     value: MutableState<Int>,
     title: String,
     focusManager: FocusManager,
-    icon: Int
+    icon: Int,
+    description: Int,
 ) {
+
+    var expanded by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier.padding(
             horizontal = MaterialTheme.spacing.medium,
             vertical = MaterialTheme.spacing.extraSmall
         )
     ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center) {
             Icon(
                 modifier = Modifier.scale(0.6f),
                 painter = painterResource(id = icon),
@@ -396,9 +404,26 @@ fun ReviewBar(
             Text(
                 text = title,
                 style = MaterialTheme.typography.h6,
-                modifier = Modifier.padding(start = 4.dp)
+                textAlign = TextAlign.Left,
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .weight(1f)
             )
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.fillMaxWidth()) {
+                DropdownMenuItem(onClick = {
+                    expanded = false
+                }) {
+                    Text(stringResource(id = description))
+                }
+            }
+            IconButton(onClick = { expanded = true }) {
+                Icon(Icons.Rounded.Info, contentDescription = null
+                )
+            }
+
+
         }
+
         Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
@@ -469,7 +494,7 @@ fun LocationBar(
     reviewViewModel: ReviewViewModel,
     location: LocationDetails?,
     navController: NavHostController,
-    focusManager: FocusManager
+    focusManager: FocusManager,
 ) {
     val context = LocalContext.current
     Row(

@@ -16,4 +16,8 @@
     <string name="take_picture">Take picture</string>
     <string name="captured_image">Captured image</string>
     <string name="forgot_password">Forgot password?</string>
+    <string name="description_meat">How was the meat? Rate it based on your experience.</string>
+    <string name="description_side_dishes">"What kind of side dishes were there? Was it flavorful? "</string>
+    <string name="description_amenities">How were the amenities? Was the place clean? Did it have good ventilation?</string>
+    <string name="description_atmosphere">How was the vibe there? Was it a nice and quiet mood? Was it lively?</string>
 </resources>

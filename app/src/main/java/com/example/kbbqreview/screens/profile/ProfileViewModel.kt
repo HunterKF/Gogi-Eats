@@ -324,7 +324,6 @@ class ProfileViewModel : ViewModel() {
                     } else if (value != null) {
                         val posts = value.map { documentSnapshot ->
                             val firebaseId = documentSnapshot.id
-                            val userId = Firebase.auth.currentUser.toString()
                             Post(
                                 timestamp = documentSnapshot.getDate("date_posted") ?: Date(),
                                 userId = Firebase.auth.currentUser.toString(),
