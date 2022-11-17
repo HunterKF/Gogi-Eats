@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
@@ -35,7 +36,6 @@ import com.example.kbbqreview.R
 import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.HomeScreen.Scrim
-import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.example.kbbqreview.util.AddressMap
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
@@ -172,13 +172,13 @@ fun TopRow(post: Post, onEditClick: () -> Unit, profileViewModel: ProfileViewMod
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "Delete post?", color = Color.Red)
-                    Icon(Icons.Rounded.Report, contentDescription = "Report", tint = Color.Red)
+                    Text(text = stringResource(R.string.delete_post_question), color = Color.Red)
+                    Icon(Icons.Rounded.Report, contentDescription = stringResource(R.string.delete), tint = Color.Red)
                 }
 
             },
             text = {
-                Text("The post cannot be recovered once you delete.")
+                Text(stringResource(R.string.delete_warning))
             },
             confirmButton = {
                 Button(
@@ -186,7 +186,7 @@ fun TopRow(post: Post, onEditClick: () -> Unit, profileViewModel: ProfileViewMod
                         viewModel.delete(post.firebaseId, post)
                         openDialog.value = false
                     }) {
-                    Text("Delete")
+                    Text(stringResource(id = R.string.delete))
                 }
             },
             dismissButton = {
@@ -194,7 +194,7 @@ fun TopRow(post: Post, onEditClick: () -> Unit, profileViewModel: ProfileViewMod
                     onClick = {
                         openDialog.value = false
                     }) {
-                    Text("Dismiss")
+                    Text(stringResource(id = R.string.dismiss))
                 }
             })
     }
@@ -236,7 +236,7 @@ fun TopRow(post: Post, onEditClick: () -> Unit, profileViewModel: ProfileViewMod
         }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_baseline_more),
-                contentDescription = "More"
+                contentDescription = stringResource(id = R.string.more)
             )
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 DropdownMenuItem(onClick = {
@@ -252,13 +252,13 @@ fun TopRow(post: Post, onEditClick: () -> Unit, profileViewModel: ProfileViewMod
                     profileViewModel.changeLocation(post.location!!.latitude, post.location.longitude, context)
                     expanded = false
                 }) {
-                    Text("Edit post")
+                    Text(stringResource(R.string.edit_post))
                 }
                 DropdownMenuItem(onClick = {
                     openDialog.value = true
                     expanded = false
                 }) {
-                    Text("Delete post")
+                    Text(stringResource(R.string.delete_post_confirmation))
                 }
 
             }
@@ -276,18 +276,19 @@ fun ReviewComment(post: Post) {
     var isClickable by remember { mutableStateOf(false) }
     var finalText by remember { mutableStateOf(post.authorText) }
     val textLayoutResult = textLayoutResultState.value
+    val context = LocalContext.current
 
     LaunchedEffect(textLayoutResult) {
         if (textLayoutResult == null) return@LaunchedEffect
-
+        
         when {
             isExpanded -> {
-                finalText = "${post.authorText} Show Less"
+                finalText = "${post.authorText} " + context.getString(R.string.show_less)
 
             }
             !isExpanded && textLayoutResult.hasVisualOverflow -> {
                 val lastCharIndex = textLayoutResult.getLineEnd(MINIMIZED_MAX_LINES - 2)
-                val showMoreString = "... Show More"
+                val showMoreString = context.getString(R.string.show_more)
                 val adjustedText = post.authorText
                     .substring(startIndex = 0, endIndex = lastCharIndex)
                     .dropLast(showMoreString.length)
@@ -343,7 +344,7 @@ fun AddressBar(review: Post) {
     val uri: Uri = Uri.parse(checkPhoto(photoList, emptyPhoto).toString())
     val sendIntent: Intent = Intent().apply {
         action = Intent.ACTION_SEND
-        putExtra(Intent.EXTRA_SUBJECT, "${review.restaurantName}")
+        putExtra(Intent.EXTRA_SUBJECT, review.restaurantName)
         putExtra(Intent.EXTRA_TEXT, "WORDS")
         putExtra(Intent.EXTRA_STREAM, uri)
         setType("*/*")
@@ -366,7 +367,7 @@ fun AddressBar(review: Post) {
             onClick = { context.startActivity(shareIntent) }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_baseline_send_24),
-                contentDescription = "Share"
+                contentDescription = stringResource(id = R.string.share)
             )
         }
         IconButton(modifier = Modifier.weight(1f), onClick = {
@@ -374,7 +375,7 @@ fun AddressBar(review: Post) {
         }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_baseline_map_marker_24),
-                contentDescription = "Launch map"
+                contentDescription = stringResource(id = R.string.open_map)
             )
         }
     }

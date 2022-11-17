@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
@@ -62,28 +63,16 @@ fun EditReview(
 
     val allPhotos = cameraViewModel.getAllPhotos()
     LaunchedEffect(key1 = Unit) {
-        Log.d(
-            "LaunchedEffect",
-            "LAUNCHED EFFECT HAS HAPPENED!!! HOLD YOUR SHIT, IT'S ABOUT TO GET LOADED!"
-        )
+
         if (profileViewModel.editPhotoList.isNotEmpty()) {
             profileViewModel.editPhotoList.forEach {
-                Log.d(
-                    "LaunchedEffect",
-                    "in editPhotoList.forEach -> allPhotos size: ${profileViewModel.editPhotoList.size}"
-                )
-                Log.d(
-                    "LaunchedEffect",
-                    "in editPhotoList.forEach -> photoList size: ${photoList.size}"
-                )
+
                 profileViewModel.photoList.add(it)
             }
             profileViewModel.editPhotoList.clear()
         }
 
         allPhotos.forEach {
-            Log.d("LaunchedEffect", "in allPhotos.forEach -> allPhotos size: ${allPhotos.size}")
-            Log.d("LaunchedEffect", "in allPhotos.forEach -> photoList size: ${photoList.size}")
             if (photoList.contains(it)) {
                 return@forEach
             } else {
@@ -112,7 +101,9 @@ fun EditReview(
             item {
                 TopBar(
                     post,
-                    modifier = Modifier.fillMaxWidth().padding(MaterialTheme.spacing.small),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(MaterialTheme.spacing.small),
                     profileViewModel.restaurantName
                 )
             }
@@ -133,23 +124,23 @@ fun EditReview(
             item {
                 Column(Modifier.padding(horizontal = 12.dp)) {
 
-                    ReviewScale(post.valueMeat, "Meat", focusManager, R.drawable.meat_icon)
+                    ReviewScale(post.valueMeat, stringResource(id = R.string.title_meat), focusManager, R.drawable.meat_icon)
                     ReviewScale(
                         post.valueSideDishes,
-                        "Side Dishes",
+                        stringResource(id = R.string.title_side_dishes),
                         focusManager,
                         R.drawable.side_dishes_icon
                     )
 
                     ReviewScale(
                         post.valueAmenities,
-                        "Amenities",
+                        stringResource(id = R.string.title_amenities),
                         focusManager,
                         R.drawable.amenities_icon
                     )
                     ReviewScale(
                         post.valueAtmosphere,
-                        "Atmosphere",
+                        stringResource(id = R.string.title_atmosphere),
                         focusManager,
                         R.drawable.atmosphere_icon
                     )
@@ -186,7 +177,7 @@ fun EditReview(
                         profileViewModel.editPhotoList
                     )
                     profileViewModel.editingState.value = false
-                    Toast.makeText(context, "Post updated.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.post_updated), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -208,7 +199,7 @@ fun ReviewCommentField(authorText: MutableState<String>, modifier: Modifier) {
                 .fillMaxWidth()
                 .align(Alignment.Center),
             label = {
-                Text(text = "(Optional) Write about it")
+                Text(text = stringResource(id = R.string.optional_write_about_it))
             },
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Sentences,
@@ -220,7 +211,7 @@ fun ReviewCommentField(authorText: MutableState<String>, modifier: Modifier) {
                     currentCharCount.value = newValue.length
                     authorText.value = newValue
                 } else {
-                    Toast.makeText(context, "Shorten review.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.shorten_name), Toast.LENGTH_SHORT).show()
                 }
 
             }
@@ -292,7 +283,7 @@ fun ReviewScale(value: MutableState<Int>, title: String, focusManager: FocusMana
 @Composable
 fun UpdateButton(modifier: Modifier, onUpdate: () -> Unit) {
     OutlinedButton(modifier = modifier, onClick = { onUpdate() }) {
-        Text("Update")
+        Text(stringResource(R.string.update))
     }
 }
 
@@ -336,7 +327,7 @@ fun AddNewPhoto(modifier: Modifier, navController: NavHostController) {
         contentAlignment = Alignment.Center
     ) {
         IconButton(onClick = { navController.navigate(Screen.MainCamera.route) }) {
-            Icon(Icons.Rounded.Camera, "Open camera")
+            Icon(Icons.Rounded.Camera, null)
         }
 
     }
@@ -385,7 +376,7 @@ fun EditPhotoCard(
             IconButton(
                 modifier = Modifier.align(Alignment.TopEnd),
                 onClick = { removePhoto(photo) }) {
-                Icon(Icons.Rounded.Delete, contentDescription = "Remove photo", tint = Color.White)
+                Icon(Icons.Rounded.Delete, contentDescription = stringResource(id = R.string.remove_photo), tint = Color.White)
             }
         }
     }
@@ -409,7 +400,7 @@ fun TopBar(post: EditingPost, modifier: Modifier, restaurantName: MutableState<S
 
                 .fillMaxWidth(),
             label = {
-                Text(text = "Restaurant name")
+                Text(text = stringResource(id = R.string.restaurant_name))
             },
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Words,
@@ -467,7 +458,7 @@ fun EditAddress(
             }) {
             Icon(
                 Icons.Rounded.MyLocation,
-                contentDescription = "My location"
+                contentDescription = stringResource(id = R.string.my_location)
             )
         }
         IconButton(
@@ -478,7 +469,7 @@ fun EditAddress(
             }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_outline_map),
-                contentDescription = "Open map"
+                contentDescription = stringResource(id = R.string.open_map)
             )
         }
     }

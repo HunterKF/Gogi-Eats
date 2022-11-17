@@ -25,6 +25,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -222,7 +223,7 @@ fun ProfileContent(
                     onClick = { scope.launch { sheetState.collapse() } }) {
                     Icon(
                         Icons.Rounded.HorizontalRule,
-                        contentDescription = "Close sheet",
+                        contentDescription = null,
                         modifier = Modifier
                             .scale(1.5f)
                             .offset(y = (-10).dp),
@@ -242,12 +243,12 @@ fun ProfileContent(
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center) {
-                                Text(text = "Sign out")
+                                Text(text = stringResource(R.string.sign_out))
                                 Spacer(modifier = Modifier.padding(5.dp))
                                 Icon(
                                     Icons.Rounded.Logout,
                                     tint = Purple500,
-                                    contentDescription = "Sign out"
+                                    contentDescription = stringResource(R.string.sign_out)
                                 )
 
                             }
@@ -266,12 +267,12 @@ fun ProfileContent(
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center) {
-                                Text(text = "Account settings")
+                                Text(text = stringResource(R.string.account_settings))
                                 Spacer(modifier = Modifier.padding(5.dp))
                                 Icon(
                                     Icons.Rounded.Settings,
                                     tint = Purple500,
-                                    contentDescription = "Account settings"
+                                    contentDescription = stringResource(R.string.account_settings)
                                 )
 
                             }
@@ -415,13 +416,13 @@ private fun ViewSelector(gridLayout: MutableState<Boolean>) {
         IconButton(onClick = { gridLayout.value = true }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_baseline_grid_view_24),
-                contentDescription = "Grid view"
+                contentDescription = stringResource(R.string.view_grid)
             )
         }
         IconButton(onClick = { gridLayout.value = false }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_baseline_crop_din_24),
-                contentDescription = "Single view"
+                contentDescription = stringResource(R.string.view_single)
             )
         }
     }
@@ -435,7 +436,7 @@ private fun StatsBar(size: Int) {
 
         ) {
         Text(
-            text = "Total Reviews",
+            text = stringResource(R.string.total_reviews),
             style = MaterialTheme.typography.body1
         )
         Spacer(modifier = Modifier.height(4.dp))
@@ -497,137 +498,11 @@ private fun UserBar(
             onClick = { scope.launch { if (sheetState.isCollapsed) sheetState.expand() else sheetState.collapse() } }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_baseline_more),
-                contentDescription = "Options"
+                contentDescription = stringResource(R.string.options)
             )
         }
     }
 }
-
-/*@Composable
-private fun AdjustProfileSettings(
-    cameraViewModel: CameraViewModel,
-    context: Context,
-    viewModel: LoginViewModel,
-    userNameAvailable: MutableState<Boolean>,
-    userNameChecked: MutableState<Boolean>,
-    navigateToProfile: () -> Unit,
-) {
-    val profileViewModel = ProfileViewModel()
-    Box(Modifier.fillMaxSize()) {
-        Column(modifier = Modifier
-            .padding(horizontal = 16.dp, vertical = 40.dp)
-            .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceEvenly) {
-            val profilePhoto = cameraViewModel.getProfilePhoto()
-            val avatarUrl = profileViewModel.setAvatar()
-            val userNameState = remember {
-                mutableStateOf("")
-            }
-            val currentCharCount = remember { mutableStateOf(0) }
-
-            Box(Modifier
-                .padding(top = 20.dp, bottom = 10.dp)
-                .fillMaxWidth(0.4f)
-                .aspectRatio(1f)
-                .clip(CircleShape)
-                .border(4.dp, Color.Cyan, CircleShape)) {
-                AsyncImage(modifier = Modifier.fillMaxSize(),
-                    model = ImageRequest.Builder(context)
-                        .data(profilePhoto?.localUri ?: avatarUrl)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop
-                )
-                Row(Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .background(Color.White.copy(0.4f)),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { viewModel.changeToSettingsCamera() }) {
-                        Icon(
-                            Icons.Rounded.PhotoCamera,
-                            "Take profile picture",
-                            tint = Color.Black,
-                            modifier = Modifier.scale(1.3f)
-                        )
-                    }
-                }
-            }
-            val maxChars = 15
-            TextField(
-                value = userNameState.value,
-                onValueChange = { newValue ->
-                    if (newValue.length <= maxChars) {
-                        currentCharCount.value = newValue.length
-                        viewModel.onTextFieldChange(
-                            userNameState,
-                            newValue
-                        )
-                    } else {
-                        Toast.makeText(context, "Shorten name.", Toast.LENGTH_SHORT).show()
-                    }
-                },
-                leadingIcon = { Icon(Icons.Rounded.DriveFileRenameOutline, null) },
-                trailingIcon = {
-                    IconButton(onClick = {
-                        userNameAvailable.value =
-                            viewModel.checkUserNameAvailability(userNameState.value,
-                                userNameAvailable,
-                                context)
-                        if (!userNameAvailable.value) {
-                            userNameChecked.value = true
-                        }
-                    }) {
-                        Icon(Icons.Rounded.PersonSearch, null)
-                    }
-                },
-                modifier = Modifier
-                    .padding()
-                    .border(
-                        BorderStroke(width = 2.dp,
-                            color = if (userNameAvailable.value) com.example.kbbqreview.screens.camera.ui.theme.Purple500 else Color.Red),
-                        shape = RoundedCornerShape(50)
-                    )
-                    .fillMaxWidth(),
-                placeholder = {
-                    Text(
-                        text = "Profile name",
-                        color = Color.LightGray,
-                        style = MaterialTheme.typography.subtitle1
-                    )
-                },
-                maxLines = 1,
-                singleLine = true,
-                colors = TextFieldDefaults.textFieldColors(
-                    backgroundColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                )
-            )
-            val currentUser = Firebase.auth.currentUser
-            Button(enabled = userNameState.value != "", onClick = {
-                if (profilePhoto != null) {
-                    viewModel.createNewAccount(currentUser = currentUser,
-                        userName = userNameState.value,
-                        context = context,
-                        profilePhoto = profilePhoto,
-                        navigateToHome = navigateToProfile)
-                } else {
-                    viewModel.createNewAccount(currentUser = currentUser,
-                        userName = userNameState.value,
-                        context = context,
-                        profilePhoto = Photo(localUri = avatarUrl),
-                        navigateToHome = navigateToProfile)
-                }
-            }) {
-                Text("Complete sign in")
-            }
-        }
-    }
-}*/
 
 @Composable
 private fun ProfileSettings(
@@ -684,7 +559,7 @@ private fun ProfileSettings(
                     IconButton(onClick = { viewModel.changeToSettingsCamera() }) {
                         Icon(
                             Icons.Rounded.PhotoCamera,
-                            "Take profile picture",
+                            stringResource(R.string.take_profile_photo),
                             tint = Color.Black,
                             modifier = Modifier.scale(1.3f)
                         )
@@ -702,7 +577,7 @@ private fun ProfileSettings(
                             newValue
                         )
                     } else {
-                        Toast.makeText(context, "Shorten name.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.shorten_name), Toast.LENGTH_SHORT).show()
                     }
                 },
                 leadingIcon = { Icon(Icons.Rounded.DriveFileRenameOutline, null) },
@@ -729,7 +604,7 @@ private fun ProfileSettings(
                     .fillMaxWidth(),
                 placeholder = {
                     Text(
-                        text = "Profile name",
+                        text = stringResource(id = R.string.profile_name),
                         color = Color.LightGray,
                         style = MaterialTheme.typography.subtitle1
                     )
@@ -752,7 +627,7 @@ private fun ProfileSettings(
                     navigateToHome = navigateToProfile
                 )
             }) {
-                Text("Update")
+                Text(stringResource(id = R.string.update))
             }
         }
     }

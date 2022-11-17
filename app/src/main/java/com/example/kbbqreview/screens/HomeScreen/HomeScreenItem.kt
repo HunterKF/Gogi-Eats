@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
@@ -124,12 +125,7 @@ private fun PhotoHolder(
     )
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .clickable {
-                println(photoList[0].remoteUri)
-                println(photoList.size)
-                println("Checking the photo list")
-            },
+            .fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
 
@@ -150,7 +146,7 @@ private fun PhotoHolder(
                             .data(data = if (photoList.isNotEmpty()) photoList[page].remoteUri else emptyPhoto)
                             .placeholder(R.drawable.ic_image_placeholder)
                             .crossfade(true)
-                            .build(), contentDescription = "", Modifier
+                            .build(), contentDescription = null, Modifier
                             .padding(vertical = 8.dp)
                             .fillMaxSize(), contentScale = ContentScale.Crop
                     )
@@ -202,8 +198,8 @@ fun TopRow(post: Post) {
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "Report", color = Color.Red)
-                    Icon(Icons.Rounded.Report, contentDescription = "Report", tint = Color.Red)
+                    Text(text = stringResource(R.string.report), color = Color.Red)
+                    Icon(Icons.Rounded.Report, contentDescription = stringResource(R.string.report), tint = Color.Red)
                 }
 
             },
@@ -220,7 +216,7 @@ fun TopRow(post: Post) {
                         )
                         context.startActivity(intent)
                     }) {
-                    Text("Go to email")
+                    Text(stringResource(R.string.go_to_email))
                 }
             },
             dismissButton = {
@@ -228,7 +224,7 @@ fun TopRow(post: Post) {
                     onClick = {
                         openDialog.value = false
                     }) {
-                    Text("Dismiss")
+                    Text(stringResource(R.string.dismiss))
                 }
             })
 
@@ -272,14 +268,14 @@ fun TopRow(post: Post) {
         }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_baseline_more),
-                contentDescription = "More"
+                contentDescription = stringResource(R.string.more)
             )
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 DropdownMenuItem(onClick = {
                     openDialog.value = true
                     expanded = false
                 }) {
-                    Text("Report post")
+                    Text(stringResource(R.string.report))
                 }
             }
         }
@@ -343,9 +339,6 @@ fun ReviewComment(post: Post) {
 @Composable
 fun AddressBar(post: Post) {
 
-    val photoList by remember {
-        mutableStateOf(post.photoList)
-    }
     val context = LocalContext.current
     val emptyPhoto = Photo(
         "",
@@ -363,7 +356,7 @@ fun AddressBar(post: Post) {
         photoUri = if (post.photoList.isEmpty()) emptyPhoto.remoteUri else post.photoList.first().remoteUri
     )
     val mapIntent: Intent = Uri.parse(
-        "geo:${post.location!!.latitude},${post.location!!.longitude}?z=8"
+        "geo:${post.location.latitude},${post.location.longitude}?z=8"
     ).let { location ->
         // Or map point based on latitude/longitude
         // val location: Uri = Uri.parse("geo:37.422219,-122.08364?z=14") // z param is zoom level
@@ -377,7 +370,6 @@ fun AddressBar(post: Post) {
         post.location!!.latitude,
         post.location.longitude
     )
-    val shareWith = "ShareWith"
 
     val intent = Intent(Intent.ACTION_SEND)
     intent.type = type
@@ -403,7 +395,7 @@ fun AddressBar(post: Post) {
             }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_baseline_send_24),
-                contentDescription = "Share"
+                contentDescription = stringResource(R.string.share)
             )
         }
         IconButton(modifier = Modifier.weight(1f), onClick = {
@@ -411,7 +403,7 @@ fun AddressBar(post: Post) {
         }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_baseline_map_marker_24),
-                contentDescription = "Launch map"
+                contentDescription = stringResource(R.string.open_map)
             )
         }
     }

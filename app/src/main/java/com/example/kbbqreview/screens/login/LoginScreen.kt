@@ -47,6 +47,7 @@ import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.screens.camera.ProfileCamera
 import com.example.kbbqreview.screens.camera.ui.theme.Purple500
+import com.example.kbbqreview.screens.login.util.DividedBackground
 import com.example.kbbqreview.screens.profile.ProfileViewModel
 import com.example.kbbqreview.util.LoginScreenState
 import com.facebook.CallbackManager
@@ -80,7 +81,6 @@ fun LoginScreen(
         viewModel.backToLanding()
         cameraViewModel.profilePicture.clear()
     }
-    println("THE LOGIN SCREEN HAS LOADED AGAIN. WHY?!")
 //    viewModel.setCurrentUser(applicationViewModel.currentUser)
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -102,12 +102,16 @@ fun LoginScreen(
                 Firebase.auth.signInWithCredential(credential).addOnCompleteListener {
                     account = GoogleSignIn.getLastSignedInAccount(context)
                     viewModel.changeProfileSettings(navigateToProfile)
-                    Toast.makeText(context, "Signed in!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context,
+                        context.getString(R.string.signed_in),
+                        Toast.LENGTH_SHORT).show()
 //                    navigateToProfile()
                 }
             } catch (e: ApiException) {
                 Log.w("Google", "Google sign in failed", e)
-                Toast.makeText(context, "Failed to sign in.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context,
+                    context.getString(R.string.failed_sign_in),
+                    Toast.LENGTH_SHORT).show()
             }
         }
     val emailFieldState = remember {
@@ -129,7 +133,6 @@ fun LoginScreen(
 
     when (state) {
         LoginScreenState.SignIn -> {
-            println("Current state is ${state}")
             SignInScreen(
                 navigateToProfile,
                 context,
@@ -142,7 +145,6 @@ fun LoginScreen(
             )
         }
         LoginScreenState.Loading -> {
-            println("Current state is ${state}")
             Surface(Modifier.fillMaxSize()) {
                 Box(contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(Modifier.scale(1.2f))
@@ -164,7 +166,6 @@ fun LoginScreen(
                 userNameAvailable,
                 userNameChecked
             )
-            println("Current state is ${state}")
         }
         LoginScreenState.LandingScreen -> {
 //            Image by <a href="https://www.freepik.com/free-vector/hand-drawn-korean-bbq-illustration_31216894.htm#query=illustrations%20korean%20bbq&position=0&from_view=search">Freepik</a>
@@ -177,7 +178,6 @@ fun LoginScreen(
             ProfileCamera(cameraViewModel = cameraViewModel) { viewModel.simpleChangeToProfileSetting() }
         }
         LoginScreenState.ChangeProfileSettings -> {
-            println("CHANGE PROFILE SETTINGS HAS BEEN ACTIVATED")
             AdjustProfileSettings(
                 cameraViewModel,
                 context,
@@ -215,7 +215,6 @@ private fun AdjustProfileSettings(
                 mutableStateOf("")
             }
             val currentCharCount = remember { mutableStateOf(0) }
-            Text("Hello~~~")
             Box(Modifier
                 .padding(top = 20.dp, bottom = 10.dp)
                 .fillMaxWidth(0.4f)
@@ -239,7 +238,7 @@ private fun AdjustProfileSettings(
                     IconButton(onClick = { viewModel.changeToSettingsCamera() }) {
                         Icon(
                             Icons.Rounded.PhotoCamera,
-                            "Take profile picture",
+                            stringResource(R.string.take_profile_photo),
                             tint = Color.Black,
                             modifier = Modifier.scale(1.3f)
                         )
@@ -257,7 +256,9 @@ private fun AdjustProfileSettings(
                             newValue
                         )
                     } else {
-                        Toast.makeText(context, "Shorten name.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context,
+                            context.getString(R.string.shorten_name),
+                            Toast.LENGTH_SHORT).show()
                     }
                 },
                 leadingIcon = { Icon(Icons.Rounded.DriveFileRenameOutline, null) },
@@ -284,7 +285,7 @@ private fun AdjustProfileSettings(
                     .fillMaxWidth(),
                 placeholder = {
                     Text(
-                        text = "Profile name",
+                        text = stringResource(R.string.profile_name),
                         color = Color.LightGray,
                         style = MaterialTheme.typography.subtitle1
                     )
@@ -315,7 +316,7 @@ private fun AdjustProfileSettings(
                         navigateToHome = navigateToProfile)
                 }
             }) {
-                Text("Complete sign in")
+                Text(stringResource(R.string.complete_sign_in))
             }
         }
     }
@@ -346,13 +347,14 @@ private fun LandScreenContent(
                 .weight(1f)
                 .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = "Hey! Welcome", style = MaterialTheme.typography.h6)
+                Text(text = stringResource(R.string.hey_welcome),
+                    style = MaterialTheme.typography.h6)
 
                 Button(onClick = { viewModel.changeToCreate() }) {
-                    Text("Get started")
+                    Text(stringResource(R.string.get_started))
                 }
                 TextButton(onClick = { viewModel.changeToSignIn() }) {
-                    Text("Already have an account?")
+                    Text(stringResource(R.string.have_an_account))
                 }
             }
         }
@@ -375,7 +377,7 @@ private fun SignInScreen(
             .background(MaterialTheme.colors.surface)
             .fillMaxSize()
     ) {
-
+        DividedBackground(Modifier.fillMaxSize())
         Box(Modifier
             .fillMaxWidth()
             .align(Alignment.TopCenter)) {
@@ -430,6 +432,7 @@ private fun CreateAccountScreen(
     val profilePhoto = cameraViewModel.getProfilePhoto()
     val currentCharCount = remember { mutableStateOf(0) }
     Box(Modifier.fillMaxSize()) {
+        DividedBackground(Modifier.fillMaxSize())
         Box(Modifier
             .fillMaxWidth()
             .align(Alignment.TopCenter)) {
@@ -471,7 +474,9 @@ private fun CreateAccountScreen(
                     verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { viewModel.changeToCreateAccCamera() }) {
                         Icon(
-                            Icons.Rounded.PhotoCamera, "Take profile picture", tint = Color.Black,
+                            Icons.Rounded.PhotoCamera,
+                            stringResource(id = R.string.take_profile_photo),
+                            tint = Color.Black,
                             modifier = Modifier.scale(1.3f)
                         )
                     }
@@ -521,10 +526,9 @@ private fun GoogleSignIn(
 
         }) {
         Icon(Icons.Rounded.Email, contentDescription = null)
-        Text("Continue with Google")
+        Text(stringResource(R.string.continue_with_google))
     }
 }
-
 
 
 @Composable
@@ -550,12 +554,10 @@ fun CreateAccountInfo(
                 auth.createUserWithEmailAndPassword(emailFieldState.value, passwordFieldState.value)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
-                            Log.d("Login", "createUserWithEmail: success")
                             val user = auth.currentUser
                         } else {
-                            Log.w("Login", "createUserWithEmail: failure", task.exception)
                             Toast.makeText(
-                                context, "Authentication failed.",
+                                context, context.getString(R.string.authentication_failed),
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
@@ -580,7 +582,7 @@ fun CreateAccountInfo(
                 .fillMaxWidth(),
             placeholder = {
                 Text(
-                    text = "Email address",
+                    text = stringResource(R.string.email_address),
                     color = Color.LightGray,
                     style = MaterialTheme.typography.subtitle1
                 )
@@ -609,7 +611,9 @@ fun CreateAccountInfo(
                         newValue
                     )
                 } else {
-                    Toast.makeText(context, "Shorten name.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context,
+                        context.getString(R.string.shorten_name),
+                        Toast.LENGTH_SHORT).show()
                 }
             },
             leadingIcon = { Icon(Icons.Rounded.DriveFileRenameOutline, null) },
@@ -636,7 +640,7 @@ fun CreateAccountInfo(
                 .fillMaxWidth(),
             placeholder = {
                 Text(
-                    text = "Profile name",
+                    text = stringResource(id = R.string.profile_name),
                     color = Color.LightGray,
                     style = MaterialTheme.typography.subtitle1
                 )
@@ -659,7 +663,7 @@ fun CreateAccountInfo(
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(if (passwordVisible) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
-                        contentDescription = "Password visibility")
+                        contentDescription = null)
                 }
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -672,7 +676,7 @@ fun CreateAccountInfo(
                 .fillMaxWidth(),
             placeholder = {
                 Text(
-                    text = "Password",
+                    text = stringResource(R.string.password),
                     color = Color.LightGray,
                     style = MaterialTheme.typography.subtitle1
                 )
@@ -700,12 +704,12 @@ fun CreateAccountInfo(
                     context
                 )
             }) {
-            Text(text = "Create Account")
+            Text(text = stringResource(R.string.create_account))
         }
         TextButton(onClick = {
             viewModel.changeToSignIn()
         }) {
-            Text("Already have an account?")
+            Text(stringResource(id = R.string.have_an_account))
         }
     }
 }
@@ -736,7 +740,7 @@ fun EmailSignIn(
                 .fillMaxWidth(),
             placeholder = {
                 Text(
-                    text = "Email address",
+                    text = stringResource(id = R.string.email_address),
                     color = Color.LightGray,
                     style = MaterialTheme.typography.subtitle1
                 )
@@ -763,7 +767,7 @@ fun EmailSignIn(
                 .fillMaxWidth(),
             placeholder = {
                 Text(
-                    text = "Password",
+                    text = stringResource(id = R.string.password),
                     color = Color.LightGray,
                     style = MaterialTheme.typography.subtitle1
                 )
@@ -780,10 +784,10 @@ fun EmailSignIn(
         )
         Box(Modifier.fillMaxWidth()) {
             fun showToast() {
-                Toast.makeText(context, "Please enter an email address", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context,
+                    context.getString(R.string.enter_an_email_address),
+                    Toast.LENGTH_SHORT).show()
             }
-
-            val showToast = remember { mutableStateOf(false) }
             TextButton(modifier = Modifier.align(Alignment.CenterEnd), onClick = {
                 if (emailFieldState.value == "")
                     showToast()
@@ -797,7 +801,6 @@ fun EmailSignIn(
         Button(modifier = Modifier.fillMaxWidth(),
             enabled = emailFieldState.value.isNotEmpty() && passwordFieldState.value.isNotEmpty(),
             onClick = {
-                println("Attempting to sign in")
                 viewModel.signInWithEmailAndPassword(
                     context,
                     emailFieldState.value,
@@ -805,13 +808,13 @@ fun EmailSignIn(
                     navigateToHome
                 )
             }) {
-            Text(text = "Sign In")
+            Text(text = stringResource(id = R.string.sign_in))
         }
 
         TextButton(onClick = {
             viewModel.changeToCreate()
         }) {
-            Text("New? Create account")
+            Text(stringResource(R.string.create_account_prompt))
         }
     }
 }
@@ -825,7 +828,8 @@ private fun FacebookSignInDefault(
     SignInButton(
         onSignedIn = {
             viewModel.changeProfileSettings(navigateToHome)
-            Toast.makeText(context, "Signed in!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.signed_in), Toast.LENGTH_SHORT)
+                .show()
         },
         onSignInFailed = {
             Toast.makeText(context, "Try again later. ${it.localizedMessage}", Toast.LENGTH_SHORT)
@@ -833,6 +837,7 @@ private fun FacebookSignInDefault(
         }
     )
 }
+
 //FACEBOOK SIGN IN
 @Composable
 fun SignInButton(
@@ -840,8 +845,12 @@ fun SignInButton(
     onSignedIn: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    Row(Modifier.fillMaxWidth().background(Color.Red)) {
-        Box(modifier = Modifier.fillMaxWidth().background(Color.Black)) {
+    Row(Modifier
+        .fillMaxWidth()
+        .background(Color.Red)) {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.Black)) {
 
         }
         Box(Modifier.background(Color.White)) {
@@ -868,8 +877,7 @@ fun SignInButton(
                                 if (authResult.user != null) {
                                     onSignedIn()
                                 } else {
-                                    println("Could not sign in with Firebase.")
-                                    onSignInFailed(RuntimeException("Could not sign in with Firebase."))
+                                    onSignInFailed(RuntimeException(context.getString(R.string.could_not_sign_in)))
                                 }
                             }
 

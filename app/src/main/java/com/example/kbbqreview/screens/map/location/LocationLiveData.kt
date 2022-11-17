@@ -40,7 +40,9 @@ class LocationLiveData(
         }
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             location.also {
-                setLocationData(it)
+                if (it != null) {
+                    setLocationData(it)
+                }
             }
         }
         startLocationUpdates()

@@ -10,7 +10,9 @@ import com.example.kbbqreview.R
 
 val baseFont = FontFamily(
     listOf(
-        Font(R.font.notosanskr_regular)
+        Font(R.font.source_sans_pro_light),
+        Font(R.font.source_sans_pro_regular),
+        Font(R.font.source_sans_pro_semi_bold)
     )
 )
 // Set of Material typography styles to start with
@@ -18,13 +20,23 @@ val Typography = Typography(
     body1 = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
-        fontSize = 16.sp
+        fontSize = 20.sp
     ),
+    body2 = TextStyle(
+        fontFamily = baseFont,
+        fontSize = 18.sp
+    ),
+    subtitle2 = TextStyle(),
     h6 = TextStyle(
         fontFamily = baseFont,
         fontWeight = FontWeight.Medium,
         fontSize = 24.sp
-    )
+    ),
+    subtitle1 = TextStyle(
+        fontFamily = baseFont,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp
+    ),
     /* Other default text styles to override
     button = TextStyle(
         fontFamily = FontFamily.Default,

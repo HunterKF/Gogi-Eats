@@ -16,6 +16,7 @@ import com.example.kbbqreview.screens.map.currentLocation.FromAddChooseLocation
 import com.example.kbbqreview.screens.HomeScreen.AddReview
 import com.example.kbbqreview.screens.HomeScreen.ProfileScreen
 import com.example.kbbqreview.screens.HomeScreen.HomeScreen
+import com.example.kbbqreview.screens.addreview.AddReview2
 import com.example.kbbqreview.screens.login.LoginScreen
 import com.example.kbbqreview.screens.login.LoginViewModel
 import com.example.kbbqreview.screens.map.MapViewModel
@@ -31,7 +32,7 @@ fun Navigation(
     val location by applicationViewModel.getLocationLiveData().observeAsState()
 
     val startDestination = remember {
-        mutableStateOf(Screen.HomeScreen.route)
+        mutableStateOf(Screen.AddReview.route)
     }
 
     val cameraViewModel = CameraViewModel()
@@ -66,7 +67,7 @@ fun Navigation(
 
         }
         composable(Screen.AddReview.route) {
-            AddReview(
+            AddReview2(
                 focusManager = focusManager,
                 navController = navController,
                 cameraViewModel = cameraViewModel,

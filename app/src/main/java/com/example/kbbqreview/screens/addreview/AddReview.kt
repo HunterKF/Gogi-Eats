@@ -124,7 +124,7 @@ fun AddReview(
                 item {
                     Text(
                         modifier = Modifier.padding(MaterialTheme.spacing.small),
-                        text = "Add Review",
+                        text = stringResource(R.string.add_review),
                         style = MaterialTheme.typography.h4
                     )
                 }
@@ -148,28 +148,28 @@ fun AddReview(
                 item {
                     //review values
                     ReviewBar(
-                        value = addReviewViewModel.valueMeat, title = "Meat",
+                        value = addReviewViewModel.valueMeat, title = stringResource(R.string.title_meat),
                         focusManager = focusManager,
                         R.drawable.meat_icon,
                         R.string.description_meat
                     )
                     ReviewBar(
                         value = addReviewViewModel.sideDishes,
-                        title = "Banchan",
+                        title = stringResource(R.string.title_side_dishes),
                         focusManager = focusManager,
                         R.drawable.side_dishes_icon,
                         R.string.description_side_dishes
                     )
                     ReviewBar(
                         value = addReviewViewModel.valueAmenities,
-                        title = "Amenities",
+                        title = stringResource(R.string.title_amenities),
                         focusManager = focusManager,
                         R.drawable.amenities_icon,
                         R.string.description_amenities
                     )
                     ReviewBar(
                         value = addReviewViewModel.valueAtmosphere,
-                        title = "Atmosphere",
+                        title = stringResource(R.string.title_atmosphere),
                         focusManager = focusManager,
                         R.drawable.atmosphere_icon,
                         R.string.description_atmosphere
@@ -198,20 +198,6 @@ fun AddReview(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        Button(onClick = {
-                            println(applicationViewModel.firebaseUser)
-                            Log.d(
-                                "Firebase Auth",
-                                "The value is now: ${applicationViewModel.firebaseUser}"
-                            )
-                            Toast.makeText(
-                                context,
-                                "The value for user is: ${addReviewViewModel.displayName.value}",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }) {
-                            Text("test")
-                        }
                         SubmitButton(
                             modifier = Modifier
                                 .weight(2f)
@@ -280,7 +266,7 @@ fun PhotoCard(allPhotos: SnapshotStateList<Photo>, modifier: Modifier) {
                     .placeholder(R.drawable.ic_image_placeholder)
                     .crossfade(true)
                     .build(),
-                contentDescription = "",
+                contentDescription = null,
                 Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
@@ -293,7 +279,7 @@ fun PhotoCard(allPhotos: SnapshotStateList<Photo>, modifier: Modifier) {
             IconButton(
                 modifier = Modifier.align(Alignment.TopEnd),
                 onClick = { removePhoto(photo) }) {
-                Icon(Icons.Rounded.Delete, contentDescription = "Remove photo", tint = Color.White)
+                Icon(Icons.Rounded.Delete, contentDescription = stringResource(R.string.remove_photo), tint = Color.White)
             }
         }
     }
@@ -311,7 +297,7 @@ private fun InputRestaurantName(
             .focusRequester(focusRequester)
             .fillMaxWidth(),
         label = {
-            Text(text = "Restaurant name")
+            Text(text = stringResource(R.string.restaurant_name))
         },
         value = addReviewViewModel.restaurantNameText.value,
         keyboardOptions = KeyboardOptions(
@@ -336,7 +322,7 @@ private fun InputRestaurantName(
 @Composable
 fun ReviewTextfield(
     reviewViewModel: ReviewViewModel,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     currentCharCount: MutableState<Int>,
 ) {
     val context = LocalContext.current
@@ -348,7 +334,7 @@ fun ReviewTextfield(
                 .fillMaxWidth()
                 .align(Alignment.Center),
             label = {
-                Text(text = "(Optional) Write about it")
+                Text(text = stringResource(R.string.optional_write_about_it))
             },
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Sentences,
@@ -363,7 +349,7 @@ fun ReviewTextfield(
                         newValue
                     )
                 } else {
-                    Toast.makeText(context, "Shorten review.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.short_review), Toast.LENGTH_SHORT).show()
                 }
             }
 
@@ -467,24 +453,23 @@ fun SubmitButton(
     Button(modifier = Modifier, onClick = {
         when {
             reviewViewModel.restaurantLng.value == 0.0 && reviewViewModel.restaurantLat.value == 0.0 -> {
-                Toast.makeText(context, "Add location!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.check_location), Toast.LENGTH_SHORT).show()
             }
             cameraViewModel.selectImages.isEmpty() -> {
-                Toast.makeText(context, "Add a photo!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context,  context.getString(R.string.check_photo), Toast.LENGTH_SHORT).show()
             }
             reviewViewModel.restaurantNameText.value == "" -> {
-                Toast.makeText(context, "Add a name!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context,  context.getString(R.string.check_name), Toast.LENGTH_SHORT).show()
             }
             else -> {
-                println("CURRENT NAME: ${reviewViewModel.displayName.value}")
                 reviewViewModel.onSubmitButton(selectImages = cameraViewModel.selectImages)
 
-                Toast.makeText(context, "Review saved!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context,  context.getString(R.string.review_saved), Toast.LENGTH_SHORT).show()
             }
         }
     }
     ) {
-        Text("Submit")
+        Text(stringResource(R.string.submit))
     }
 }
 
@@ -526,7 +511,7 @@ fun LocationBar(
             }) {
             Icon(
                 Icons.Rounded.MyLocation,
-                contentDescription = "My location"
+                contentDescription = stringResource(R.string.my_location)
             )
         }
         IconButton(
@@ -537,7 +522,7 @@ fun LocationBar(
             }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_outline_map),
-                contentDescription = "Open map"
+                contentDescription = stringResource(R.string.open_map)
             )
         }
     }

@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -65,8 +66,6 @@ fun MapScreen(
     val permissionState = rememberPermissionState(permission = Manifest.permission.ACCESS_FINE_LOCATION)
 
     val context = LocalContext.current
-    val application = context.applicationContext as Application
-
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
@@ -247,11 +246,11 @@ fun MapScreen(
         }
         permissionState.shouldShowRationale -> {
             Column() {
-                Text("Location permission is required to access the map.")
+                Text(stringResource(R.string.location_permission_required))
             }
         }
         !permissionState.hasPermission && !permissionState.shouldShowRationale -> {
-            Toast.makeText(context, "Enable permission location permission in app settings.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, stringResource(R.string.prompt_location_permission), Toast.LENGTH_SHORT).show()
             navController.navigate(Screen.HomeScreen.route)
         }
     }
@@ -297,7 +296,7 @@ private fun SheetContent(
                        onClick = { scope.launch { if (sheetState.isCollapsed) sheetState.expand() else sheetState.collapse() } }) {
                        Icon(
                            Icons.Rounded.HorizontalRule,
-                           contentDescription = "Close sheet",
+                           contentDescription = null,
                            modifier = Modifier
                                .scale(1.5f)
                                .offset(y = (-10).dp),
@@ -496,7 +495,7 @@ private fun Address(address: String, location: GeoPoint) {
             fontWeight = FontWeight.Light
         )
         IconButton(onClick = { context.startActivity(mapIntent) }) {
-            Icon(Icons.Rounded.Map, "Open map")
+            Icon(Icons.Rounded.Map, stringResource(id = R.string.open_map))
         }
     }
 
