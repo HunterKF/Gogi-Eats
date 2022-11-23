@@ -1,13 +1,18 @@
 package com.example.kbbqreview.screens.HomeScreen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -15,8 +20,11 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.kbbqreview.*
+import com.example.kbbqreview.R
 import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.screens.profile.ProfileScreenState
+import com.example.kbbqreview.ui.theme.Brown
+import com.example.kbbqreview.ui.theme.Orange
 
 @Composable
 fun HomeScreen(
@@ -28,16 +36,60 @@ fun HomeScreen(
     LaunchedEffect(key1 = Unit) {
         viewModel.getPosts()
     }
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+    var label = ""
+    items.forEach {
+        if (currentDestination?.route == it.route) {
+            label = it.label
+        }
+    }
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .shadow(12.dp, RoundedCornerShape(0.dp), spotColor = Color.Black),
+                backgroundColor = Color.White,
+                content = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.logo),
+                            null,
+
+                            modifier = Modifier.padding(vertical = 4.dp).size(62.dp)
+                        )
+                    }
+                }
+            )
+        },
         bottomBar = {
-            BottomNavigation {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination = navBackStackEntry?.destination
+            BottomNavigation(
+                modifier = Modifier
+                    .shadow(12.dp, RoundedCornerShape(0.dp), spotColor = Color.Black),
+                backgroundColor = Color.White
+            ) {
                 items.forEach { screen ->
                     BottomNavigationItem(
-                        icon = { Icon(screen.vector, contentDescription = null) },
-                        label = { Text(screen.label) },
+                        icon = {
+                            Icon(
+                                modifier = Modifier.size(22.dp),
+                                painter = painterResource(id = screen.icon
+                                    ?: R.drawable.icon_meat),
+                                contentDescription = null,
+                                tint = if (currentDestination?.route == screen.route) Orange else Color.LightGray)
+                        },
+                        label = {
+                            Text(
+                                text = screen.label,
+                                style = MaterialTheme.typography.subtitle2,
+                                color = if (currentDestination?.route == screen.route) Orange else Color.LightGray)
+                        },
                         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                         onClick = {
                             navController.navigate(screen.route) {

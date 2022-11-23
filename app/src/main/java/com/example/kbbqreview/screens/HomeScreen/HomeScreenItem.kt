@@ -2,6 +2,7 @@ package com.example.kbbqreview.screens.HomeScreen
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,6 +31,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.MutableLiveData
 import coil.compose.AsyncImage
@@ -37,8 +39,15 @@ import coil.request.ImageRequest
 import com.example.kbbqreview.HomeScreenViewModel
 import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.R
+import com.example.kbbqreview.data.Category
 import com.example.kbbqreview.data.photos.Photo
+import com.example.kbbqreview.screens.util.DisplayValuesCard
+import com.example.kbbqreview.screens.util.ShadowDivider
+import com.example.kbbqreview.ui.theme.Brown
+import com.example.kbbqreview.ui.theme.Orange
+import com.example.kbbqreview.ui.theme.UserReviewInfo
 import com.example.kbbqreview.util.AddressMap
+import com.example.kbbqreview.util.HandleUser
 import com.example.kbbqreview.util.ShareUtils
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
@@ -85,25 +94,52 @@ fun HomePostCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                TopRow(post)
+
             }
-            PhotoHolder(state, photoList)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.TopCenter
             ) {
-                PointIcon(R.drawable.meat_icon, post.valueMeat)
-                PointIcon(R.drawable.side_dishes_icon, post.valueSideDishes)
-                PointIcon(R.drawable.amenities_icon, post.valueAmenities)
-                PointIcon(R.drawable.atmosphere_icon, post.valueAtmosphere)
-            }
-            Column(modifier = Modifier.padding(horizontal = 12.dp)) {
-                ReviewComment(
-                    post = post
+                TopBox(post,
+                    modifier = Modifier
+                        .zIndex(1f)
+                        .align(Alignment.TopCenter))
+                PhotoHolder(state, photoList, modifier = Modifier)
+                val category = listOf(
+                    Category(R.drawable.icon_meat, post.valueMeat),
+                    Category(R.drawable.icon_side_dishes, post.valueSideDishes),
+                    Category(R.drawable.icon_amenities, post.valueAmenities),
+                    Category(R.drawable.icon_atmosphere, post.valueAtmosphere),
                 )
-                AddressBar(post)
+                Column(Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(0.8f),
+                    verticalArrangement = Arrangement.Center) {
+                    DotsIndicator(
+                        totalDots = photoList.size,
+                        selectedIndex = state.currentPage,
+                        modifier = Modifier.offset(y = (8).dp)
+                    )
+                    DisplayValuesCard(category = category, modifier = Modifier.offset(y = 20.dp))
+                }
+            }
+            Spacer(Modifier.height(28.dp))
+            val context = LocalContext.current
+            Column(modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp)
+                .clickable {
+                    Toast
+                        .makeText(context, "${post.userId}", Toast.LENGTH_SHORT)
+                        .show()
+                },
+                horizontalAlignment = Alignment.CenterHorizontally) {
+                Spacer(Modifier.height(8.dp))
+                UserReviewInfo(post = post,
+                    modifier = Modifier.fillMaxWidth(0.8f))
+                Spacer(Modifier.height(8.dp))
+                ShadowDivider(modifier = Modifier.fillMaxWidth(0.8f))
+                Spacer(Modifier.height(18.dp))
             }
         }
     }
@@ -115,6 +151,7 @@ fun HomePostCard(
 private fun PhotoHolder(
     state: PagerState,
     photoList: List<Photo>,
+    modifier: Modifier = Modifier,
 ) {
 
     val emptyPhoto = Photo(
@@ -124,8 +161,7 @@ private fun PhotoHolder(
         0
     )
     Box(
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
 
@@ -133,7 +169,8 @@ private fun PhotoHolder(
             state = state,
             count = photoList.size, modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(1f)
+                .aspectRatio(1.1f)
+                .clip(RoundedCornerShape(bottomEnd = 50.dp, bottomStart = 50.dp))
         ) { page ->
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -147,7 +184,7 @@ private fun PhotoHolder(
                             .placeholder(R.drawable.ic_image_placeholder)
                             .crossfade(true)
                             .build(), contentDescription = null, Modifier
-                            .padding(vertical = 8.dp)
+                            .padding(vertical = 0.dp)
                             .fillMaxSize(), contentScale = ContentScale.Crop
                     )
                 }
@@ -160,16 +197,12 @@ private fun PhotoHolder(
                 .align(Alignment.BottomCenter)
                 .offset(y = (-20).dp),
         ) {
-            DotsIndicator(
-                totalDots = photoList.size,
-                selectedIndex = state.currentPage
-            )
+
         }
         Box(
             Modifier
                 .zIndex(1f)
                 .fillMaxWidth()
-                .offset(y = (-8).dp)
                 .align(Alignment.BottomCenter)
         ) {
             Scrim(
@@ -179,8 +212,6 @@ private fun PhotoHolder(
                     .height(56.dp)
             )
         }
-
-
     }
 }
 
@@ -199,7 +230,9 @@ fun TopRow(post: Post) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(text = stringResource(R.string.report), color = Color.Red)
-                    Icon(Icons.Rounded.Report, contentDescription = stringResource(R.string.report), tint = Color.Red)
+                    Icon(Icons.Rounded.Report,
+                        contentDescription = stringResource(R.string.report),
+                        tint = Color.Red)
                 }
 
             },
@@ -386,7 +419,8 @@ fun AddressBar(post: Post) {
                 post.location!!.latitude,
                 post.location.longitude
             ),
-            fontWeight = FontWeight.SemiBold
+            fontSize = 15.sp,
+            color = Brown
         )
         IconButton(
             modifier = Modifier.weight(1f),
@@ -424,9 +458,10 @@ fun checkPhoto(photoList: List<Photo>, emptyPhoto: Photo): String? {
 fun DotsIndicator(
     totalDots: Int,
     selectedIndex: Int,
+    modifier: Modifier = Modifier,
 ) {
     LazyRow(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .wrapContentHeight(), horizontalArrangement = Arrangement.Center
     ) {
@@ -437,14 +472,14 @@ fun DotsIndicator(
                     modifier = Modifier
                         .size(10.dp)
                         .clip(CircleShape)
-                        .background(color = Color.White)
+                        .background(color = Orange)
                 )
             } else {
                 Box(
                     modifier = Modifier
                         .size(10.dp)
                         .clip(CircleShape)
-                        .background(color = Color.LightGray)
+                        .background(color = Color.White)
                 )
             }
 

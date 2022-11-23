@@ -105,9 +105,6 @@ fun AddReview(
     ) { innerPadding ->
         val innerPadding = innerPadding
 
-
-        val intent = (context as MainActivity).intent
-
         val lazyState = rememberLazyListState()
         val currentCharCount = remember { mutableStateOf(0) }
         Surface {

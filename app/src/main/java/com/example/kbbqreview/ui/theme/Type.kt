@@ -10,7 +10,6 @@ import com.example.kbbqreview.R
 
 val baseFont = FontFamily(
     listOf(
-        Font(R.font.source_sans_pro_light),
         Font(R.font.source_sans_pro_regular),
         Font(R.font.source_sans_pro_semi_bold)
     )
@@ -26,13 +25,17 @@ val Typography = Typography(
         fontFamily = baseFont,
         fontSize = 18.sp
     ),
-    subtitle2 = TextStyle(),
     h6 = TextStyle(
         fontFamily = baseFont,
         fontWeight = FontWeight.Medium,
         fontSize = 24.sp
     ),
     subtitle1 = TextStyle(
+        fontFamily = baseFont,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp
+    ),
+    subtitle2 = TextStyle(
         fontFamily = baseFont,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp

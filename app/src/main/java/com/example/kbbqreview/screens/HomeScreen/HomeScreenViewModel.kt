@@ -61,7 +61,7 @@ class HomeScreenViewModel : ViewModel() {
                             val firebaseId = documentSnapshot.id
                             Post(
                                 timestamp = documentSnapshot.getDate("date_posted") ?: Date(),
-                                userId = Firebase.auth.currentUser.toString(),
+                                userId = documentSnapshot.getString("user_id").orEmpty(),
                                 firebaseId = documentSnapshot.getString("firebase_id").orEmpty(),
                                 authorDisplayName = documentSnapshot.getString("author_id")
                                     .orEmpty(),

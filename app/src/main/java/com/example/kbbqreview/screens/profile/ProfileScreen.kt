@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -48,6 +49,8 @@ import com.example.kbbqreview.screens.map.location.LocationDetails
 import com.example.kbbqreview.screens.profile.ProfilePostCard
 import com.example.kbbqreview.screens.profile.ProfileScreenState
 import com.example.kbbqreview.screens.profile.ProfileViewModel
+import com.example.kbbqreview.ui.theme.Brown
+import com.example.kbbqreview.ui.theme.Orange
 import com.example.kbbqreview.ui.theme.Purple500
 import com.google.accompanist.flowlayout.FlowMainAxisAlignment
 import com.google.accompanist.flowlayout.FlowRow
@@ -87,21 +90,61 @@ fun ProfileScreen(
         profileViewModel.setCurrentUser(user)
         profileViewModel.checkIfSignedIn()
     }
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+    var label = ""
+    items.forEach {
+        if (currentDestination?.route == it.route) {
+            label = it.label
+        }
+    }
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .shadow(12.dp, RoundedCornerShape(0.dp), spotColor = Color.Black),
+                backgroundColor = Color.White,
+                content = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.h6,
+                            color = Brown
+                        )
+                    }
+                }
+            )
+        },
         bottomBar = {
-            BottomNavigation {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination = navBackStackEntry?.destination
+            BottomNavigation(
+                modifier = Modifier
+                    .shadow(12.dp, RoundedCornerShape(0.dp), spotColor = Color.Black),
+                backgroundColor = Color.White
+            ) {
                 items.forEach { screen ->
                     BottomNavigationItem(
-                        icon = { Icon(screen.vector, contentDescription = null) },
-                        label = { Text(screen.label) },
+                        icon = {
+                            Icon(
+                                modifier = Modifier.size(22.dp),
+                                painter = painterResource(id = screen.icon
+                                    ?: R.drawable.icon_meat),
+                                contentDescription = null,
+                                tint = if (currentDestination?.route == screen.route) Orange else Color.LightGray)
+                        },
+                        label = {
+                            Text(
+                                text = screen.label,
+                                style = MaterialTheme.typography.subtitle2,
+                                color = if (currentDestination?.route == screen.route) Orange else Color.LightGray)
+                        },
                         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                         onClick = {
-                            if (screen.route == "profile") {
-                                editing.value = false
-                            }
                             navController.navigate(screen.route) {
                                 // Pop up to the start destination of the graph to
                                 // avoid building up a large stack of destinations

@@ -60,7 +60,7 @@ class ReviewViewModel : ViewModel() {
     val stateLat = mutableStateOf("")
 
     val stateLng = mutableStateOf("")
-    val address = mutableStateOf("")
+    val address = mutableStateOf("Address here")
 
 
     fun changeLocation(latitude: Double, longitude: Double, context: Context) {

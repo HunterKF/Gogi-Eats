@@ -10,8 +10,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun ShadowDivider() {
-    Divider(modifier = Modifier
+fun ShadowDivider(modifier: Modifier = Modifier) {
+    Divider(modifier = modifier
         .fillMaxWidth()
         .shadow(6.dp, RoundedCornerShape(1.dp), spotColor = Color.Gray, ambientColor = Color.LightGray ),
         color = Color.Transparent

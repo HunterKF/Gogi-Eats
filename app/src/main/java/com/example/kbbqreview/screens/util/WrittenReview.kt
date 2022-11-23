@@ -3,10 +3,9 @@ package com.example.kbbqreview.screens.util
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Shapes
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
@@ -17,9 +16,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.kbbqreview.R
 import com.example.kbbqreview.screens.addreview.ReviewViewModel
+import com.example.kbbqreview.ui.theme.Orange
 import com.example.kbbqreview.ui.theme.Shadows
 
 @Composable
@@ -32,12 +33,13 @@ fun WrittenReview(
     val maxChars = 1000
 
     OutlinedTextField(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .aspectRatio(3.5f)
-            .shadow(Shadows().small,
-                Shapes().medium,
-                spotColor = Color.DarkGray,
+            .shadow(
+                Shadows().extraSmall,
+                RoundedCornerShape(10.dp),
+                spotColor = Color.Gray,
                 ambientColor = Color.Transparent)
             .background(Color.White),
         label = {
@@ -48,8 +50,6 @@ fun WrittenReview(
             ) {
                 Text(text = stringResource(R.string.optional_write_about_it))
                 Text(
-                    modifier = Modifier
-                        .offset(x = (-2).dp, y = (-4).dp),
                     text = "${currentCharCount.value} / 1000"
                 )
             }
@@ -71,7 +71,21 @@ fun WrittenReview(
                     context.getString(R.string.short_review),
                     Toast.LENGTH_SHORT).show()
             }
-        }
+        },
+        colors = TextFieldDefaults.textFieldColors(
+            textColor = Color.Gray,
+            disabledTextColor = Color.Transparent,
+            backgroundColor = Color.White,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+            focusedLabelColor = Orange,
+            cursorColor = Orange
+        ),
+        textStyle = LocalTextStyle.current.copy(
+            fontSize = MaterialTheme.typography.body1.fontSize,
+            textAlign = TextAlign.Left
+        )
 
     )
 

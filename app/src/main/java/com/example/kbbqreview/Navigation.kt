@@ -32,7 +32,7 @@ fun Navigation(
     val location by applicationViewModel.getLocationLiveData().observeAsState()
 
     val startDestination = remember {
-        mutableStateOf(Screen.AddReview.route)
+        mutableStateOf(Screen.HomeScreen.route)
     }
 
     val cameraViewModel = CameraViewModel()
