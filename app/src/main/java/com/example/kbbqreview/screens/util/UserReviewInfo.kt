@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,11 +21,9 @@ import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ChainStyle
@@ -39,33 +36,23 @@ import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.data.user.FullUser
 import com.example.kbbqreview.screens.util.ProfileImage
 import com.example.kbbqreview.util.AddressMap
-import com.example.kbbqreview.util.HandleUser
 import com.example.kbbqreview.util.ShareUtils
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 @Composable
 fun UserReviewInfo(
     modifier: Modifier = Modifier,
     post: Post,
+    postUser: MutableState<FullUser>,
 ) {
-
-    var userOfPost = remember {
-        mutableStateOf("")
-    }
-    LaunchedEffect(key1 = Unit, block = {
-        userOfPost.value = HandleUser.getUser(post.userId)
-    })
 
 
     val constraints = ConstraintSet {
-        val greenBox = createRefFor("greenbox")
-        val redBox = createRefFor("redbox")
 
         val userInfo = createRefFor("userinfo")
         val addressIcon = createRefFor("addressicon")
         val reviewComment = createRefFor("reviewcomment")
         val addressBar = createRefFor("addressbar")
+        val barrier = createRefFor("barrier")
 
         constrain(userInfo) {
             top.linkTo(parent.top)
@@ -73,13 +60,15 @@ fun UserReviewInfo(
         }
         constrain(addressIcon) {
             top.linkTo(reviewComment.bottom)
-            start.linkTo(parent.start)
+            start.linkTo(userInfo.start)
+            end.linkTo(userInfo.end)
             bottom.linkTo(parent.bottom)
+
 //            end.linkTo(addressBar.start)
         }
         constrain(reviewComment) {
             top.linkTo(parent.top)
-            start.linkTo(userInfo.end)
+            start.linkTo(barrier.end)
             end.linkTo(parent.end)
             width = Dimension.fillToConstraints
         }
@@ -89,22 +78,39 @@ fun UserReviewInfo(
             end.linkTo(parent.end)
             width = Dimension.fillToConstraints
         }
-        createHorizontalChain(userInfo, reviewComment)
-        createHorizontalChain(addressIcon, addressBar, chainStyle = ChainStyle.Packed)
-        createVerticalChain(userInfo, addressIcon, chainStyle = ChainStyle.SpreadInside)
+        constrain(barrier) {
+            start.linkTo(userInfo.end)
+            top.linkTo(parent.top)
+            end.linkTo(reviewComment.start)
+        }
+        createHorizontalChain(userInfo, barrier, reviewComment)
+        createHorizontalChain(addressIcon, barrier, addressBar, chainStyle = ChainStyle.Spread)
+        createVerticalChain(userInfo, addressIcon, chainStyle = ChainStyle.Packed)
         createVerticalChain(reviewComment, addressBar, chainStyle = ChainStyle.SpreadInside)
 
     }
     ConstraintLayout(constraints, modifier = modifier) {
         Box(modifier = Modifier
-            .layoutId("userinfo")
+            .layoutId("userinfo"),
+            contentAlignment = Alignment.Center
         ) {
-            Column() {
-                ProfileImage(avatarUrl = userOfPost.value)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                var textSize by remember { mutableStateOf(16.sp) }
+                when  {
+                    (postUser.value.user_name.length in 7..9) -> {
+                        textSize = 9.sp
+                    }
+                    (postUser.value.user_name.length in 10..15) -> {
+                        textSize = 3.sp
+                    }
+                }
+                ProfileImage(avatarUrl = postUser.value.profile_avatar_remote_uri)
                 Text(
-                    text = post.authorDisplayName,
+                    text = postUser.value.user_name,
                     style = MaterialTheme.typography.h6,
-                    fontSize = 16.sp,
+                    fontSize = textSize,
                     fontWeight = FontWeight.Bold,
                     color = Brown
                 )
@@ -114,23 +120,30 @@ fun UserReviewInfo(
         Box(modifier = Modifier
             .size(40.dp)
             .layoutId("addressicon"),
-        contentAlignment = Alignment.Center) {
+            contentAlignment = Alignment.Center) {
             Icon(painter = painterResource(id = R.drawable.icon_address),
                 contentDescription = null,
                 tint = Brown,
-            modifier = Modifier.size(24.dp))
+                modifier = Modifier
+                    .size(24.dp)
+                    .align(Alignment.Center))
         }
         Box(
             modifier = Modifier
+                .height(0.dp)
+                .width(8.dp)
+                .background(Color.Red)
+                .layoutId("barrier")
+        )
+        Box(
+            modifier = Modifier
                 .layoutId("reviewcomment")
-                .padding(start = 6.dp)
         ) {
             ReviewComment2(post = post, modifier = Modifier)
         }
         Box(
             modifier = Modifier
                 .layoutId("addressbar")
-                .padding(start = 6.dp)
         ) {
             ReviewAddress(post = post)
 

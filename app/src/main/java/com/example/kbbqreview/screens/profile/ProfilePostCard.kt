@@ -47,7 +47,8 @@ fun ProfilePostCard(
     state: PagerState,
     post: Post,
     onEditClick: () -> Unit,
-    profileViewModel: ProfileViewModel
+    profileViewModel: ProfileViewModel,
+
 ) {
 
 

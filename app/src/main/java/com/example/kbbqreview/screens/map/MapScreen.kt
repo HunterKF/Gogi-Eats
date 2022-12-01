@@ -1,7 +1,6 @@
 package com.example.kbbqreview
 
 import android.Manifest
-import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.location.Location
@@ -9,6 +8,8 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -31,21 +32,28 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.kbbqreview.data.Category
 import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.HomeScreen.HomePostCard
 import com.example.kbbqreview.screens.map.MapStyle
 import com.example.kbbqreview.screens.map.MapViewModel
 import com.example.kbbqreview.screens.map.location.LocationDetails
+import com.example.kbbqreview.screens.util.DisplayValuesCard
+import com.example.kbbqreview.screens.util.ShadowDivider
 import com.example.kbbqreview.ui.theme.Brown
 import com.example.kbbqreview.ui.theme.Orange
+import com.example.kbbqreview.ui.theme.Shadows
+import com.example.kbbqreview.ui.theme.Yellow
 import com.example.kbbqreview.util.BitmapHandler
+import com.example.kbbqreview.util.UserViewModel
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.rememberPagerState
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -66,7 +74,8 @@ fun MapScreen(
     posts: State<List<Post>>,
 ) {
 
-    val permissionState = rememberPermissionState(permission = Manifest.permission.ACCESS_FINE_LOCATION)
+    val permissionState =
+        rememberPermissionState(permission = Manifest.permission.ACCESS_FINE_LOCATION)
 
     val context = LocalContext.current
 
@@ -133,31 +142,11 @@ fun MapScreen(
     when {
         permissionState.hasPermission -> {
             Scaffold(
-                topBar = {
-
-                    TopAppBar(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .shadow(12.dp, RoundedCornerShape(0.dp), spotColor = Color.Black),
-                        backgroundColor = Color.White,
-                        content = {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Text(
-                                    text = label,
-                                    style = MaterialTheme.typography.h6,
-                                    color = Brown
-                                )
-                            }
-                        }
-                    )
-                },
                 floatingActionButton = {
                     Column() {
                         FloatingActionButton(
+                            backgroundColor = Orange,
+                            contentColor = Color.White,
                             modifier = Modifier
                                 .offset(offsetAnimation)
                                 .scale(offsetSizeAnimation),
@@ -174,11 +163,13 @@ fun MapScreen(
                             Icon(
                                 Icons.Rounded.MyLocation,
                                 modifier = Modifier.scale(offsetSizeAnimation),
-                                contentDescription = "My Location"
+                                contentDescription = "My Location",
                             )
                         }
                         Spacer(Modifier.size(4.dp))
                         FloatingActionButton(
+                            backgroundColor = Orange,
+                            contentColor = Color.White,
                             modifier = Modifier
                                 .offset(offsetAnimation)
                                 .scale(offsetSizeAnimation),
@@ -249,7 +240,12 @@ fun MapScreen(
                 BottomSheetScaffold(
                     scaffoldState = scaffoldState,
                     sheetContent = {
-                        SheetContent(scope, sheetState, posts, location, showSinglePost, mapViewModel)
+                        SheetContent(scope,
+                            sheetState,
+                            posts,
+                            location,
+                            showSinglePost,
+                            mapViewModel)
                     },
                     sheetPeekHeight = 0.dp,
                     sheetGesturesEnabled = true,
@@ -266,17 +262,25 @@ fun MapScreen(
                         properties = MapProperties(
                             mapStyleOptions = MapStyleOptions(MapStyle.json)
                         ),
-                        onMapClick = { showSinglePost.value = false}
+                        onMapClick = { showSinglePost.value = false }
                     ) {
-                        Marker(position = LatLng(location.latitude, location.longitude), flat = true)
+                        val icon = BitmapHandler.bitmapDescriptorFromVector(
+                            context, R.drawable.icon_map_my_location
+                        )
+                        Marker(
+                            position = LatLng(location.latitude, location.longitude),
+                            flat = true,
+                            icon = icon)
+
 
                         posts.value.forEach { post ->
-                            val total = post.valueMeat + post.valueAmenities + post.valueAtmosphere + post.valueSideDishes
+                            val total =
+                                post.valueMeat + post.valueAmenities + post.valueAtmosphere + post.valueSideDishes
                             MapMarker(
                                 LocalContext.current,
                                 LatLng(post.location!!.latitude, post.location.longitude),
                                 post.restaurantName,
-                                R.drawable.map_marker__2_,
+                                R.drawable.icon_map_marker,
                                 total = total
                             ) {
                                 showSinglePost.value = true
@@ -294,7 +298,9 @@ fun MapScreen(
             }
         }
         !permissionState.hasPermission && !permissionState.shouldShowRationale -> {
-            Toast.makeText(context, stringResource(R.string.prompt_location_permission), Toast.LENGTH_SHORT).show()
+            Toast.makeText(context,
+                stringResource(R.string.prompt_location_permission),
+                Toast.LENGTH_SHORT).show()
             navController.navigate(Screen.HomeScreen.route)
         }
     }
@@ -325,36 +331,46 @@ private fun SheetContent(
             .fillMaxWidth()
             .fillMaxHeight(offsetAnimation)
     ) {
-
         val state = rememberLazyListState()
+        val paddingValue: Dp by animateDpAsState(
+            if (showSinglePost.value) 0.dp else 16.dp
+        )
 
-        LazyColumn(contentPadding = PaddingValues(top = 15.dp, bottom = 60.dp), state = state) {
+        LazyColumn(contentPadding = PaddingValues(top = 10.dp,
+            bottom = 60.dp,
+            start = paddingValue,
+            end = paddingValue), state = state) {
             when {
                 (state.firstVisibleItemScrollOffset >= 3) -> expand = true
                 sheetState.isCollapsed -> expand = false
-
             }
-           item {
-               Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
-                   IconButton(
-                       onClick = { scope.launch { if (sheetState.isCollapsed) sheetState.expand() else sheetState.collapse() } }) {
-                       Icon(
-                           Icons.Rounded.HorizontalRule,
-                           contentDescription = null,
-                           modifier = Modifier
-                               .scale(1.5f)
-                               .offset(y = (-10).dp),
-                           tint = Color.LightGray
-                       )
-                   }
-               }
-           }
+            item {
+                Row(horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()) {
+                    IconButton(
+                        onClick = { scope.launch { if (sheetState.isCollapsed) sheetState.expand() else sheetState.collapse() } }) {
+                        Icon(
+                            Icons.Rounded.HorizontalRule,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .scale(1.5f)
+                                .offset(y = (-10).dp),
+                            tint = Color.LightGray
+                        )
+                    }
+                }
+            }
             if (showSinglePost.value) {
                 item {
                     val state = rememberPagerState()
+                    val userViewModel = UserViewModel()
+                    LaunchedEffect(key1 = Unit, block = {
+                        userViewModel.getUser(viewModel.singlePost.value.userId)
+                    })
                     HomePostCard(state = state,
                         post = viewModel.singlePost.value,
-                        photoList = viewModel.singlePost.value.photoList)
+                        photoList = viewModel.singlePost.value.photoList,
+                        postUser = userViewModel.user)
                 }
             } else {
                 itemsIndexed(posts.value.sortedByDescending { it.distance.toDouble() }
@@ -364,14 +380,15 @@ private fun SheetContent(
                         viewModel.singlePost.value = restaurant
                         showSinglePost.value = true
                     }
-                    Spacer(Modifier.size(10.dp))
+                    Spacer(Modifier.size(16.dp))
                     if (index != posts.value.size - 1) {
-                        Divider(
+                        ShadowDivider(
                             Modifier
                                 .fillMaxWidth()
-                                .height(1.dp)
                         )
                     }
+                    Spacer(Modifier.size(16.dp))
+
                 }
             }
         }
@@ -389,21 +406,30 @@ fun RestaurantCard(restaurant: Post, currentLocation: LocationDetails, onClick: 
         restaurant.location!!.latitude,
         restaurant.location.longitude
     )
-    val emptyPhoto = Photo(
-        "",
-        "",
-        "",
-        0
+    val category = listOf(
+        Category(R.drawable.icon_meat, restaurant.valueMeat),
+        Category(R.drawable.icon_side_dishes, restaurant.valueSideDishes),
+        Category(R.drawable.icon_amenities, restaurant.valueAmenities),
+        Category(R.drawable.icon_atmosphere, restaurant.valueAtmosphere),
     )
     Box {
-        Column(Modifier.padding(8.dp)) {
+        Column(Modifier.padding(vertical = 0.dp)) {
             Box(Modifier.fillMaxWidth()) {
                 PhotoDisplay(photoList)
             }
-            Heading(restaurant, onClick)
-            Distance(restaurant.location, currentLocation)
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = restaurant.restaurantName,
+                style = MaterialTheme.typography.h6,
+                fontWeight = FontWeight.Bold,
+                color = Brown,
+                modifier = Modifier
+            )
+            Heading(restaurant, currentLocation, onClick)
+            Spacer(modifier = Modifier.height(6.dp))
             Address(location, restaurant.location)
-            ValueBar(restaurant)
+            Spacer(modifier = Modifier.height(6.dp))
+            DisplayValuesCard(category = category)
 
 
         }
@@ -478,48 +504,74 @@ private fun ValueBar(restaurant: Post) {
 }
 
 @Composable
-private fun Heading(restaurant: Post, onClick: () -> Unit) {
+private fun Heading(restaurant: Post, currentLocation: LocationDetails, onClick: () -> Unit) {
     val totalValue =
         restaurant.valueAmenities + restaurant.valueMeat + restaurant.valueAtmosphere + restaurant.valueSideDishes
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
+    val viewModel = MapViewModel()
+    val result = FloatArray(10)
+    val restaurantLocation = restaurant.location
+    Location.distanceBetween(
+        restaurantLocation!!.latitude,
+        restaurantLocation.longitude,
+        currentLocation.latitude,
+        currentLocation.longitude,
+        result
+    )
+    val distanceInKilometers = viewModel.distanceInKm(result[0])
+
+    Column(
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-
-            modifier = Modifier
-                .padding(start = 8.dp)
-                .border(1.dp, Color.Black, RoundedCornerShape(15.dp))
+            Modifier
+                .fillMaxWidth()
+                .clickable { onClick() },
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.Center,
+                horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    modifier = Modifier.scale(0.75f),
-                    painter = painterResource(id = R.drawable.ic_baseline_star_rate_24),
-                    contentDescription = null
+                Icon(painter = painterResource(id = R.drawable.icon_location),
+                    contentDescription = null)
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = "${distanceInKilometers} km",
+                    fontSize = 28.sp,
+                    color = Brown
                 )
-                Text(totalValue.toString())
+            }
+            Row(
+                modifier = Modifier
+                    .padding(start = 8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        modifier = Modifier,
+                        painter = painterResource(id = R.drawable.icon_star),
+                        contentDescription = null
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = totalValue.toString(),
+                        fontSize = 28.sp,
+                        color = Yellow
+                    )
+                }
             }
         }
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            modifier = Modifier.weight(1f),
-            text = restaurant.restaurantName,
-            style = MaterialTheme.typography.h6
-        )
     }
 
 
 }
 
 @Composable
-private fun Address(address: String, location: GeoPoint) {
+private fun Address(address: String, location: GeoPoint, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val mapIntent: Intent = Uri.parse(
         "geo:${location.latitude},${location.longitude}?z=8"
@@ -529,17 +581,35 @@ private fun Address(address: String, location: GeoPoint) {
         Intent(Intent.ACTION_VIEW, location)
     }
     Row(
+        modifier = modifier,
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            modifier = Modifier.weight(1f),
-            text = address,
-            style = MaterialTheme.typography.body1,
-            fontWeight = FontWeight.Light
+        Icon(
+            painter = painterResource(id = R.drawable.icon_address),
+            null
         )
-        IconButton(onClick = { context.startActivity(mapIntent) }) {
-            Icon(Icons.Rounded.Map, stringResource(id = R.string.open_map))
+        Spacer(Modifier.width(8.dp))
+        Text(
+            modifier = Modifier
+                .padding(horizontal = 4.dp)
+                .weight(1f),
+            text = address,
+            fontSize = 18.sp,
+            style = MaterialTheme.typography.body1
+        )
+        IconButton(
+            onClick = { context.startActivity(mapIntent) },
+            modifier = Modifier
+                .padding(horizontal = 10.dp)
+                .size(30.dp)
+                .shadow(Shadows().small,
+                    Shapes().medium,
+                    spotColor = Color.Gray,
+                    ambientColor = Color.Transparent)
+                .clip(RoundedCornerShape(5.dp))
+                .background(Orange)) {
+            Icon(Icons.Rounded.Map, stringResource(id = R.string.open_map), tint = Color.White)
         }
     }
 
@@ -573,9 +643,11 @@ fun MapMarker(
     val icon = BitmapHandler.bitmapDescriptorFromVector(
         context, iconResourceId
     )
+
     fun getEmojiByUnicode(unicode: Int): String {
-        return  String(Character.toChars(unicode));
+        return String(Character.toChars(unicode));
     }
+
     val text = "${getEmojiByUnicode(0x2B50)} $total"
     Marker(
         position = position,

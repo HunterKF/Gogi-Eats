@@ -3,6 +3,7 @@ package com.example.kbbqreview.screens.HomeScreen
 import android.content.Context
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,9 +28,11 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -51,7 +54,7 @@ import com.example.kbbqreview.screens.profile.ProfileScreenState
 import com.example.kbbqreview.screens.profile.ProfileViewModel
 import com.example.kbbqreview.ui.theme.Brown
 import com.example.kbbqreview.ui.theme.Orange
-import com.example.kbbqreview.ui.theme.Purple500
+import com.example.kbbqreview.ui.theme.Shadows
 import com.google.accompanist.flowlayout.FlowMainAxisAlignment
 import com.google.accompanist.flowlayout.FlowRow
 import com.google.accompanist.flowlayout.SizeMode
@@ -59,10 +62,10 @@ import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.rememberPagerState
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun ProfileScreen(
     navController: NavHostController,
@@ -98,6 +101,11 @@ fun ProfileScreen(
             label = it.label
         }
     }
+    val sheetState = rememberBottomSheetState(initialValue = BottomSheetValue.Collapsed)
+    val scaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = sheetState
+    )
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -110,13 +118,26 @@ fun ProfileScreen(
                 content = {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Image(
+                            painter = painterResource(id = R.drawable._12_512),
+                            null
+                        )
                         Text(
                             text = label,
                             style = MaterialTheme.typography.h6,
                             color = Brown
                         )
+                        IconButton(
+                            modifier = Modifier,
+                            onClick = { scope.launch { if (sheetState.isCollapsed) sheetState.expand() else sheetState.collapse() } }) {
+                            Icon(
+                                Icons.Rounded.MoreVert,
+                                contentDescription = stringResource(R.string.options)
+                            )
+                        }
                     }
                 }
             )
@@ -170,13 +191,7 @@ fun ProfileScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             val displayName = profileViewModel.setDisplayName()
-            val userNameState = remember {
-                mutableStateOf(displayName)
-            }
             val avatarUrl = profileViewModel.setAvatar()
-            val profilePhotoState = remember {
-                mutableStateOf(avatarUrl)
-            }
             when (state) {
                 is ProfileScreenState.Loaded -> {
                     val loaded = state as ProfileScreenState.Loaded
@@ -196,8 +211,9 @@ fun ProfileScreen(
                             profileViewModel = profileViewModel,
                             onEditClick = {
                                 editing.value = true
-
                             },
+                            sheetState = sheetState,
+                            scaffoldState = scaffoldState,
                             onSignOut = {
                                 profileViewModel.signOut()
                             }
@@ -243,11 +259,10 @@ fun ProfileContent(
     displayName: String,
     onEditClick: () -> Unit,
     profileViewModel: ProfileViewModel,
+    sheetState: BottomSheetState,
+    scaffoldState: BottomSheetScaffoldState,
+    padding: Dp = 24.dp,
 ) {
-    val sheetState = rememberBottomSheetState(initialValue = BottomSheetValue.Collapsed)
-    val scaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = sheetState
-    )
 
     val gridLayoutState = remember {
         mutableStateOf(true)
@@ -276,51 +291,46 @@ fun ProfileContent(
 
                 Column(modifier = Modifier
                     .align(Alignment.Center)
-                    .padding(top = 8.dp)) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        TextButton(onClick = { onSignOut() }) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center) {
-                                Text(text = stringResource(R.string.sign_out))
-                                Spacer(modifier = Modifier.padding(5.dp))
-                                Icon(
-                                    Icons.Rounded.Logout,
-                                    tint = Purple500,
-                                    contentDescription = stringResource(R.string.sign_out)
-                                )
+                    .padding(top = 8.dp)
+                    .fillMaxWidth(0.6f)) {
 
-                            }
+                    TextButton(onClick = { onSignOut() }) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(text = stringResource(R.string.sign_out),
+                                fontSize = 16.sp,
+                                color = Brown)
+                            Spacer(modifier = Modifier.padding(5.dp))
+                            Icon(
+                                Icons.Rounded.Logout,
+                                tint = Brown,
+                                contentDescription = stringResource(R.string.sign_out)
+                            )
+
                         }
+
 
                     }
                     Divider(Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp))
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        TextButton(onClick = { profileViewModel.changeToSettings() }) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center) {
-                                Text(text = stringResource(R.string.account_settings))
-                                Spacer(modifier = Modifier.padding(5.dp))
-                                Icon(
-                                    Icons.Rounded.Settings,
-                                    tint = Purple500,
-                                    contentDescription = stringResource(R.string.account_settings)
-                                )
 
-                            }
+                    TextButton(onClick = { profileViewModel.changeToSettings() }) {
+                        Row(Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(text = stringResource(R.string.account_settings),
+                                fontSize = 16.sp,
+                                color = Brown)
+                            Spacer(modifier = Modifier.padding(5.dp))
+                            Icon(
+                                Icons.Rounded.Settings,
+                                tint = Brown,
+                                contentDescription = stringResource(R.string.account_settings)
+                            )
                         }
-
                     }
                 }
             }
@@ -333,40 +343,56 @@ fun ProfileContent(
         val size = posts.size
         val lazyColumnState = rememberLazyListState()
         val scope = rememberCoroutineScope()
+        val width: Dp by animateDpAsState(
+            if (gridLayoutState.value)
+                24.dp
+            else
+                0.dp
+        )
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth(),
-            contentPadding = PaddingValues(bottom = 40.dp),
+            contentPadding = PaddingValues(bottom = 40.dp, top = 24.dp, start = 0.dp, end = 0.dp),
             state = lazyColumnState
         ) {
-            stickyHeader {
-                UserBar(scope, sheetState, displayName, avatarUrl)
+            item {
+                UserBar(displayName, avatarUrl, padding = padding)
             }
             item {
-                Column(
-                    Modifier.padding(4.dp)
-                ) {
-                    StatsBar(size)
-                    ViewSelector(gridLayoutState)
-                }
+                Spacer(modifier = Modifier.height(12.dp))
             }
+            item {
+                StatsBar(size, padding = padding)
+            }
+            item {
+                Spacer(modifier = Modifier.height(18.dp))
+            }
+            item {
+                ViewSelector(gridLayoutState, padding)
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
             if (gridLayoutState.value) {
                 item {
                     FlowRow(
+                        modifier = Modifier.padding(horizontal = padding),
                         mainAxisSize = SizeMode.Expand,
-                        mainAxisAlignment = FlowMainAxisAlignment.SpaceBetween
+                        mainAxisAlignment = FlowMainAxisAlignment.SpaceBetween,
+                        crossAxisSpacing = 10.dp,
+                        mainAxisSpacing = 10.dp
                     ) {
-                        val itemSize: Dp = (LocalConfiguration.current.screenWidthDp.dp / 2)
+                        val itemSize: Dp =
+                            ((LocalConfiguration.current.screenWidthDp.dp - 58.dp) / 2)
                         var defaultIndex = 2
-                        val context = LocalContext.current
                         posts.forEach { post ->
                             val index = defaultIndex
                             GridViewCard(
                                 Modifier
-                                    .size(itemSize)
-                                    .padding(8.dp)
-                                    .clip(RoundedCornerShape(5.dp))
-                                    .aspectRatio(1f),
+                                    .width(itemSize)
+                                    .aspectRatio(1.3f),
                                 post
                             ) {
                                 gridLayoutState.value = false
@@ -418,15 +444,15 @@ private fun GridViewCard(modifier: Modifier, post: Post, onClick: () -> Job) {
         )
         Scrim(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
+                .fillMaxSize()
                 .align(Alignment.BottomCenter)
         )
         Text(
             modifier = Modifier
                 .padding(6.dp)
-                .align(Alignment.BottomStart),
+                .align(Alignment.Center),
             text = post.restaurantName,
+            fontSize = 20.sp,
             color = Color.White
         )
     }
@@ -450,100 +476,116 @@ private fun SingleViewCard(
 }
 
 @Composable
-private fun ViewSelector(gridLayout: MutableState<Boolean>) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = { gridLayout.value = true }) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_baseline_grid_view_24),
-                contentDescription = stringResource(R.string.view_grid)
-            )
-        }
-        IconButton(onClick = { gridLayout.value = false }) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_baseline_crop_din_24),
-                contentDescription = stringResource(R.string.view_single)
-            )
-        }
-    }
-}
-
-@Composable
-private fun StatsBar(size: Int) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-
+private fun ViewSelector(gridLayout: MutableState<Boolean>, padding: Dp) {
+    Column(modifier = Modifier
+        .padding(horizontal = padding)
+        .fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-        Text(
-            text = stringResource(R.string.total_reviews),
-            style = MaterialTheme.typography.body1
+            IconButton(onClick = { gridLayout.value = true }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.icon_grid_view),
+                    contentDescription = stringResource(R.string.view_grid),
+                    tint = Brown
+                )
+            }
+            Divider(
+                modifier = Modifier
+                    .height(28.dp)
+                    .width(1.dp),
+                color = Color.LightGray
+            )
+            IconButton(onClick = { gridLayout.value = false }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.icon_single_view),
+                    contentDescription = stringResource(R.string.view_single),
+                    tint = Brown
+                )
+            }
+
+        }
+        Divider(
+            modifier = Modifier
+                .fillMaxWidth(),
+            color = Color.LightGray
         )
-        Spacer(modifier = Modifier.height(4.dp))
-        Divider(Modifier
-            .width(60.dp)
-            .height(2.dp)
-            .clip(RoundedCornerShape(2.dp)))
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(size.toString(),
-            style = MaterialTheme.typography.h6)
+    }
+
+}
+
+@Composable
+private fun StatsBar(size: Int, modifier: Modifier = Modifier, padding: Dp) {
+    Card(
+        shape = RoundedCornerShape(10.dp),
+        modifier = modifier
+            .padding(horizontal = padding)
+            .fillMaxWidth()
+            .background(Color.White)
+            .shadow(Shadows().small, RoundedCornerShape(10.dp),
+                spotColor = Color.Gray,
+                ambientColor = Color.Transparent)
+    ) {
+        Row(Modifier.padding(vertical = 6.dp, horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceAround) {
+            Text(
+                text = "Total Reviews",
+                fontSize = 22.sp,
+                color = Orange
+            )
+            Divider(
+                modifier = Modifier
+                    .height(28.dp)
+                    .width(1.dp),
+                color = Color.LightGray
+            )
+
+            Text(
+                text = if (size <= 9) "0${size}" else size.toString(),
+                fontSize = 30.sp,
+                color = Orange
+            )
+        }
     }
 }
 
-@Preview(showSystemUi = true)
-@Composable
-fun StatsPreview() {
-    StatsBar(size = 5)
-}
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun UserBar(
-    scope: CoroutineScope,
-    sheetState: BottomSheetState,
     userName: String,
     avatarUrl: Photo,
+    padding: Dp,
 ) {
-    val context = LocalContext.current
-    Box(
+    Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White)
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        IconButton(modifier = Modifier.padding(8.dp), onClick = {
-            Toast.makeText(context, avatarUrl.remoteUri, Toast.LENGTH_SHORT).show()
-        }) {
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(avatarUrl.remoteUri)
-                    .placeholder(R.drawable.profile)
-                    .crossfade(true)
-                    .build(), contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .border(2.dp, Color.Blue, CircleShape)
-            )
-        }
-
-        Text(
-            modifier = Modifier.align(Alignment.Center),
-            text = userName,
-            style = MaterialTheme.typography.h6
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(avatarUrl.remoteUri)
+                .placeholder(R.drawable.profile)
+                .crossfade(true)
+                .build(), contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxWidth(0.4f)
+                .aspectRatio(1f)
+                .clip(CircleShape)
         )
-        IconButton(
-            modifier = Modifier.align(Alignment.TopEnd),
-            onClick = { scope.launch { if (sheetState.isCollapsed) sheetState.expand() else sheetState.collapse() } }) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_baseline_more),
-                contentDescription = stringResource(R.string.options)
-            )
-        }
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = userName,
+            style = MaterialTheme.typography.h6,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Brown
+        )
+
     }
 }
 
@@ -620,7 +662,9 @@ private fun ProfileSettings(
                             newValue
                         )
                     } else {
-                        Toast.makeText(context, context.getString(R.string.shorten_name), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context,
+                            context.getString(R.string.shorten_name),
+                            Toast.LENGTH_SHORT).show()
                     }
                 },
                 leadingIcon = { Icon(Icons.Rounded.DriveFileRenameOutline, null) },

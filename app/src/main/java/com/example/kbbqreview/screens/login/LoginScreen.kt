@@ -309,7 +309,8 @@ private fun AdjustProfileSettings(
                         navigateToHome = navigateToProfile
                     )
                 } else {
-                    viewModel.createNewAccount(currentUser = currentUser,
+                    viewModel.createNewAccount(
+                        currentUser = currentUser,
                         userName = userNameState.value,
                         context = context,
                         profilePhoto = Photo(localUri = avatarUrl.localUri),

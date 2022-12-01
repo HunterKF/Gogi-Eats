@@ -15,7 +15,6 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Report
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,7 +32,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import androidx.lifecycle.MutableLiveData
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.kbbqreview.HomeScreenViewModel
@@ -41,14 +39,16 @@ import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.R
 import com.example.kbbqreview.data.Category
 import com.example.kbbqreview.data.photos.Photo
+import com.example.kbbqreview.data.user.FullUser
+import com.example.kbbqreview.screens.profile.ProfileViewModel
 import com.example.kbbqreview.screens.util.DisplayValuesCard
 import com.example.kbbqreview.screens.util.ShadowDivider
 import com.example.kbbqreview.ui.theme.Brown
 import com.example.kbbqreview.ui.theme.Orange
 import com.example.kbbqreview.ui.theme.UserReviewInfo
 import com.example.kbbqreview.util.AddressMap
-import com.example.kbbqreview.util.HandleUser
 import com.example.kbbqreview.util.ShareUtils
+import com.example.kbbqreview.util.UserViewModel
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.PagerState
@@ -62,6 +62,11 @@ fun HomeScreenItem(
     photoList: List<Photo>,
 ) {
 
+    val userViewModel = UserViewModel()
+    LaunchedEffect(key1 = Unit, block = {
+        userViewModel.getUser(storyItem.userId)
+    })
+
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -69,8 +74,12 @@ fun HomeScreenItem(
     ) {
         val state = rememberPagerState()
         Column {
-            HomePostCard(state, storyItem, photoList)
-            Spacer(modifier = Modifier.padding(4.dp))
+            HomePostCard(state = state,
+                post = storyItem,
+                photoList = photoList,
+                modifier = Modifier.padding(bottom = 12.dp),
+                postUser =  userViewModel.user
+            )
         }
     }
 
@@ -83,11 +92,14 @@ fun HomePostCard(
     state: PagerState,
     post: Post,
     photoList: List<Photo>,
+    modifier: Modifier = Modifier,
+    postUser: MutableState<FullUser>,
+    profileViewModel: ProfileViewModel? = null
 ) {
 
     Surface(Modifier.background(Color.White)) {
         Column(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxWidth()
         ) {
             Row(
@@ -103,7 +115,8 @@ fun HomePostCard(
                 TopBox(post,
                     modifier = Modifier
                         .zIndex(1f)
-                        .align(Alignment.TopCenter))
+                        .align(Alignment.TopCenter),
+                profileViewModel = profileViewModel)
                 PhotoHolder(state, photoList, modifier = Modifier)
                 val category = listOf(
                     Category(R.drawable.icon_meat, post.valueMeat),
@@ -120,26 +133,21 @@ fun HomePostCard(
                         selectedIndex = state.currentPage,
                         modifier = Modifier.offset(y = (8).dp)
                     )
-                    DisplayValuesCard(category = category, modifier = Modifier.offset(y = 20.dp))
+                    DisplayValuesCard(category = category, modifier = Modifier.offset(y = 28.dp))
                 }
             }
-            Spacer(Modifier.height(28.dp))
-            val context = LocalContext.current
+            Spacer(Modifier.height(32.dp))
             Column(modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp)
-                .clickable {
-                    Toast
-                        .makeText(context, "${post.userId}", Toast.LENGTH_SHORT)
-                        .show()
-                },
+                .padding(horizontal = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally) {
                 Spacer(Modifier.height(8.dp))
                 UserReviewInfo(post = post,
-                    modifier = Modifier.fillMaxWidth(0.8f))
+                    modifier = Modifier.fillMaxWidth(0.8f),
+                    postUser = postUser)
                 Spacer(Modifier.height(8.dp))
                 ShadowDivider(modifier = Modifier.fillMaxWidth(0.8f))
-                Spacer(Modifier.height(18.dp))
+                Spacer(Modifier.height(8.dp))
             }
         }
     }

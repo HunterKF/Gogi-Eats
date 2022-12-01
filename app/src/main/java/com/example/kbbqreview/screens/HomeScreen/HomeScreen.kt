@@ -1,6 +1,8 @@
 package com.example.kbbqreview.screens.HomeScreen
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -139,7 +141,8 @@ fun HomeScreenContents(posts: List<Post>) {
     LazyColumn(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        contentPadding = PaddingValues(bottom = 100.dp)
+        contentPadding = PaddingValues(bottom = 100.dp),
+        modifier = Modifier.background(Color.White)
     ) {
         items(posts) { post ->
             val photoList by remember {

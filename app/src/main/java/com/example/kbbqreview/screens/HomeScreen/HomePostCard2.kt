@@ -23,6 +23,7 @@ import com.example.kbbqreview.R
 import com.example.kbbqreview.data.Category
 import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.data.photos.Photo
+import com.example.kbbqreview.screens.profile.ProfileViewModel
 import com.example.kbbqreview.screens.util.DisplayValuesCard
 import com.example.kbbqreview.ui.theme.Yellow
 import com.google.accompanist.pager.ExperimentalPagerApi
@@ -45,7 +46,7 @@ fun HomePostCard2(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                TopBox(post)
+//                TopBox(post)
             }
 //            PhotoHolder(state, photoList)
             Row(
@@ -73,7 +74,7 @@ fun HomePostCard2(
 }
 
 @Composable
-fun TopBox(post: Post, modifier: Modifier = Modifier) {
+fun TopBox(post: Post, modifier: Modifier = Modifier, profileViewModel: ProfileViewModel?) {
     val context = LocalContext.current
     val openDialog = remember { mutableStateOf(false) }
     val viewModel = HomeScreenViewModel()
@@ -175,8 +176,22 @@ fun TopBox(post: Post, modifier: Modifier = Modifier) {
                 )
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     DropdownMenuItem(onClick = {
-                        openDialog.value = true
-                        expanded = false
+                        if (profileViewModel == null) {
+                            openDialog.value = true
+                            expanded = false
+                        } else {
+                            profileViewModel.photoList.clear()
+                            profileViewModel.toBeDeletedPhotoList.clear()
+                            profileViewModel.post.value = post.deepCopy()
+                            profileViewModel.editingPost = profileViewModel.convertPostToEditingPost(profileViewModel.post.value)
+
+                            post.photoList.forEach {
+                                profileViewModel.editPhotoList.add(it)
+                            }
+                            profileViewModel.editingState.value = true
+                            profileViewModel.changeLocation(post.location!!.latitude, post.location.longitude, context)
+                            expanded = false
+                        }
                     }) {
                         Text(stringResource(R.string.report))
                     }

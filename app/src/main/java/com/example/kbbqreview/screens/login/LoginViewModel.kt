@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.text.toLowerCase
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kbbqreview.data.photos.Photo
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.util.*
 
 class LoginViewModel : ViewModel() {
     val loadingState = MutableStateFlow<LoginScreenState>(LoginScreenState.LandingScreen)
@@ -120,23 +122,31 @@ class LoginViewModel : ViewModel() {
         userName: String,
         context: Context,
     ) {
-        val handle = Firebase.firestore.collection("users")
-            .add(
-                hashMapOf(
-                    "user_id" to currentUser!!.uid,
-                    "user_name" to userName,
-                    "user_name_lowercase" to userName.lowercase(),
-                )
+        currentUser?.let {
+            val fullUser = FullUser(
+                "1",
+                "1",
+                currentUser.uid,
+                userName,
+                userName.lowercase(Locale.getDefault()),
             )
-        handle.addOnSuccessListener {
-            println("Successfully stored a user")
-            Toast.makeText(context, "Signed in!", Toast.LENGTH_SHORT).show()
+            val handle = Firebase.firestore.collection("users")
+
+            handle.document(currentUser.uid).get()
+                .addOnSuccessListener { result ->
+                    if (result.data == null && result.data.isNullOrEmpty()) {
+                        handle.document(currentUser.uid).set(fullUser)
+                    }
+                    println("Successfully stored a user")
+                    Toast.makeText(context, "Signed in!", Toast.LENGTH_SHORT).show()
+                }
+                .addOnFailureListener {
+                    println("Failed to store user. ${it.localizedMessage}")
+                    println("Failed to store user. ${it.message}")
+                    Toast.makeText(context, "Failed to sign in.", Toast.LENGTH_SHORT).show()
+                }
         }
-        handle.addOnFailureListener {
-            println("Failed to store user. ${it.localizedMessage}")
-            println("Failed to store user. ${it.message}")
-            Toast.makeText(context, "Failed to sign in.", Toast.LENGTH_SHORT).show()
-        }
+
     }
 
     fun onSignIn(context: Context) {
