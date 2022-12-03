@@ -1,59 +1,79 @@
 package com.example.kbbqreview.screens.login.util
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.result.ActivityResult
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Password
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.rounded.PhotoCamera
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.kbbqreview.R
-import com.example.kbbqreview.data.photos.Photo
+import com.example.kbbqreview.screens.camera.CameraViewModel
+import com.example.kbbqreview.screens.login.LoginViewModel
 import com.example.kbbqreview.screens.util.OrangeButton
-import com.example.kbbqreview.ui.theme.Orange
-
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
 
 
 @Composable
 fun SignUp(
     modifier: Modifier = Modifier,
+    viewModel: LoginViewModel,
+    emailFieldState: MutableState<String>,
+    passwordFieldState: MutableState<String>,
+    navigateToHome: () -> Unit,
+    launcher: ManagedActivityResultLauncher<Intent, ActivityResult>,
+    googleSignInClient: GoogleSignInClient,
+    userName: MutableState<String>,
+    cameraViewModel: CameraViewModel,
+    popBackStack: () -> Boolean,
+    userNameAvailable: MutableState<Boolean>,
+    userNameChecked: MutableState<Boolean>,
 ) {
 
-    val profilePhoto = Photo() /*= cameraViewModel.getProfilePhoto()*/
+    val profilePhoto = cameraViewModel.getProfilePhoto()
     val context = LocalContext.current
-    val userName = remember {
-        mutableStateOf("")
-    }
+    val focusManager = LocalFocusManager.current
+
     val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
@@ -70,135 +90,179 @@ fun SignUp(
                     ambientColor = Color.Transparent)
                 .clip(RoundedCornerShape(15.dp))
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp, horizontal = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Box(
+                modifier = Modifier.fillMaxSize()
             ) {
-                Image(painter = painterResource(id = R.drawable.logo), contentDescription = null,
-                    modifier = Modifier
-                        .size(90.dp)
-                        .bottomElevation()
-                )
-                Divider(modifier = Modifier
-                    .padding(6.dp)
-                    .bottomElevation(),
-                    thickness = 2.dp,
-                    color = Color.Black.copy(0.1f)
-                )
-
-                Text(
-                    text = "Sign Up",
-                    style = MaterialTheme.typography.h6
-                )
-                Row(
+                IconButton(
+                    modifier = Modifier.align(Alignment.TopStart),
+                    onClick = { viewModel.backToLanding() }) {
+                    Icon(Icons.Rounded.ArrowBack, null, tint = Color.DarkGray)
+                }
+                LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .height(100.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+                        .padding(vertical = 8.dp, horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Box(
-                        Modifier
-                            .size(70.dp)
-                            .aspectRatio(1f)
-                            .clip(CircleShape)
-                            .border(4.dp, Color.Cyan, CircleShape),
-                        contentAlignment = Alignment.Center) {
-                        AsyncImage(
+                    item {
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth(),
-                            model = ImageRequest
-                                .Builder(context)
-                                .data(R.drawable.profile)
-                                .crossfade(true)
-                                .build(),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop
+                                .fillMaxWidth()
+                                .zIndex(1f),
+                        ) {
+
+                            Image(painter = painterResource(id = R.drawable.logo),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .size(90.dp)
+                                    .bottomElevation()
+                            )
+                        }
+                    }
+                    item {
+                        Divider(modifier = Modifier
+                            .padding(6.dp)
+                            .bottomElevation(),
+                            thickness = 2.dp,
+                            color = Color.Black.copy(0.1f)
                         )
-                        Row(Modifier
-                            .align(Alignment.BottomCenter)
-                            .fillMaxWidth()
-                            .background(Color.White.copy(0.4f)),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = { /*TODO - viewModel.changeToCreateAccCamera()*/ }) {
-                                Icon(
-                                    Icons.Rounded.PhotoCamera,
-                                    stringResource(id = R.string.take_profile_photo),
-                                    tint = Color.Black,
-                                    modifier = Modifier.scale(1.3f)
+                    }
+
+                    item {
+                        Text(
+                            text = "Sign Up",
+                            style = MaterialTheme.typography.h6
+                        )
+                    }
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .height(100.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Box(
+                                Modifier
+                                    .size(70.dp)
+                                    .aspectRatio(1f)
+                                    .clip(CircleShape)
+                                    .border(1.dp, Color.Cyan, CircleShape),
+                                contentAlignment = Alignment.Center) {
+                                AsyncImage(
+                                    modifier = Modifier
+                                        .fillMaxWidth(),
+                                    model = ImageRequest
+                                        .Builder(context)
+                                        .data(profilePhoto?.localUri ?: R.drawable.profile)
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop
+                                )
+                                Row(Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .fillMaxWidth()
+                                    .background(Color.White.copy(0.4f)),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(onClick = { viewModel.changeToCreateAccCamera() }) {
+                                        Icon(
+                                            Icons.Rounded.PhotoCamera,
+                                            stringResource(id = R.string.take_profile_photo),
+                                            tint = Color.Black,
+                                            modifier = Modifier.scale(1.3f)
+                                        )
+                                    }
+                                }
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .fillMaxSize(),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Text(
+                                    text = "Upload profile picture"
                                 )
                             }
                         }
                     }
+                    val modifier = Modifier.padding(vertical = 12.dp)
+                    val maxChars = 15
+                    item {
+                        val currentCharCount = remember { mutableStateOf(0) }
 
-                    Box(
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .fillMaxSize(),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Text(
-                            text = "Upload profile picture"
+                        CustomTextField(icon = Icons.Outlined.Person,
+                            text = "Username",
+                            label = "e.g.maxpaene",
+                            value = emailFieldState,
+                            modifier = modifier,
+                            maxChars = maxChars,
+                            currentCharCount = currentCharCount,
+                            context = context,
+                            focusManager = focusManager,
+                            isUserName = true,
+                            viewModel = viewModel,
+                            userNameAvailable = userNameAvailable,
+                            userNameChecked = userNameChecked,
+                            keyboardType = KeyboardType.Password
                         )
                     }
-                }
-                val modifier = Modifier.padding(vertical = 12.dp)
-                CustomTextField(icon = Icons.Outlined.Person,
-                    text = "Username",
-                    label = "e.g.maxpaene",
-                    value = userName,
-                    modifier = modifier)
-                CustomTextField(icon = Icons.Outlined.Email,
-                    text = "Email",
-                    label = "example@gmail.com",
-                    value = userName,
-                    modifier = modifier)
-                CustomTextField(icon = Icons.Outlined.Password,
-                    text = "Password",
-                    label = "Enter password",
-                    value = userName,
-                    modifier = modifier)
-                OrangeButton(text = "Next",
-                    onClick = { /*TODO*/ },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Or continue with "
-                    )
-                    IconButton(
-                        modifier = Modifier
-                            .shadow(1.dp,
-                                RoundedCornerShape(6.dp),
-                                ambientColor = Color.Transparent,
-                                spotColor = Color.Gray)
-                            .padding(2.dp)
 
-                            .clip(RoundedCornerShape(15.dp))
-                            .size(32.dp),
-                        onClick = {/*TODO*/ }) {
-                        Image(
-                            painter = painterResource(id = R.drawable.google_logo),
-                            null,
+                    item {
+                        CustomTextField(icon = Icons.Outlined.Email,
+                            text = "Email",
+                            label = "example@gmail.com",
+                            value = userName,
+                            modifier = modifier,
+                            context = context,
+                            focusManager = focusManager,
+                            viewModel = viewModel,
+                            keyboardType = KeyboardType.Text
+
+                        )
+                    }
+                    item {
+                        CustomTextField(icon = Icons.Outlined.Password,
+                            text = "Password",
+                            label = "Enter password",
+                            value = passwordFieldState,
+                            modifier = modifier,
+                            maxChars = null,
+                            currentCharCount = null,
+                            context = context,
+                            isPassword = true,
+                            focusManager = focusManager,
+                            viewModel = viewModel,
+                            keyboardType = KeyboardType.Password
+                        )
+                    }
+                    item {
+                        OrangeButton(text = "Next",
+                            onClick = {
+                                viewModel.createAccount(
+                                    emailFieldState.value,
+                                    passwordFieldState.value,
+                                    userName.value,
+                                    profilePhoto,
+                                    navigateToHome,
+                                    context
+                                )
+                            },
                             modifier = Modifier
-                                .offset(y = 1.dp)
-                                .size(16.dp)
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                        )
+                        GoogleSignIn2(
+                            launcher, googleSignInClient
                         )
                     }
-                }
 
+                }
             }
         }
         Row(
@@ -206,55 +270,20 @@ fun SignUp(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Already registered? Login",
-                fontSize = 16.sp
-            )
-        }
-    }
-
-}
-
-@Composable
-fun CustomTextField(
-    icon: ImageVector,
-    text: String = "",
-    label: String = "",
-    value: MutableState<String>,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier) {
-        Row(
-            modifier = Modifier
-                .padding(horizontal = 10.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                icon,
-                null
-            )
-            Text(
-                text = text,
-                modifier = Modifier.padding(start = 7.dp)
-            )
-        }
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
-            value = value.value,
-            onValueChange = { newValue -> value.value = newValue },
-            singleLine = true,
-            shape = RoundedCornerShape(8.dp),
-            label = {
-                Text(text = label,
-                    color = Color.LightGray)
+            TextButton(onClick = { viewModel.changeToSignIn() }) {
+                Text(
+                    text = "Already registered? Login",
+                    fontSize = 16.sp
+                )
             }
-        )
+
+        }
     }
+
 }
 
 
-private fun Modifier.bottomElevation(): Modifier = this.then(Modifier.drawWithContent {
+fun Modifier.bottomElevation(): Modifier = this.then(Modifier.drawWithContent {
     val paddingPx = 8.dp.toPx()
     clipRect(
         left = 0f,
@@ -271,6 +300,6 @@ private fun Modifier.bottomElevation(): Modifier = this.then(Modifier.drawWithCo
 fun SignUpPreview() {
     Surface(modifier = Modifier.fillMaxSize()) {
         DividedBackground(modifier = Modifier.fillMaxSize())
-        SignUp()
+//        SignUp()
     }
 }

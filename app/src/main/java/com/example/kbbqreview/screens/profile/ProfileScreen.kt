@@ -55,6 +55,7 @@ import com.example.kbbqreview.screens.profile.ProfileViewModel
 import com.example.kbbqreview.ui.theme.Brown
 import com.example.kbbqreview.ui.theme.Orange
 import com.example.kbbqreview.ui.theme.Shadows
+import com.example.kbbqreview.util.UserViewModel
 import com.google.accompanist.flowlayout.FlowMainAxisAlignment
 import com.google.accompanist.flowlayout.FlowRow
 import com.google.accompanist.flowlayout.SizeMode
@@ -466,13 +467,29 @@ private fun SingleViewCard(
     onEditClick: () -> Unit,
     profileViewModel: ProfileViewModel,
 ) {
-    val state = rememberPagerState()
-    ProfilePostCard(
-        post = post,
-        state = state,
-        onEditClick = onEditClick,
-        profileViewModel = profileViewModel
-    )
+
+    val userViewModel = UserViewModel()
+    LaunchedEffect(key1 = Unit, block = {
+        userViewModel.getUser(post.userId)
+    })
+    val photoList by remember {
+        mutableStateOf(post.photoList)
+    }
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colors.background
+    ) {
+        val state = rememberPagerState()
+        Column {
+            HomePostCard(state = state,
+                post = post,
+                photoList = photoList,
+                modifier = Modifier.padding(bottom = 12.dp),
+                postUser =  userViewModel.user,
+                profileViewModel = profileViewModel
+            )
+        }
+    }
 }
 
 @Composable

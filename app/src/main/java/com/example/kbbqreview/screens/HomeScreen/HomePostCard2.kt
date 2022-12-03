@@ -29,49 +29,6 @@ import com.example.kbbqreview.ui.theme.Yellow
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.PagerState
 
-@OptIn(ExperimentalPagerApi::class)
-@Composable
-fun HomePostCard2(
-    state: PagerState,
-    post: Post,
-    photoList: List<Photo>,
-) {
-
-    Surface(Modifier.background(Color.White)) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-//                TopBox(post)
-            }
-//            PhotoHolder(state, photoList)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                val category = listOf(
-                    Category(R.drawable.icon_meat, post.valueMeat),
-                    Category(R.drawable.icon_side_dishes, post.valueSideDishes),
-                    Category(R.drawable.icon_amenities, post.valueAmenities),
-                    Category(R.drawable.icon_atmosphere, post.valueAtmosphere),
-                )
-                DisplayValuesCard(category = category)
-            }
-            Column(modifier = Modifier.padding(horizontal = 12.dp)) {
-                ReviewComment(
-                    post = post
-                )
-                AddressBar(post)
-            }
-        }
-    }
-}
 
 @Composable
 fun TopBox(post: Post, modifier: Modifier = Modifier, profileViewModel: ProfileViewModel?) {
@@ -80,43 +37,79 @@ fun TopBox(post: Post, modifier: Modifier = Modifier, profileViewModel: ProfileV
     val viewModel = HomeScreenViewModel()
 
     if (openDialog.value) {
-        AlertDialog(onDismissRequest = { openDialog.value = false },
-            title = {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = stringResource(R.string.report), color = Color.Red)
-                    Icon(Icons.Rounded.Report, contentDescription = stringResource(R.string.report), tint = Color.Red)
-                }
+        if (profileViewModel == null) {
+            AlertDialog(onDismissRequest = { openDialog.value = false },
+                title = {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = stringResource(R.string.report), color = Color.Red)
+                        Icon(Icons.Rounded.Report,
+                            contentDescription = stringResource(R.string.report),
+                            tint = Color.Red)
+                    }
 
-            },
-            text = {
-                Text("Please send an email to report this post.")
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        openDialog.value = false
-                        val intent = viewModel.sendMail(
-                            to = "hunter.krez@gmail.com",
-                            subject = "Post Reported: User ID ${post.authorDisplayName}"
-                        )
-                        context.startActivity(intent)
-                    }) {
-                    Text(stringResource(R.string.go_to_email))
-                }
-            },
-            dismissButton = {
-                Button(
-                    onClick = {
-                        openDialog.value = false
-                    }) {
-                    Text(stringResource(R.string.dismiss))
-                }
-            })
+                },
+                text = {
+                    Text("Please send an email to report this post.")
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            openDialog.value = false
+                            val intent = viewModel.sendMail(
+                                to = "hunter.krez@gmail.com",
+                                subject = "Post Reported: User ID ${post.authorDisplayName}"
+                            )
+                            context.startActivity(intent)
+                        }) {
+                        Text(stringResource(R.string.go_to_email))
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = {
+                            openDialog.value = false
+                        }) {
+                        Text(stringResource(R.string.dismiss))
+                    }
+                })
+        } else {
+            AlertDialog(onDismissRequest = { openDialog.value = false },
+                title = {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = stringResource(R.string.delete_post_question), color = Color.Red)
+                        Icon(Icons.Rounded.Report, contentDescription = stringResource(R.string.delete), tint = Color.Red)
+                    }
 
+                },
+                text = {
+                    Text(stringResource(R.string.delete_warning))
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            profileViewModel.delete(post.firebaseId, post)
+                            openDialog.value = false
+                        }) {
+                        Text(stringResource(id = R.string.delete))
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = {
+                            openDialog.value = false
+                        }) {
+                        Text(stringResource(id = R.string.dismiss))
+                    }
+                })
+        }
     }
 
     var expanded by remember { mutableStateOf(false) }
@@ -193,8 +186,17 @@ fun TopBox(post: Post, modifier: Modifier = Modifier, profileViewModel: ProfileV
                             expanded = false
                         }
                     }) {
-                        Text(stringResource(R.string.report))
+                        Text(stringResource(if (profileViewModel == null) R.string.report else (R.string.edit_post)))
                     }
+                    if (profileViewModel != null) {
+                        DropdownMenuItem(onClick = {
+                            openDialog.value = true
+                            expanded = false
+                        }) {
+                            Text(stringResource(R.string.delete_post_confirmation))
+                        }
+                    }
+
                 }
             }
         }

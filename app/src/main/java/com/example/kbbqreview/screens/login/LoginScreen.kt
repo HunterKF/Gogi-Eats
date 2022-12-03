@@ -33,11 +33,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -48,7 +50,12 @@ import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.screens.camera.ProfileCamera
 import com.example.kbbqreview.screens.camera.ui.theme.Purple500
 import com.example.kbbqreview.screens.login.util.DividedBackground
+import com.example.kbbqreview.screens.login.util.SignIn
+import com.example.kbbqreview.screens.login.util.SignUp
 import com.example.kbbqreview.screens.profile.ProfileViewModel
+import com.example.kbbqreview.screens.util.OrangeButton
+import com.example.kbbqreview.ui.theme.Brown
+import com.example.kbbqreview.ui.theme.Orange
 import com.example.kbbqreview.util.LoginScreenState
 import com.facebook.CallbackManager
 import com.facebook.FacebookCallback
@@ -133,16 +140,20 @@ fun LoginScreen(
 
     when (state) {
         LoginScreenState.SignIn -> {
-            SignInScreen(
-                navigateToProfile,
-                context,
-                launcher,
-                googleSignInClient,
-                popBackStack,
-                emailFieldState,
-                passwordFieldState,
-                viewModel
-            )
+            Surface(modifier = Modifier.fillMaxSize()) {
+                DividedBackground(modifier = Modifier.fillMaxSize())
+                SignIn(
+                    modifier = Modifier,
+                    navigateToHome = navigateToProfile,
+                    context = context,
+                    launcher = launcher,
+                    googleSignInClient = googleSignInClient,
+                    popBackStack = popBackStack,
+                    emailFieldState = emailFieldState,
+                    passwordFieldState = passwordFieldState,
+                    viewModel = viewModel
+                )
+            }
         }
         LoginScreenState.Loading -> {
             Surface(Modifier.fillMaxSize()) {
@@ -152,23 +163,26 @@ fun LoginScreen(
             }
         }
         LoginScreenState.CreateAccount -> {
-            CreateAccountScreen(
-                viewModel,
-                context,
-                emailFieldState,
-                passwordFieldState,
-                navigateToProfile,
-                launcher,
-                googleSignInClient,
-                userName,
-                cameraViewModel,
-                popBackStack,
-                userNameAvailable,
-                userNameChecked
-            )
+            Surface(modifier = Modifier.fillMaxSize()) {
+                DividedBackground(modifier = Modifier.fillMaxSize())
+                SignUp(
+                    viewModel = viewModel,
+                    emailFieldState = emailFieldState,
+                    passwordFieldState = passwordFieldState,
+                    navigateToHome = navigateToProfile,
+                    launcher = launcher,
+                    googleSignInClient = googleSignInClient,
+                    userName = userName,
+                    cameraViewModel = cameraViewModel,
+                    popBackStack = popBackStack,
+                    userNameAvailable = userNameAvailable,
+                    userNameChecked = userNameChecked,
+
+                )
+            }
+
         }
         LoginScreenState.LandingScreen -> {
-//            Image by <a href="https://www.freepik.com/free-vector/hand-drawn-korean-bbq-illustration_31216894.htm#query=illustrations%20korean%20bbq&position=0&from_view=search">Freepik</a>
             LandScreenContent(popBackStack, viewModel)
         }
         LoginScreenState.CreateAccCamera -> {
@@ -328,34 +342,68 @@ private fun LandScreenContent(
     popBackStack: () -> Boolean,
     viewModel: LoginViewModel,
 ) {
-    Box {
-        IconButton(modifier = Modifier
-            .align(Alignment.TopStart)
-            .padding(4.dp),
-            onClick = {
-                popBackStack()
-            }) {
-            Icon(Icons.Rounded.Close, null)
-        }
-        Column(Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(modifier = Modifier
-                .scale(0.7f)
-                .weight(1f),
-                painter = painterResource(id = R.drawable.landing_page_image),
-                contentDescription = null)
-            Column(Modifier
-                .weight(1f)
-                .fillMaxWidth(),
+    DividedBackground(Modifier.fillMaxSize())
+    Card(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp)
+    ) {
+        Box {
+            IconButton(modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(4.dp),
+                onClick = {
+                    popBackStack()
+                }) {
+                Icon(Icons.Rounded.Close, null)
+            }
+            Column(Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = stringResource(R.string.hey_welcome),
-                    style = MaterialTheme.typography.h6)
+                Image(modifier = Modifier
+                    .scale(0.5f)
+                    .weight(1f),
+                    painter = painterResource(id = R.drawable.logo),
+                    contentDescription = null)
+                Column(Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceEvenly) {
+                    Text(text = stringResource(R.string.hey_welcome),
+                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.h4,
+                    modifier = Modifier.weight(1f))
 
-                Button(onClick = { viewModel.changeToCreate() }) {
-                    Text(stringResource(R.string.get_started))
-                }
-                TextButton(onClick = { viewModel.changeToSignIn() }) {
-                    Text(stringResource(R.string.have_an_account))
+                    Column(
+                        modifier = Modifier.fillMaxWidth().weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        OrangeButton(
+                            text = (stringResource(R.string.get_started)),
+                            onClick = { viewModel.changeToCreate() },
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .padding(16.dp))
+
+                        TextButton(onClick = { viewModel.changeToSignIn() }) {
+                            Row(
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.have_an_account),
+                                    fontSize = 20.sp,
+                                    style = MaterialTheme.typography.h6,
+                                    color = Brown
+                                )
+                                Text(
+                                    text = " Login",
+                                    fontSize = 20.sp,
+                                    style = MaterialTheme.typography.h6,
+                                    color = Orange
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

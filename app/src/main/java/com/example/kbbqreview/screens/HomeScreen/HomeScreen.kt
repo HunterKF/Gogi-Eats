@@ -25,6 +25,7 @@ import com.example.kbbqreview.*
 import com.example.kbbqreview.R
 import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.screens.profile.ProfileScreenState
+import com.example.kbbqreview.screens.util.CustomCircularProgress
 import com.example.kbbqreview.ui.theme.Brown
 import com.example.kbbqreview.ui.theme.Orange
 
@@ -125,7 +126,7 @@ fun HomeScreen(
                 println("Current state is ${state}")
                 Surface(Modifier.fillMaxSize()) {
                     Box(contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(Modifier.scale(1.2f))
+                        CustomCircularProgress(/*Modifier.scale(1.2f)*/)
                     }
                 }
             }

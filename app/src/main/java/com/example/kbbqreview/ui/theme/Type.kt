@@ -16,6 +16,7 @@ val baseFont = FontFamily(
 )
 // Set of Material typography styles to start with
 val Typography = Typography(
+    defaultFontFamily = baseFont,
     body1 = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
@@ -29,6 +30,11 @@ val Typography = Typography(
         fontFamily = baseFont,
         fontWeight = FontWeight.Medium,
         fontSize = 24.sp
+    ),
+    h4 = TextStyle(
+        fontFamily = baseFont,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 28.sp
     ),
     subtitle1 = TextStyle(
         fontFamily = baseFont,
