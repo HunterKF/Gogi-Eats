@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.example.kbbqreview">
+    package="com.example.gogieats">
 
     <uses-feature android:name="android.hardware.camera" />
 
@@ -14,7 +14,7 @@
     <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
 
     <application
-        android:name="com.example.kbbqreview.K_BBQ_Review"
+        android:name="com.example.gogieats.Gogi_Eats"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -25,12 +25,12 @@
         android:theme="@style/Theme.KBBQReview"
         tools:targetApi="31">
         <activity
-            android:name="com.example.kbbqreview.CameraActivity"
+            android:name="com.example.gogieats.CameraActivity"
             android:exported="false"
             android:label="@string/title_activity_camera"
             android:theme="@style/Theme.KBBQReview" />
         <activity
-            android:name="com.example.kbbqreview.MainActivity"
+            android:name="com.example.gogieats.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.KBBQReview">
@@ -51,7 +51,7 @@
                 android:resource="@xml/file_paths" />
         </provider>
         <provider
-            android:name=".util.GenericFileProvider"
+            android:name="com.example.gogieats.util.GenericFileProvider"
             android:authorities="${applicationId}.util.provider"
             android:exported="false"
             android:grantUriPermissions ="true">
