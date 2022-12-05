@@ -14,6 +14,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import com.example.kbbqreview.R
+import com.example.kbbqreview.data.firestore.EditingPost
 import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.example.kbbqreview.ui.theme.Orange
 import com.example.kbbqreview.ui.theme.Shadows
@@ -21,9 +22,11 @@ import com.example.kbbqreview.ui.theme.Shadows
 @Composable
 fun InputRestaurantName2(
     focusRequester: FocusRequester,
-    addReviewViewModel: ReviewViewModel,
+    addReviewViewModel: ReviewViewModel? = null,
+    post: EditingPost? = null
 ) {
-    TextField(
+    (post?.restaurantName?.value ?: addReviewViewModel?.restaurantNameText?.value)?.let {
+        TextField(
         modifier = Modifier
             .focusRequester(focusRequester)
             .fillMaxWidth()
@@ -36,17 +39,23 @@ fun InputRestaurantName2(
                 style = MaterialTheme.typography.subtitle1,
                 color = Color.Gray)
         },
-        value = addReviewViewModel.restaurantNameText.value,
+        value = it,
         keyboardOptions = KeyboardOptions(
             capitalization = KeyboardCapitalization.Words,
             imeAction = ImeAction.Done
         ),
         singleLine = true,
         onValueChange = { newValue ->
-            addReviewViewModel.onTextFieldChange(
-                addReviewViewModel.restaurantNameText,
-                newValue
-            )
+            if (post == null && addReviewViewModel != null) {
+                addReviewViewModel.onTextFieldChange(
+                    addReviewViewModel.restaurantNameText,
+                    newValue
+                )
+            } else {
+                if (post != null) {
+                    post.restaurantName.value = newValue
+                }
+            }
         },
         colors = TextFieldDefaults.textFieldColors(
             textColor = Color.DarkGray,
@@ -63,4 +72,5 @@ fun InputRestaurantName2(
             textAlign = TextAlign.Center
         )
     )
+    }
 }

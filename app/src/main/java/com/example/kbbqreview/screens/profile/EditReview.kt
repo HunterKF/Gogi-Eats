@@ -1,6 +1,5 @@
 package com.example.kbbqreview.screens
 
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.border
@@ -18,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -40,6 +40,7 @@ import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.screens.map.location.LocationDetails
 import com.example.kbbqreview.screens.profile.ProfileViewModel
+import com.example.kbbqreview.screens.util.*
 import com.example.kbbqreview.ui.theme.spacing
 import com.google.accompanist.flowlayout.FlowMainAxisAlignment
 import com.google.accompanist.flowlayout.FlowRow
@@ -51,13 +52,15 @@ fun EditReview(
     navController: NavHostController,
     cameraViewModel: CameraViewModel,
     profileViewModel: ProfileViewModel,
-    location: LocationDetails?
+    location: LocationDetails?,
 ) {
     BackHandler() {
         navController.navigate(Screen.Profile.route)
         profileViewModel.editingState.value = false
     }
     val focusManager = LocalFocusManager.current
+    val focusRequester = FocusRequester()
+
     val photoList = profileViewModel.photoList
     val context = LocalContext.current
 
@@ -96,20 +99,21 @@ fun EditReview(
             Modifier
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            contentPadding = PaddingValues(vertical = 20.dp)
+            contentPadding = PaddingValues(
+                top = 18.dp,
+                bottom = 120.dp,
+                start = 12.dp,
+                end = 12.dp
+            )
         ) {
             item {
-                TopBar(
-                    post,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(MaterialTheme.spacing.small),
-                    profileViewModel.restaurantName
-                )
+                InputRestaurantName2(focusRequester = focusRequester, post = post)
             }
             item {
-                Spacer(Modifier.height(8.dp))
-                EditAddress(
+                Spacer(Modifier.height(24.dp))
+            }
+            item {
+                EditAddress2(
                     profileViewModel,
                     location = location,
                     modifier = Modifier.padding(horizontal = 8.dp),
@@ -119,66 +123,98 @@ fun EditReview(
                         navController.navigate(
                             Screen.FromEditChooseLocation.route
                         )
-                    })
+                    }
+                )
             }
             item {
-                Column(Modifier.padding(horizontal = 12.dp)) {
+                Spacer(Modifier.height(20.dp))
+                ShadowDivider()
+                Spacer(Modifier.height(10.dp))
+            }
+            item {
+                Column(Modifier.fillMaxWidth()) {
 
-                    ReviewScale(post.valueMeat, stringResource(id = R.string.title_meat), focusManager, R.drawable.meat_icon)
-                    ReviewScale(
-                        post.valueSideDishes,
-                        stringResource(id = R.string.title_side_dishes),
-                        focusManager,
-                        R.drawable.side_dishes_icon
+                    CategoryCard(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        value = post.valueMeat,
+                        title = R.string.title_meat,
+                        icon = R.drawable.icon_meat,
+                        description = R.string.description_meat
+                    )
+                    CategoryCard(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        value = post.valueSideDishes,
+                        title = R.string.title_side_dishes,
+                        icon = R.drawable.icon_side_dishes,
+                        description = R.string.description_side_dishes
+
+                    )
+                    CategoryCard(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        value = post.valueAmenities,
+                        title = R.string.title_amenities,
+                        icon = R.drawable.icon_amenities,
+                        description = R.string.description_amenities
+
+                    )
+                    CategoryCard(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        value = post.valueAtmosphere,
+                        title = R.string.title_atmosphere,
+                        icon = R.drawable.icon_atmosphere,
+                        description = R.string.description_atmosphere
+
                     )
 
-                    ReviewScale(
-                        post.valueAmenities,
-                        stringResource(id = R.string.title_amenities),
-                        focusManager,
-                        R.drawable.amenities_icon
-                    )
-                    ReviewScale(
-                        post.valueAtmosphere,
-                        stringResource(id = R.string.title_atmosphere),
-                        focusManager,
-                        R.drawable.atmosphere_icon
-                    )
+
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
 
             item {
-                PhotoGrid(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 12.dp),
-                    photoList = photoList,
+                PhotoRow(
+                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 2.dp),
                     navController = navController,
+                    allPhotos = photoList,
                     profileViewModel = profileViewModel
                 )
             }
             item {
-                ReviewCommentField(
+
+                val currentCharCount = remember { mutableStateOf(authorText.value.length) }
+               /* ReviewCommentField(
                     authorText,
                     Modifier
                         .padding(8.dp)
                         .fillMaxWidth()
+                )*/
+                WrittenReview(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    authorText = authorText,
+                    currentCharCount = currentCharCount
                 )
             }
             item {
-                UpdateButton(modifier = Modifier.fillMaxWidth()) {
-                    post.photoList = photoList
-                    post.location = profileViewModel.changePostAddress()
-                    profileViewModel.updateReview(
-                        post.firebaseId,
-                        post,
-                        profileViewModel.editPhotoList
-                    )
-                    profileViewModel.editingState.value = false
-                    Toast.makeText(context, context.getString(R.string.post_updated), Toast.LENGTH_SHORT).show()
-                }
+                Spacer(Modifier.height(10.dp))
+            }
+            item {
+                OrangeButton(modifier = Modifier.fillMaxWidth(),
+                    text = stringResource(id = R.string.update),
+                    onClick =
+                    {
+                        post.photoList = photoList
+                        post.location = profileViewModel.changePostAddress()
+                        profileViewModel.updateReview(
+                            post.firebaseId,
+                            post,
+                            profileViewModel.editPhotoList
+                        )
+                        profileViewModel.editingState.value = false
+                        Toast.makeText(context,
+                            context.getString(R.string.post_updated),
+                            Toast.LENGTH_SHORT).show()
+                    })
             }
         }
     }
@@ -211,7 +247,9 @@ fun ReviewCommentField(authorText: MutableState<String>, modifier: Modifier) {
                     currentCharCount.value = newValue.length
                     authorText.value = newValue
                 } else {
-                    Toast.makeText(context, context.getString(R.string.shorten_name), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context,
+                        context.getString(R.string.shorten_name),
+                        Toast.LENGTH_SHORT).show()
                 }
 
             }
@@ -292,7 +330,7 @@ fun PhotoGrid(
     photoList: SnapshotStateList<Photo>,
     modifier: Modifier,
     profileViewModel: ProfileViewModel,
-    navController: NavHostController
+    navController: NavHostController,
 ) {
     FlowRow(
         mainAxisSize = SizeMode.Expand,
@@ -337,7 +375,7 @@ fun AddNewPhoto(modifier: Modifier, navController: NavHostController) {
 fun EditPhotoCard(
     photoList: SnapshotStateList<Photo>,
     profileViewModel: ProfileViewModel,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     fun removePhoto(photo: Photo) {
         photoList.remove(photo)
@@ -367,7 +405,7 @@ fun EditPhotoCard(
                 Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
-            com.example.kbbqreview.screens.HomeScreen.Scrim(
+            BlackScrim(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
@@ -376,7 +414,9 @@ fun EditPhotoCard(
             IconButton(
                 modifier = Modifier.align(Alignment.TopEnd),
                 onClick = { removePhoto(photo) }) {
-                Icon(Icons.Rounded.Delete, contentDescription = stringResource(id = R.string.remove_photo), tint = Color.White)
+                Icon(Icons.Rounded.Delete,
+                    contentDescription = stringResource(id = R.string.remove_photo),
+                    tint = Color.White)
             }
         }
     }
@@ -423,7 +463,7 @@ fun EditAddress(
     onClick: () -> Unit,
     onNavigate: () -> Unit,
     modifier: Modifier,
-    post: EditingPost
+    post: EditingPost,
 ) {
     val context = LocalContext.current
 

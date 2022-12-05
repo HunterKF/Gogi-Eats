@@ -49,6 +49,7 @@ import com.example.kbbqreview.screens.AddNewPhoto
 import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.screens.addreview.ReviewViewModel
 import com.example.kbbqreview.screens.map.location.LocationDetails
+import com.example.kbbqreview.screens.util.BlackScrim
 import com.example.kbbqreview.ui.theme.spacing
 import com.google.accompanist.flowlayout.FlowMainAxisAlignment
 import com.google.accompanist.flowlayout.FlowRow
@@ -151,7 +152,7 @@ fun AddReview(
                         R.string.description_meat
                     )
                     ReviewBar(
-                        value = addReviewViewModel.sideDishes,
+                        value = addReviewViewModel.valueSideDishes,
                         title = stringResource(R.string.title_side_dishes),
                         focusManager = focusManager,
                         R.drawable.side_dishes_icon,
@@ -267,7 +268,7 @@ fun PhotoCard(allPhotos: SnapshotStateList<Photo>, modifier: Modifier) {
                 Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
-            Scrim(
+            BlackScrim(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)

@@ -1,42 +1,31 @@
 package com.example.kbbqreview.screens.addreview
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.MyLocation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.kbbqreview.ApplicationViewModel
 import com.example.kbbqreview.R
-import com.example.kbbqreview.Screen
 import com.example.kbbqreview.items
 import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.screens.map.location.LocationDetails
@@ -164,7 +153,7 @@ fun AddReview2(
                         reviewViewModel = addReviewViewModel,
                         location = location,
                         navController = navController,
-                        focusManager = focusManager
+                        focusManager = focusManager,
                     )
                 }
                 item {
@@ -186,21 +175,21 @@ fun AddReview2(
                             modifier = Modifier.padding(vertical = 12.dp)
                         )
                         CategoryCard(modifier = Modifier.padding(vertical = 8.dp),
-                            value = mutableState,
+                            value = addReviewViewModel.valueMeat,
                             title = R.string.title_meat,
                             icon = R.drawable.icon_meat,
                             description = R.string.description_meat)
-                        CategoryCard(value = mutableState,
+                        CategoryCard(value = addReviewViewModel.valueSideDishes,
                             title = R.string.title_side_dishes,
                             icon = R.drawable.icon_side_dishes,
                             description = R.string.description_side_dishes,
                             modifier = Modifier.padding(vertical = 8.dp))
-                        CategoryCard(value = mutableState,
+                        CategoryCard(value = addReviewViewModel.valueAmenities,
                             title = R.string.title_amenities,
                             icon = R.drawable.icon_amenities,
                             description = R.string.description_amenities,
                             modifier = Modifier.padding(vertical = 8.dp))
-                        CategoryCard(value = mutableState,
+                        CategoryCard(value = addReviewViewModel.valueAtmosphere,
                             title = R.string.title_atmosphere,
                             icon = R.drawable.icon_atmosphere,
                             description = R.string.description_atmosphere,
@@ -216,8 +205,8 @@ fun AddReview2(
                 item {
                     WrittenReview(
                         reviewViewModel = addReviewViewModel,
-                        currentCharCount = currentCharCount,
-                        modifier = Modifier.padding(vertical = 8.dp)
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        currentCharCount = currentCharCount
                     )
                 }
                 item {

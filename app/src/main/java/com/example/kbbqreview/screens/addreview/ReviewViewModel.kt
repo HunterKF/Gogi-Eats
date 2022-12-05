@@ -1,8 +1,6 @@
 package com.example.kbbqreview.screens.addreview
 
 import android.content.Context
-import android.location.Address
-import android.location.Geocoder
 import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.MutableState
@@ -22,8 +20,6 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import okhttp3.internal.wait
-import java.text.SimpleDateFormat
 import java.util.*
 
 class ReviewViewModel : ViewModel() {
@@ -46,7 +42,7 @@ class ReviewViewModel : ViewModel() {
 
     val valueMeat = mutableStateOf(2)
 
-    val sideDishes = mutableStateOf(2)
+    val valueSideDishes = mutableStateOf(2)
 
     val valueAmenities = mutableStateOf(2)
 
@@ -73,7 +69,7 @@ class ReviewViewModel : ViewModel() {
         restaurantNameText.value = ""
         restaurantReviewText.value = ""
         valueMeat.value = 2
-        sideDishes.value = 2
+        valueSideDishes.value = 2
         valueAtmosphere.value = 2
         valueAmenities.value = 2
         restaurantLat.value = 0.0
@@ -99,7 +95,7 @@ class ReviewViewModel : ViewModel() {
             val postLng = restaurantLng.value
             val postReviewText = restaurantReviewText.value
             val postMeat = valueMeat.value
-            val postSideDishes = sideDishes.value
+            val postSideDishes = valueSideDishes.value
             val postAmenities = valueAmenities.value
             val postAtmosphere = valueAtmosphere.value
             val userId = setUser()

@@ -51,6 +51,7 @@ import com.example.kbbqreview.R
 import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.screens.login.LoginViewModel
 import com.example.kbbqreview.screens.util.OrangeButton
+import com.example.kbbqreview.ui.theme.Yellow
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 
 
@@ -149,7 +150,10 @@ fun SignUp(
                                     .size(70.dp)
                                     .aspectRatio(1f)
                                     .clip(CircleShape)
-                                    .border(1.dp, Color.Cyan, CircleShape),
+                                    .border(2.dp, Yellow, CircleShape)
+                                    .clickable {
+                                        viewModel.changeToCreateAccCamera()
+                                    },
                                 contentAlignment = Alignment.Center) {
                                 AsyncImage(
                                     modifier = Modifier
@@ -162,17 +166,17 @@ fun SignUp(
                                     contentDescription = null,
                                     contentScale = ContentScale.Crop
                                 )
-                                Row(Modifier
-                                    .align(Alignment.BottomCenter)
-                                    .fillMaxWidth()
-                                    .background(Color.White.copy(0.4f)),
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically) {
-                                    IconButton(onClick = { viewModel.changeToCreateAccCamera() }) {
+                                if (profilePhoto == null) {
+                                    Row(Modifier
+                                        .align(Alignment.Center)
+                                        .fillMaxSize()
+                                        .background(Color.White.copy(0.4f)),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically) {
                                         Icon(
                                             Icons.Rounded.PhotoCamera,
                                             stringResource(id = R.string.take_profile_photo),
-                                            tint = Color.Black,
+                                            tint = Yellow,
                                             modifier = Modifier.scale(1.3f)
                                         )
                                     }

@@ -28,7 +28,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.kbbqreview.R
 import com.example.kbbqreview.screens.login.LoginViewModel
+import com.example.kbbqreview.screens.profile.ProfileViewModel
+import com.example.kbbqreview.ui.theme.Brown
 import com.example.kbbqreview.ui.theme.Orange
+import com.example.kbbqreview.ui.theme.Yellow
 
 @Composable
 fun CustomTextField(
@@ -43,10 +46,11 @@ fun CustomTextField(
     isPassword: Boolean = false,
     focusManager: FocusManager,
     isUserName: Boolean = false,
-    viewModel: LoginViewModel,
+    viewModel: LoginViewModel? = null,
     userNameAvailable: MutableState<Boolean>? = null,
     userNameChecked: MutableState<Boolean>? = null,
     keyboardType: KeyboardType,
+    profileViewModel: ProfileViewModel? = null
 ) {
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
@@ -86,19 +90,30 @@ fun CustomTextField(
                 if (isPassword) {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(if (passwordVisible) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
-                            contentDescription = null)
+                            contentDescription = null,
+                        tint = Brown)
                     }
                 } else if (isUserName) {
                     IconButton(onClick = {
-                        userNameAvailable!!.value =
-                            viewModel.checkUserNameAvailability(value.value,
-                                userNameAvailable,
-                                context)
-                        if (!userNameAvailable.value) {
-                            userNameChecked!!.value = true
+                        if (viewModel != null) {
+                            userNameAvailable!!.value =
+                                viewModel.checkUserNameAvailability(value.value,
+                                    userNameAvailable,
+                                    context)
+                        } else if (profileViewModel != null) {
+                            userNameAvailable!!.value =
+                                profileViewModel.checkUserNameAvailability(value.value,
+                                    userNameAvailable,
+                                    context)
+                        }
+                        if (userNameAvailable != null) {
+                            if (!userNameAvailable.value) {
+                                userNameChecked!!.value = true
+                            }
                         }
                     }) {
-                        Icon(Icons.Rounded.PersonSearch, null)
+                        Icon(Icons.Rounded.PersonSearch, null,
+                            tint = Brown)
                     }
                 }
             },
@@ -121,7 +136,9 @@ fun CustomTextField(
             },
             colors = TextFieldDefaults.outlinedTextFieldColors(
                 cursorColor = Orange,
-
+                focusedBorderColor = Yellow,
+                unfocusedBorderColor = Brown,
+                focusedLabelColor = Yellow
             )
         )
     }

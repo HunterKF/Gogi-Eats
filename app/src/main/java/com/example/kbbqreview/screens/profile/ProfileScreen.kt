@@ -1,7 +1,6 @@
 package com.example.kbbqreview.screens.HomeScreen
 
 import android.content.Context
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.*
@@ -13,6 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -21,18 +21,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -48,13 +49,16 @@ import com.example.kbbqreview.screens.EditReview
 import com.example.kbbqreview.screens.camera.CameraViewModel
 import com.example.kbbqreview.screens.camera.ProfileCamera
 import com.example.kbbqreview.screens.login.LoadingScreen
+import com.example.kbbqreview.screens.login.util.CustomTextField
+import com.example.kbbqreview.screens.login.util.DividedBackground
 import com.example.kbbqreview.screens.map.location.LocationDetails
-import com.example.kbbqreview.screens.profile.ProfilePostCard
 import com.example.kbbqreview.screens.profile.ProfileScreenState
 import com.example.kbbqreview.screens.profile.ProfileViewModel
+import com.example.kbbqreview.screens.util.OrangeButton
 import com.example.kbbqreview.ui.theme.Brown
 import com.example.kbbqreview.ui.theme.Orange
 import com.example.kbbqreview.ui.theme.Shadows
+import com.example.kbbqreview.ui.theme.Yellow
 import com.example.kbbqreview.util.UserViewModel
 import com.google.accompanist.flowlayout.FlowMainAxisAlignment
 import com.google.accompanist.flowlayout.FlowRow
@@ -186,8 +190,8 @@ fun ProfileScreen(
             }
         }
     ) { innerPadding ->
+        val padding = innerPadding
         Column(
-            modifier = Modifier.padding(innerPadding),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -227,16 +231,23 @@ fun ProfileScreen(
                         stateChange = { profileViewModel.changeToSettings() })
                 }
                 ProfileScreenState.Settings -> {
-                    ProfileSettings(
-                        cameraViewModel = cameraViewModel,
-                        context = context,
-                        avatarPhoto = avatarUrl,
-                        viewModel = profileViewModel,
-                        userNameAvailable = userNameAvailable,
-                        userNameChecked = userNameChecked,
-                        displayName = displayName,
-                        navigateToProfile = { profileViewModel.checkIfSignedIn() }
-                    )
+                    Surface(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        DividedBackground(modifier = Modifier.fillMaxSize())
+
+                        ProfileSettings(
+                            cameraViewModel = cameraViewModel,
+                            context = context,
+                            avatarPhoto = avatarUrl,
+                            viewModel = profileViewModel,
+                            userNameAvailable = userNameAvailable,
+                            userNameChecked = userNameChecked,
+                            displayName = displayName,
+                            navigateToProfile = { profileViewModel.checkIfSignedIn() }
+                        )
+                    }
+
                 }
                 ProfileScreenState.Loading -> LoadingScreen()
                 ProfileScreenState.SignInRequired -> LaunchedEffect(key1 = Unit) {
@@ -443,7 +454,7 @@ private fun GridViewCard(modifier: Modifier, post: Post, onClick: () -> Job) {
             Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
-        Scrim(
+        com.example.kbbqreview.screens.util.BlackScrim(
             modifier = Modifier
                 .fillMaxSize()
                 .align(Alignment.BottomCenter)
@@ -485,7 +496,7 @@ private fun SingleViewCard(
                 post = post,
                 photoList = photoList,
                 modifier = Modifier.padding(bottom = 12.dp),
-                postUser =  userViewModel.user,
+                postUser = userViewModel.user,
                 profileViewModel = profileViewModel
             )
         }
@@ -616,122 +627,103 @@ private fun ProfileSettings(
     navigateToProfile: () -> Unit,
     avatarPhoto: Photo,
     displayName: String,
+    modifier: Modifier = Modifier,
 ) {
     val userNameState = remember {
         mutableStateOf(displayName)
     }
+    val focusManager = LocalFocusManager.current
 
-    Box(Modifier.fillMaxSize()) {
-        IconButton(modifier = Modifier
-            .align(Alignment.TopStart)
-            .padding(4.dp),
-            onClick = {
-                navigateToProfile()
-            }) {
-            Icon(Icons.Rounded.Close, null)
-        }
-        Column(modifier = Modifier
-            .padding(horizontal = 16.dp, vertical = 40.dp)
-            .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceEvenly) {
-            val profilePhoto = cameraViewModel.getProfilePhoto()
-            val currentCharCount = remember { mutableStateOf(0) }
 
-            Box(Modifier
-                .padding(top = 20.dp, bottom = 10.dp)
-                .fillMaxWidth(0.4f)
-                .aspectRatio(1f)
-                .clip(CircleShape)
-                .border(4.dp, Color.Cyan, CircleShape)) {
-                AsyncImage(modifier = Modifier.fillMaxSize(),
-                    model = ImageRequest.Builder(context)
-                        .data(profilePhoto?.localUri ?: avatarPhoto.remoteUri)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop
-                )
-                Row(Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .background(Color.White.copy(0.4f)),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { viewModel.changeToSettingsCamera() }) {
+    Card(
+        modifier = modifier
+            .padding(12.dp)
+            .shadow(4.dp,
+                RoundedCornerShape(15.dp),
+                spotColor = Color.LightGray,
+                ambientColor = Color.Transparent)
+            .clip(RoundedCornerShape(15.dp))
+            .zIndex(1f)
+    ) {
+        Box(Modifier.fillMaxSize()) {
+            IconButton(modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(4.dp),
+                onClick = {
+                    navigateToProfile()
+                }) {
+                Icon(Icons.Rounded.Close, null)
+            }
+            Column(modifier = Modifier
+                .padding(horizontal = 24.dp, vertical = 40.dp)
+                .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceEvenly) {
+                val profilePhoto = cameraViewModel.getProfilePhoto()
+                val currentCharCount = remember { mutableStateOf(0) }
+
+                Box(Modifier
+                    .padding(top = 20.dp, bottom = 10.dp)
+                    .fillMaxWidth(0.4f)
+                    .aspectRatio(1f)
+                    .clip(CircleShape)
+                    .clickable {
+                        viewModel.changeToSettingsCamera()
+                    }
+                    .border(2.dp, Yellow, CircleShape)) {
+                    AsyncImage(modifier = Modifier.fillMaxSize(),
+                        model = ImageRequest.Builder(context)
+                            .data(profilePhoto?.localUri ?: avatarPhoto.remoteUri)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop
+                    )
+                    Row(Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxSize()
+                        .background(Color.White.copy(0.2f)),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             Icons.Rounded.PhotoCamera,
                             stringResource(R.string.take_profile_photo),
-                            tint = Color.Black,
+                            tint = Yellow,
                             modifier = Modifier.scale(1.3f)
                         )
                     }
                 }
-            }
-            val maxChars = 15
-            TextField(
-                value = userNameState.value,
-                onValueChange = { newValue ->
-                    if (newValue.length <= maxChars) {
-                        currentCharCount.value = newValue.length
-                        viewModel.onTextFieldChange(
-                            userNameState,
-                            newValue
+                val maxChars = 15
+
+
+                CustomTextField(icon = Icons.Outlined.Person,
+                    text = "Username",
+                    label = "e.g.maxpaene",
+                    value = userNameState,
+                    modifier = modifier,
+                    maxChars = maxChars,
+                    currentCharCount = currentCharCount,
+                    context = context,
+                    focusManager = focusManager,
+                    isUserName = true,
+                    profileViewModel = viewModel,
+                    userNameAvailable = userNameAvailable,
+                    userNameChecked = userNameChecked,
+                    keyboardType = KeyboardType.Password
+                )
+                val currentUser = Firebase.auth.currentUser
+
+                OrangeButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = stringResource(id = R.string.update), onClick = {
+                        viewModel.updateAccount(
+                            currentUser = currentUser,
+                            userName = userNameState.value,
+                            newPhoto = profilePhoto,
+                            oldPhoto = avatarPhoto,
+                            navigateToHome = navigateToProfile
                         )
-                    } else {
-                        Toast.makeText(context,
-                            context.getString(R.string.shorten_name),
-                            Toast.LENGTH_SHORT).show()
-                    }
-                },
-                leadingIcon = { Icon(Icons.Rounded.DriveFileRenameOutline, null) },
-                trailingIcon = {
-                    IconButton(onClick = {
-                        userNameAvailable.value =
-                            viewModel.checkUserNameAvailability(userNameState.value,
-                                userNameAvailable,
-                                context)
-                        if (!userNameAvailable.value) {
-                            userNameChecked.value = true
-                        }
-                    }) {
-                        Icon(Icons.Rounded.PersonSearch, null)
-                    }
-                },
-                modifier = Modifier
-                    .padding()
-                    .border(
-                        BorderStroke(width = 2.dp,
-                            color = if (userNameAvailable.value) com.example.kbbqreview.screens.camera.ui.theme.Purple500 else Color.Red),
-                        shape = RoundedCornerShape(50)
-                    )
-                    .fillMaxWidth(),
-                placeholder = {
-                    Text(
-                        text = stringResource(id = R.string.profile_name),
-                        color = Color.LightGray,
-                        style = MaterialTheme.typography.subtitle1
-                    )
-                },
-                maxLines = 1,
-                singleLine = true,
-                colors = TextFieldDefaults.textFieldColors(
-                    backgroundColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                )
-            )
-            val currentUser = Firebase.auth.currentUser
-            Button(enabled = userNameState.value != "", onClick = {
-                viewModel.updateAccount(
-                    currentUser = currentUser,
-                    userName = userNameState.value,
-                    newPhoto = profilePhoto,
-                    oldPhoto = avatarPhoto,
-                    navigateToHome = navigateToProfile
-                )
-            }) {
-                Text(stringResource(id = R.string.update))
+                    })
             }
         }
     }
@@ -740,14 +732,3 @@ private fun ProfileSettings(
     }
 }
 
-@Composable
-fun Scrim(modifier: Modifier) {
-    //This is to make the bottom of the photo cards a little more readable
-    Box(
-        modifier = modifier.background(
-            Brush.verticalGradient(
-                listOf(Color.Transparent, Color(0x99000000))
-            )
-        )
-    )
-}

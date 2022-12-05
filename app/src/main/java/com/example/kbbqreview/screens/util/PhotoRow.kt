@@ -1,14 +1,11 @@
 package com.example.kbbqreview.screens.util
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Camera
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -31,12 +28,8 @@ import coil.request.ImageRequest
 import com.example.kbbqreview.R
 import com.example.kbbqreview.Screen
 import com.example.kbbqreview.data.photos.Photo
-import com.example.kbbqreview.screens.AddNewPhoto
-import com.example.kbbqreview.screens.HomeScreen.PhotoCard
-import com.example.kbbqreview.screens.HomeScreen.Scrim
+import com.example.kbbqreview.screens.profile.ProfileViewModel
 import com.example.kbbqreview.ui.theme.Orange
-import com.example.kbbqreview.ui.theme.Shadows
-import com.example.kbbqreview.ui.theme.Shapes
 import com.google.accompanist.flowlayout.FlowMainAxisAlignment
 import com.google.accompanist.flowlayout.FlowRow
 import com.google.accompanist.flowlayout.SizeMode
@@ -46,6 +39,7 @@ fun PhotoRow(
     modifier: Modifier = Modifier,
     navController: NavHostController,
     allPhotos: SnapshotStateList<Photo>,
+    profileViewModel: ProfileViewModel? = null,
 ) {
     FlowRow(
         modifier = modifier,
@@ -60,7 +54,9 @@ fun PhotoRow(
             modifier = Modifier
                 .size(itemSize - 22.dp)
                 .clip(RoundedCornerShape(5.dp))
-                .aspectRatio(1f)
+                .aspectRatio(1f),
+            profileViewModel = profileViewModel
+
         )
         AddNewPhoto2(
             modifier = Modifier
@@ -93,18 +89,31 @@ fun AddNewPhoto2(modifier: Modifier, navController: NavHostController) {
 }
 
 @Composable
-fun PhotoCard2(allPhotos: SnapshotStateList<Photo>, modifier: Modifier) {
+fun PhotoCard2(
+    allPhotos: SnapshotStateList<Photo>,
+    modifier: Modifier = Modifier,
+    profileViewModel: ProfileViewModel? = null,
+) {
     fun removePhoto(photo: Photo) {
         allPhotos.remove(photo)
+        profileViewModel?.addPhotoToBeDeleted(photo)
     }
+
+    var listIndex = 0
     allPhotos.forEach { photo ->
+        photo.listIndex = listIndex
+        listIndex += 1
+        var uri = photo.remoteUri
+        if (uri == "") {
+            uri = photo.localUri
+        }
         Box(
             modifier = modifier
         ) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(
-                        data = photo.localUri
+                        data = uri
                     )
                     .placeholder(R.drawable.ic_image_placeholder)
                     .crossfade(true)
@@ -113,7 +122,7 @@ fun PhotoCard2(allPhotos: SnapshotStateList<Photo>, modifier: Modifier) {
                 Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
-            Scrim(
+            BlackScrim(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)

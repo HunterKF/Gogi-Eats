@@ -41,6 +41,7 @@ import com.example.kbbqreview.data.Category
 import com.example.kbbqreview.data.photos.Photo
 import com.example.kbbqreview.data.user.FullUser
 import com.example.kbbqreview.screens.profile.ProfileViewModel
+import com.example.kbbqreview.screens.util.BlackScrim
 import com.example.kbbqreview.screens.util.DisplayValuesCard
 import com.example.kbbqreview.screens.util.ShadowDivider
 import com.example.kbbqreview.ui.theme.Brown
@@ -78,7 +79,7 @@ fun HomeScreenItem(
                 post = storyItem,
                 photoList = photoList,
                 modifier = Modifier.padding(bottom = 12.dp),
-                postUser =  userViewModel.user
+                postUser = userViewModel.user
             )
         }
     }
@@ -94,9 +95,9 @@ fun HomePostCard(
     photoList: List<Photo>,
     modifier: Modifier = Modifier,
     postUser: MutableState<FullUser>,
-    profileViewModel: ProfileViewModel? = null
+    profileViewModel: ProfileViewModel? = null,
 ) {
-
+    val context = LocalContext.current
     Surface(Modifier.background(Color.White)) {
         Column(
             modifier = modifier
@@ -116,7 +117,7 @@ fun HomePostCard(
                     modifier = Modifier
                         .zIndex(1f)
                         .align(Alignment.TopCenter),
-                profileViewModel = profileViewModel)
+                    profileViewModel = profileViewModel)
                 PhotoHolder(state, photoList, modifier = Modifier)
                 val category = listOf(
                     Category(R.drawable.icon_meat, post.valueMeat),
@@ -143,7 +144,15 @@ fun HomePostCard(
                 horizontalAlignment = Alignment.CenterHorizontally) {
                 Spacer(Modifier.height(8.dp))
                 UserReviewInfo(post = post,
-                    modifier = Modifier.fillMaxWidth(0.8f),
+                    modifier = Modifier
+                        .fillMaxWidth(0.8f)
+                        .clickable {
+                            Toast
+                                .makeText(context,
+                                    "postUser: ${postUser.value}",
+                                    Toast.LENGTH_SHORT)
+                                .show()
+                        },
                     postUser = postUser)
                 Spacer(Modifier.height(8.dp))
                 ShadowDivider(modifier = Modifier.fillMaxWidth(0.8f))
@@ -195,6 +204,12 @@ private fun PhotoHolder(
                             .padding(vertical = 0.dp)
                             .fillMaxSize(), contentScale = ContentScale.Crop
                     )
+                    BlackScrim(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .height(56.dp)
+                    )
                 }
 
             }
@@ -213,12 +228,7 @@ private fun PhotoHolder(
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
         ) {
-            Scrim(
-                modifier = Modifier
 
-                    .fillMaxWidth()
-                    .height(56.dp)
-            )
         }
     }
 }

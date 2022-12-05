@@ -35,7 +35,7 @@ import coil.request.ImageRequest
 import com.example.kbbqreview.R
 import com.example.kbbqreview.data.firestore.Post
 import com.example.kbbqreview.data.photos.Photo
-import com.example.kbbqreview.screens.HomeScreen.Scrim
+import com.example.kbbqreview.screens.util.BlackScrim
 import com.example.kbbqreview.util.AddressMap
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
@@ -147,9 +147,8 @@ private fun PhotoHolder(
                 .offset(y = (-8).dp)
                 .align(Alignment.BottomCenter)
         ) {
-            Scrim(
+            BlackScrim(
                 modifier = Modifier
-
                     .fillMaxWidth()
                     .height(56.dp)
             )
