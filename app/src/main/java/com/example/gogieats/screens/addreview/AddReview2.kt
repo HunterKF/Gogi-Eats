@@ -234,7 +234,9 @@ fun AddReview2(
                                 Toast.makeText(context,  context.getString(R.string.review_saved), Toast.LENGTH_SHORT).show()
                             }
                         } },
-                        modifier = Modifier.fillMaxWidth())
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = true
+                    )
                 }
 
             }

@@ -35,7 +35,6 @@ fun ProfileCamera(
 ) {
     val TAG = "CAMERA TAG"
     var imageUri by remember { mutableStateOf(cameraViewModel.EMPTY_IMAGE_URI) }
-    val imageUri2 = remember { mutableListOf(cameraViewModel.EMPTY_IMAGE_URI) }
 
     Log.d(TAG, "The camera has opened.")
     if (imageUri != cameraViewModel.EMPTY_IMAGE_URI) {

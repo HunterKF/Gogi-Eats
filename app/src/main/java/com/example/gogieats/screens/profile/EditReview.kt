@@ -199,8 +199,7 @@ fun EditReview(
                 Spacer(Modifier.height(10.dp))
             }
             item {
-                OrangeButton(modifier = Modifier.fillMaxWidth(),
-                    text = stringResource(id = R.string.update),
+                OrangeButton(text = stringResource(id = R.string.update),
                     onClick =
                     {
                         post.photoList = photoList
@@ -214,7 +213,10 @@ fun EditReview(
                         Toast.makeText(context,
                             context.getString(R.string.post_updated),
                             Toast.LENGTH_SHORT).show()
-                    })
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = true
+                )
             }
         }
     }

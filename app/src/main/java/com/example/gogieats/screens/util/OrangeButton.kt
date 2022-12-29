@@ -17,9 +17,11 @@ fun OrangeButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean,
 ) {
     Button(
         onClick = { onClick() },
+        enabled = enabled,
         modifier = modifier.clip(RoundedCornerShape(10.dp)),
         colors = ButtonDefaults.buttonColors(
             backgroundColor = Orange

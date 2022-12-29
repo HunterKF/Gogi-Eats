@@ -82,11 +82,11 @@ fun UserReviewInfo(
             start.linkTo(userInfo.end)
             top.linkTo(parent.top)
             end.linkTo(reviewComment.start)
-        }
+        }/*
         createHorizontalChain(userInfo, barrier, reviewComment)
         createHorizontalChain(addressIcon, barrier, addressBar, chainStyle = ChainStyle.Spread)
         createVerticalChain(userInfo, addressIcon, chainStyle = ChainStyle.Packed)
-        createVerticalChain(reviewComment, addressBar, chainStyle = ChainStyle.SpreadInside)
+        createVerticalChain(reviewComment, addressBar, chainStyle = ChainStyle.SpreadInside)*/
 
     }
     ConstraintLayout(constraints, modifier = modifier) {
@@ -138,6 +138,7 @@ fun UserReviewInfo(
         Box(
             modifier = Modifier
                 .layoutId("reviewcomment")
+                .padding(bottom = 12.dp)
         ) {
             ReviewComment2(post = post, modifier = Modifier)
         }
@@ -195,8 +196,7 @@ fun ReviewComment2(post: Post, modifier: Modifier = Modifier) {
         fontSize = 15.sp,
         lineHeight = 18.sp,
         modifier = Modifier
-            .clickable(enabled = isClickable) { isExpanded = !isExpanded }
-            .animateContentSize(),
+            .clickable(enabled = isClickable) { isExpanded = !isExpanded },
     )
 }
 

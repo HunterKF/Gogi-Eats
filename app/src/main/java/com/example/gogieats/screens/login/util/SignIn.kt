@@ -124,7 +124,8 @@ fun SignIn(
                         )
                     }
                     item {
-                        OrangeButton(text = stringResource(id = R.string.sign_in),
+                        OrangeButton(
+                            text = stringResource(id = R.string.sign_in),
                             onClick = {
                                 viewModel.signInWithEmailAndPassword(
                                     context,
@@ -135,7 +136,8 @@ fun SignIn(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
+                                .clip(RoundedCornerShape(10.dp)),
+                            enabled = passwordFieldState.value != "" && emailFieldState.value.contains("@")
                         )
                         GoogleSignIn2(
                             launcher, googleSignInClient

@@ -1,6 +1,7 @@
 package com.example.gogieats.screens.login.util
 
 import android.content.Intent
+import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.ActivityResult
 import androidx.compose.foundation.*
@@ -38,6 +39,7 @@ import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.gogieats.R
+import com.example.gogieats.data.photos.Photo
 import com.example.gogieats.screens.camera.CameraViewModel
 import com.example.gogieats.screens.login.LoginViewModel
 import com.example.gogieats.screens.util.OrangeButton
@@ -85,7 +87,9 @@ fun SignUp(
                 modifier = Modifier.fillMaxSize()
             ) {
                 IconButton(
-                    modifier = Modifier.padding(4.dp).align(Alignment.TopStart),
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .align(Alignment.TopStart),
                     onClick = { viewModel.backToLanding() }) {
                     Icon(Icons.Rounded.ArrowBack, null, tint = Color.DarkGray)
                 }
@@ -193,7 +197,7 @@ fun SignUp(
                         CustomTextField(icon = Icons.Outlined.Person,
                             text = "Username",
                             label = "e.g.maxpaene",
-                            value = emailFieldState,
+                            value = userName,
                             modifier = modifier,
                             maxChars = maxChars,
                             currentCharCount = currentCharCount,
@@ -211,7 +215,7 @@ fun SignUp(
                         CustomTextField(icon = Icons.Outlined.Email,
                             text = "Email",
                             label = "example@gmail.com",
-                            value = userName,
+                            value = emailFieldState,
                             modifier = modifier,
                             context = context,
                             focusManager = focusManager,
@@ -236,20 +240,39 @@ fun SignUp(
                         )
                     }
                     item {
-                        OrangeButton(text = "Next",
+                        HyperlinkText(
+                            fullText = "By signing in, you agree to the privacy policy and terms of use.",
+                            linkText = listOf("privacy policy", "terms of use"),
+                            hyperlinks = listOf("https://hunter.freas.me/privacy.html", "https://www.youtube.com/watch?v=dPeS92y4gRs"),
+                            fontSize = MaterialTheme.typography.subtitle1.fontSize
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+                    item {
+                        val containsAt by remember {
+                            mutableStateOf(emailFieldState.value.contains("@") )
+                        }
+                        val containsDot by remember {
+                            mutableStateOf(emailFieldState.value.contains(".") )
+                        }
+                        OrangeButton(
+                            text = "Next",
                             onClick = {
                                 viewModel.createAccount(
                                     emailFieldState.value,
                                     passwordFieldState.value,
                                     userName.value,
-                                    profilePhoto,
+                                    profilePhoto ?: Photo(
+                                        localUri = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
+                                    ),
                                     navigateToHome,
                                     context
                                 )
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
+                                .clip(RoundedCornerShape(10.dp)),
+                            enabled = userName.value != "" && passwordFieldState.value != "" && emailFieldState.value.contains("@")
                         )
                         GoogleSignIn2(
                             launcher, googleSignInClient

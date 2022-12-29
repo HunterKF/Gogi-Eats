@@ -286,7 +286,7 @@ fun ProfileContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp)
+                    .height(200.dp)
             ) {
                 IconButton(
                     modifier = Modifier.align(Alignment.TopCenter),
@@ -302,8 +302,8 @@ fun ProfileContent(
                 }
 
                 Column(modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(top = 8.dp)
+                    .align(Alignment.TopCenter)
+                    .padding(top = 18.dp)
                     .fillMaxWidth(0.6f)) {
 
                     TextButton(onClick = { onSignOut() }) {
@@ -390,7 +390,7 @@ fun ProfileContent(
             if (gridLayoutState.value) {
                 item {
                     FlowRow(
-                        modifier = Modifier.padding(horizontal = padding),
+                        modifier = Modifier.padding(start = padding, end = padding, bottom = 40.dp),
                         mainAxisSize = SizeMode.Expand,
                         mainAxisAlignment = FlowMainAxisAlignment.SpaceBetween,
                         crossAxisSpacing = 10.dp,
@@ -714,8 +714,8 @@ private fun ProfileSettings(
                 val currentUser = Firebase.auth.currentUser
 
                 OrangeButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    text = stringResource(id = R.string.update), onClick = {
+                    text = stringResource(id = R.string.update),
+                    onClick = {
                         viewModel.updateAccount(
                             currentUser = currentUser,
                             userName = userNameState.value,
@@ -723,7 +723,10 @@ private fun ProfileSettings(
                             oldPhoto = avatarPhoto,
                             navigateToHome = navigateToProfile
                         )
-                    })
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = true
+                )
             }
         }
     }
