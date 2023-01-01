@@ -123,7 +123,6 @@ class MapViewModel : ViewModel() {
     fun getAddressFromLocation(context: Context, lat: Double, long: Double): String {
         val geocoder = Geocoder(context, Locale.getDefault())
         var addresses: List<Address>? = null
-        val address: Address?
         var addressText = ""
 
         try {
@@ -136,7 +135,7 @@ class MapViewModel : ViewModel() {
             ex.printStackTrace()
         }
 
-        address = addresses?.get(0)
+        val address: Address? = addresses?.get(0)
         addressText = address?.getAddressLine(0) ?: ""
 
         return addressText

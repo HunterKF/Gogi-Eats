@@ -9,9 +9,9 @@ import com.google.firebase.ktx.Firebase
 class UserViewModel {
     val user = mutableStateOf(FullUser())
 
-    val db = Firebase.firestore
+    private val db = Firebase.firestore
     fun getUser(uid: String) {
-        Log.d("handleUser", "Starting getUser: ${uid}")
+        Log.d("handleUser", "Starting getUser: $uid")
         db.collection("users").document(uid).get()
             .addOnSuccessListener { result ->
                 Log.d("handleUser", "Attempting to create full user: ${result}")

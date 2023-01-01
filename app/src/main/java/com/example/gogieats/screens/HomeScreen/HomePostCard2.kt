@@ -19,13 +19,24 @@ import androidx.compose.ui.unit.sp
 import com.example.gogieats.HomeScreenViewModel
 import com.example.gogieats.R
 import com.example.gogieats.data.firestore.Post
+import com.example.gogieats.data.user.FullUser
+import com.example.gogieats.data.user.User
 import com.example.gogieats.screens.profile.ProfileViewModel
 import com.example.gogieats.ui.theme.Yellow
+import com.example.gogieats.util.BlockUser
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 
 @Composable
-fun TopBox(post: Post, modifier: Modifier = Modifier, profileViewModel: ProfileViewModel?) {
+fun TopBox(
+    post: Post,
+    modifier: Modifier = Modifier,
+    profileViewModel: ProfileViewModel?,
+    postUser: MutableState<FullUser>
+) {
     val context = LocalContext.current
+    val currentUser = Firebase.auth.currentUser
     val openDialog = remember { mutableStateOf(false) }
     val viewModel = HomeScreenViewModel()
 
@@ -54,7 +65,7 @@ fun TopBox(post: Post, modifier: Modifier = Modifier, profileViewModel: ProfileV
                             openDialog.value = false
                             val intent = viewModel.sendMail(
                                 to = "hunter.krez@gmail.com",
-                                subject = "Post Reported: User ID ${post.authorDisplayName}"
+                                subject = "Post Reported: User ID ${post.firebaseId}"
                             )
                             context.startActivity(intent)
                         }) {
@@ -77,8 +88,11 @@ fun TopBox(post: Post, modifier: Modifier = Modifier, profileViewModel: ProfileV
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = stringResource(R.string.delete_post_question), color = Color.Red)
-                        Icon(Icons.Rounded.Report, contentDescription = stringResource(R.string.delete), tint = Color.Red)
+                        Text(text = stringResource(R.string.delete_post_question),
+                            color = Color.Red)
+                        Icon(Icons.Rounded.Report,
+                            contentDescription = stringResource(R.string.delete),
+                            tint = Color.Red)
                     }
 
                 },
@@ -169,17 +183,37 @@ fun TopBox(post: Post, modifier: Modifier = Modifier, profileViewModel: ProfileV
                             profileViewModel.photoList.clear()
                             profileViewModel.toBeDeletedPhotoList.clear()
                             profileViewModel.post.value = post.deepCopy()
-                            profileViewModel.editingPost = profileViewModel.convertPostToEditingPost(profileViewModel.post.value)
+                            profileViewModel.editingPost =
+                                profileViewModel.convertPostToEditingPost(profileViewModel.post.value)
 
                             post.photoList.forEach {
                                 profileViewModel.editPhotoList.add(it)
                             }
                             profileViewModel.editingState.value = true
-                            profileViewModel.changeLocation(post.location!!.latitude, post.location.longitude, context)
+                            profileViewModel.changeLocation(post.location!!.latitude,
+                                post.location.longitude,
+                                context)
                             expanded = false
                         }
                     }) {
-                        Text(stringResource(if (profileViewModel == null) R.string.report else (R.string.edit_post)))
+                        if (profileViewModel == null) {
+                            Text(stringResource(R.string.report))
+                        } else {
+                            Text(text = stringResource(id = R.string.edit_post))
+                        }
+                    }
+                    if (currentUser != null) {
+                        DropdownMenuItem(
+                            onClick = {
+                                BlockUser.blockUser(currentUser.uid, User(
+                                    uid = post.userId,
+                                    profileAvatar = postUser.value.profile_avatar_remote_uri,
+                                    userName = post.authorDisplayName
+                                ))
+                            }
+                        ) {
+                            Text(stringResource(R.string.block))
+                        }
                     }
                     if (profileViewModel != null) {
                         DropdownMenuItem(onClick = {

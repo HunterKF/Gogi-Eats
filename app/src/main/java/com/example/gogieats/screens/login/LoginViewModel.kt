@@ -44,7 +44,8 @@ class LoginViewModel : ViewModel() {
                 Log.d("create account", "It started creating an account...")
                 createNewAccount(currentUser, userName, profilePhoto, navigateToHome, context)
             } catch (e: Exception) {
-                loadingState.emit(LoginScreenState.Error(e.localizedMessage))
+                loadingState.emit(LoginScreenState.CreateAccount)
+                Toast.makeText(context, "Failed to create account.", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -122,11 +123,12 @@ class LoginViewModel : ViewModel() {
     ) {
         currentUser?.let {
             val fullUser = FullUser(
-                "1",
-                "1",
-                currentUser.uid,
-                userName,
-                userName.lowercase(Locale.getDefault()),
+                profile_avatar_local_uri = "1",
+                profile_avatar_remote_uri = "1",
+                user_id = currentUser.uid,
+                user_name = userName,
+                user_name_lowercase = userName.lowercase(Locale.getDefault()),
+                blocked_accounts = arrayListOf()
             )
             val handle = Firebase.firestore.collection("users")
 
@@ -147,17 +149,6 @@ class LoginViewModel : ViewModel() {
 
     }
 
-    fun onSignIn(context: Context) {
-        val currentUser = Firebase.auth.currentUser
-        viewModelScope.launch(Dispatchers.IO) {
-            val db = Firebase.firestore.collection("users")
-            db.whereEqualTo("user_id", currentUser?.uid).get().addOnSuccessListener { result ->
-                if (result.isEmpty) {
-                    createFirebaseUser(currentUser, currentUser!!.displayName!!, context)
-                }
-            }
-        }
-    }
 
     fun signInWithEmailAndPassword(
         context: Context,
@@ -172,9 +163,9 @@ class LoginViewModel : ViewModel() {
             Toast.makeText(context, "Signed in!", Toast.LENGTH_SHORT).show()
             navigateToHome()
         } catch (e: Exception) {
+            loadingState.emit(LoginScreenState.SignIn)
             println("Something failed... ${e.localizedMessage}")
-            loadingState.emit(LoginScreenState.Error(e.localizedMessage))
-            Toast.makeText(context, "Failed to sign in.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Failed to sign in. ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
         }
     }
 

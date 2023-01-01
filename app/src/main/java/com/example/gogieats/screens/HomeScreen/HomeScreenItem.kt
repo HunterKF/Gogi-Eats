@@ -117,7 +117,9 @@ fun HomePostCard(
                     modifier = Modifier
                         .zIndex(1f)
                         .align(Alignment.TopCenter),
-                    profileViewModel = profileViewModel)
+                    profileViewModel = profileViewModel,
+                    postUser = postUser
+                )
                 PhotoHolder(state, photoList, modifier = Modifier)
                 val category = listOf(
                     Category(R.drawable.icon_meat, post.valueMeat),
@@ -263,7 +265,7 @@ fun TopRow(post: Post) {
                         openDialog.value = false
                         val intent = viewModel.sendMail(
                             to = "hunter.krez@gmail.com",
-                            subject = "Post Reported: User ID ${post.authorDisplayName}"
+                            subject = "Post Reported: Post ID ${post.firebaseId}"
                         )
                         context.startActivity(intent)
                     }) {

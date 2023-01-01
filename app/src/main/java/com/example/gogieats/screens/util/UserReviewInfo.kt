@@ -82,11 +82,11 @@ fun UserReviewInfo(
             start.linkTo(userInfo.end)
             top.linkTo(parent.top)
             end.linkTo(reviewComment.start)
-        }/*
+        }
         createHorizontalChain(userInfo, barrier, reviewComment)
         createHorizontalChain(addressIcon, barrier, addressBar, chainStyle = ChainStyle.Spread)
         createVerticalChain(userInfo, addressIcon, chainStyle = ChainStyle.Packed)
-        createVerticalChain(reviewComment, addressBar, chainStyle = ChainStyle.SpreadInside)*/
+        createVerticalChain(reviewComment, addressBar, chainStyle = ChainStyle.SpreadInside)
 
     }
     ConstraintLayout(constraints, modifier = modifier) {

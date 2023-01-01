@@ -15,6 +15,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.gogieats.data.firestore.EditingPost
 import com.example.gogieats.data.firestore.Post
 import com.example.gogieats.data.photos.Photo
+import com.example.gogieats.data.user.FullUser
+import com.example.gogieats.data.user.User
+import com.example.gogieats.util.BlockUser
 import com.facebook.AccessToken
 import com.facebook.login.LoginManager
 import com.google.firebase.auth.FirebaseAuth
@@ -61,6 +64,9 @@ class ProfileViewModel : ViewModel() {
     private val emailAvatarPhoto = mutableStateOf(Photo())
     private val emailUserName = mutableStateOf("")
 
+    var blockedAccounts = mutableStateOf(arrayListOf<User>())
+
+
     fun checkIfSignedIn() {
         viewModelScope.launch(Dispatchers.IO) {
             if (currentUser != null) {
@@ -70,6 +76,39 @@ class ProfileViewModel : ViewModel() {
                     ProfileScreenState.SignInRequired
                 )
             }
+        }
+    }
+
+    fun addBlockedAccount() {
+        val db = Firebase.firestore.collection("users")
+        currentUser?.let {
+            db.document(currentUser!!.uid).get()
+                .addOnSuccessListener { documentSnapshot ->
+                    val fullUser = documentSnapshot.toObject(FullUser::class.java)
+                    fullUser?.let { account ->
+                        blockedAccounts.value = account.blocked_accounts
+                        /*account.blocked_accounts.forEach {
+                            Log.d("BlockUser", "Adding a blocked account.")
+                            val filteredList
+                            if (!blockedAccounts.value.contains(it)) {
+                                blockedAccounts.value.add(it)
+                            }
+                            Log.d("BlockUser", "Current blocked account size: ${blockedAccounts.value.size}")
+
+                        }*/
+                        return@addOnSuccessListener
+
+                    }
+                }
+                .addOnFailureListener {
+                    Log.d("BlockUser", "Failed to get blocked accounts. ${it.localizedMessage}")
+                }
+        }
+
+        currentUser?.let {
+            Log.d("BlockUser", "Block user has started in viewmodel...")
+            Log.d("BlockUser", "profile view model blocked account size: ${blockedAccounts.value.size}")
+
         }
     }
 
@@ -443,10 +482,9 @@ class ProfileViewModel : ViewModel() {
         address.value = getAddressFromLocation(context, latitude, longitude)
     }
 
-    fun getAddressFromLocation(context: Context, lat: Double, long: Double): String {
+    private fun getAddressFromLocation(context: Context, lat: Double, long: Double): String {
         val geocoder = Geocoder(context, Locale.getDefault())
         var addresses: List<Address>? = null
-        val address: Address?
         var addressText = ""
 
         try {
@@ -459,8 +497,10 @@ class ProfileViewModel : ViewModel() {
             ex.printStackTrace()
         }
 
-        address = addresses?.get(0)
-        addressText = address?.getAddressLine(0) ?: ""
+        val address: Address? = addresses?.get(0)
+        address?.let {
+            addressText = address.getAddressLine(0) ?: ""
+        }
         stateLng.value = address?.longitude.toString()
         stateLat.value = address?.latitude.toString()
 

@@ -249,12 +249,6 @@ fun SignUp(
                         Spacer(modifier = Modifier.height(6.dp))
                     }
                     item {
-                        val containsAt by remember {
-                            mutableStateOf(emailFieldState.value.contains("@") )
-                        }
-                        val containsDot by remember {
-                            mutableStateOf(emailFieldState.value.contains(".") )
-                        }
                         OrangeButton(
                             text = "Next",
                             onClick = {

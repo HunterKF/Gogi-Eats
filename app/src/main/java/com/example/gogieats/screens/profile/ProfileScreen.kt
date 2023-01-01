@@ -30,6 +30,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,10 +56,8 @@ import com.example.gogieats.screens.map.location.LocationDetails
 import com.example.gogieats.screens.profile.ProfileScreenState
 import com.example.gogieats.screens.profile.ProfileViewModel
 import com.example.gogieats.screens.util.OrangeButton
-import com.example.gogieats.ui.theme.Brown
-import com.example.gogieats.ui.theme.Orange
-import com.example.gogieats.ui.theme.Shadows
-import com.example.gogieats.ui.theme.Yellow
+import com.example.gogieats.ui.theme.*
+import com.example.gogieats.util.BlockUser
 import com.example.gogieats.util.UserViewModel
 import com.google.accompanist.flowlayout.FlowMainAxisAlignment
 import com.google.accompanist.flowlayout.FlowRow
@@ -91,12 +90,12 @@ fun ProfileScreen(
         mutableStateOf(false)
     }
 
-    println("THE PAGE HAS LOADED!!! HOLD YOUR BUNS!!!")
-    println("Current state of profile state: ${state}")
     LaunchedEffect(key1 = user) {
         println("Profile launched effect has occurred. Changing current user.")
         profileViewModel.setCurrentUser(user)
         profileViewModel.checkIfSignedIn()
+        profileViewModel.addBlockedAccount()
+
     }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -195,11 +194,14 @@ fun ProfileScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
             val displayName = profileViewModel.setDisplayName()
             val avatarUrl = profileViewModel.setAvatar()
+
             when (state) {
                 is ProfileScreenState.Loaded -> {
                     val loaded = state as ProfileScreenState.Loaded
+
 
                     if (editing.value) {
                         EditReview(
@@ -654,79 +656,132 @@ private fun ProfileSettings(
                 }) {
                 Icon(Icons.Rounded.Close, null)
             }
-            Column(modifier = Modifier
-                .padding(horizontal = 24.dp, vertical = 40.dp)
+            val profilePhoto = cameraViewModel.getProfilePhoto()
+            val currentCharCount = remember {
+                mutableStateOf(0)
+            }
+            LazyColumn(modifier = Modifier
+                .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 40.dp)
                 .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceEvenly) {
-                val profilePhoto = cameraViewModel.getProfilePhoto()
-                val currentCharCount = remember { mutableStateOf(0) }
 
-                Box(Modifier
-                    .padding(top = 20.dp, bottom = 10.dp)
-                    .fillMaxWidth(0.4f)
-                    .aspectRatio(1f)
-                    .clip(CircleShape)
-                    .clickable {
-                        viewModel.changeToSettingsCamera()
-                    }
-                    .border(2.dp, Yellow, CircleShape)) {
-                    AsyncImage(modifier = Modifier.fillMaxSize(),
-                        model = ImageRequest.Builder(context)
-                            .data(profilePhoto?.localUri ?: avatarPhoto.remoteUri)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop
-                    )
-                    Row(Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxSize()
-                        .background(Color.White.copy(0.2f)),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Rounded.PhotoCamera,
-                            stringResource(R.string.take_profile_photo),
-                            tint = Yellow,
-                            modifier = Modifier.scale(1.3f)
+
+                item {
+                    Box(Modifier
+                        .padding(top = 0.dp, bottom = 10.dp)
+                        .fillMaxWidth(0.4f)
+                        .aspectRatio(1f)
+                        .clip(CircleShape)
+                        .clickable {
+                            viewModel.changeToSettingsCamera()
+                        }
+                        .border(2.dp, Yellow, CircleShape)) {
+                        AsyncImage(modifier = Modifier.fillMaxSize(),
+                            model = ImageRequest.Builder(context)
+                                .data(profilePhoto?.localUri ?: avatarPhoto.remoteUri)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop
                         )
+                        Row(Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxSize()
+                            .background(Color.White.copy(0.2f)),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Rounded.PhotoCamera,
+                                stringResource(R.string.take_profile_photo),
+                                tint = Yellow,
+                                modifier = Modifier.scale(1.3f)
+                            )
+                        }
                     }
                 }
                 val maxChars = 15
 
-
-                CustomTextField(icon = Icons.Outlined.Person,
-                    text = "Username",
-                    label = "e.g.maxpaene",
-                    value = userNameState,
-                    modifier = modifier,
-                    maxChars = maxChars,
-                    currentCharCount = currentCharCount,
-                    context = context,
-                    focusManager = focusManager,
-                    isUserName = true,
-                    profileViewModel = viewModel,
-                    userNameAvailable = userNameAvailable,
-                    userNameChecked = userNameChecked,
-                    keyboardType = KeyboardType.Password
-                )
+                item {
+                    CustomTextField(icon = Icons.Outlined.Person,
+                        text = "Username",
+                        label = "e.g.maxpaene",
+                        value = userNameState,
+                        modifier = modifier,
+                        maxChars = maxChars,
+                        currentCharCount = currentCharCount,
+                        context = context,
+                        focusManager = focusManager,
+                        isUserName = true,
+                        profileViewModel = viewModel,
+                        userNameAvailable = userNameAvailable,
+                        userNameChecked = userNameChecked,
+                        keyboardType = KeyboardType.Password
+                    )
+                }
                 val currentUser = Firebase.auth.currentUser
 
-                OrangeButton(
-                    text = stringResource(id = R.string.update),
-                    onClick = {
-                        viewModel.updateAccount(
-                            currentUser = currentUser,
-                            userName = userNameState.value,
-                            newPhoto = profilePhoto,
-                            oldPhoto = avatarPhoto,
-                            navigateToHome = navigateToProfile
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = true
-                )
+
+                item {
+                    if (viewModel.blockedAccounts.value.isNotEmpty()) {
+
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "Blocked Accounts",
+                                style = MaterialTheme.typography.h6,
+                                textAlign = TextAlign.Left,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(15.dp))
+                                    .background(OffWhite)
+                            ) {
+                                
+                                viewModel.blockedAccounts.value.forEach {
+                                    Row(
+                                        modifier = Modifier
+                                            .padding(horizontal = 8.dp)
+                                            .fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            it.userName,
+                                            textAlign = TextAlign.Left,
+                                            style = MaterialTheme.typography.subtitle2
+                                        )
+                                        IconButton(onClick = { BlockUser.unblockUser(currentUser!!.uid, it) }) {
+                                            Icon(Icons.Rounded.Cancel, contentDescription = null, tint = Color.Red)
+                                        }
+                                    }
+                                    Spacer(Modifier.height(6.dp))
+                                }
+                            }
+
+                        }
+                    }
+                }
+                item {
+                    OrangeButton(
+                        text = stringResource(id = R.string.update),
+                        onClick = {
+                            viewModel.updateAccount(
+                                currentUser = currentUser,
+                                userName = userNameState.value,
+                                newPhoto = profilePhoto,
+                                oldPhoto = avatarPhoto,
+                                navigateToHome = navigateToProfile
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = true
+                    )
+                }
             }
         }
     }

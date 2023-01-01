@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.gogieats.data.firestore.Post
 import com.example.gogieats.data.photos.Photo
 import com.example.gogieats.screens.HomeScreen.HomeScreenState
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +31,7 @@ class HomeScreenViewModel : ViewModel() {
 
     val state = loadingState.asStateFlow()
 
+    val currentUser = Firebase.auth.currentUser
     fun getPosts(){
         viewModelScope.launch(Dispatchers.IO) {
             startObersevePosts()

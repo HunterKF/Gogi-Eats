@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -22,8 +23,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.gogieats.*
 import com.example.gogieats.R
 import com.example.gogieats.data.firestore.Post
+import com.example.gogieats.data.user.User
 import com.example.gogieats.screens.util.CustomCircularProgress
 import com.example.gogieats.ui.theme.Orange
+import com.example.gogieats.util.BlockUser
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 @Composable
 fun HomeScreen(
@@ -61,7 +66,9 @@ fun HomeScreen(
                             painter = painterResource(id = R.drawable.logo),
                             null,
 
-                            modifier = Modifier.padding(vertical = 4.dp).size(62.dp)
+                            modifier = Modifier
+                                .padding(vertical = 4.dp)
+                                .size(62.dp)
                         )
                     }
                 }
@@ -141,12 +148,44 @@ fun HomeScreenContents(posts: List<Post>) {
         contentPadding = PaddingValues(bottom = 100.dp),
         modifier = Modifier.background(Color.White)
     ) {
-        items(posts) { post ->
-            val photoList by remember {
-                mutableStateOf(post.photoList)
-            }
+        val currentUser = Firebase.auth.currentUser
+        var blockedAccounts = arrayListOf<User>()
 
-            HomeScreenItem(post, photoList)
+        currentUser?.let {
+             blockedAccounts = BlockUser.getBlockedAccounts(currentUser.uid)
+        }
+
+        items(posts) { post ->
+            val containsPost = blockedAccounts.filter { it.uid == post.userId }
+            if (containsPost.isNotEmpty()) {
+                Box(
+                    modifier = Modifier.aspectRatio(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.SpaceEvenly,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "This account was blocked.",
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "To unblock, please go to account settings.",
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                }
+
+            } else {
+                val photoList by remember {
+                    mutableStateOf(post.photoList)
+                }
+
+                HomeScreenItem(post, photoList)
+            }
         }
 
     }

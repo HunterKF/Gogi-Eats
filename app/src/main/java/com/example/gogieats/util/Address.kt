@@ -24,7 +24,9 @@ class AddressMap {
             }
 
             val address: Address? = addresses?.get(0)
-            addressText = "${address!!.subThoroughfare} ${address.thoroughfare}, ${address.subLocality}, ${address.adminArea}"
+            address?.let {
+                addressText = "${address!!.subThoroughfare} ${address.thoroughfare}, ${address.subLocality}, ${address.adminArea}"
+            }
 
             return addressText
         }
