@@ -372,7 +372,7 @@ private fun SheetContent(
                         postUser = userViewModel.user)
                 }
             } else {
-                itemsIndexed(posts.value.sortedByDescending { it.distance.toDouble() }
+                itemsIndexed(posts.value.sortedByDescending { it.distance }
                     .reversed()) { index, restaurant ->
                     Spacer(Modifier.size(10.dp))
                     RestaurantCard(restaurant, location) {

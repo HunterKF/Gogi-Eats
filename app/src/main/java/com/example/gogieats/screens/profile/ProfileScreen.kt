@@ -357,12 +357,6 @@ fun ProfileContent(
         val size = posts.size
         val lazyColumnState = rememberLazyListState()
         val scope = rememberCoroutineScope()
-        val width: Dp by animateDpAsState(
-            if (gridLayoutState.value)
-                24.dp
-            else
-                0.dp
-        )
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth(),
@@ -370,7 +364,7 @@ fun ProfileContent(
             state = lazyColumnState
         ) {
             item {
-                UserBar(displayName, avatarUrl, padding = padding)
+                UserBar(displayName, avatarUrl)
             }
             item {
                 Spacer(modifier = Modifier.height(12.dp))
@@ -419,8 +413,8 @@ fun ProfileContent(
                     }
                 }
             } else {
-                itemsIndexed(posts) { index, post ->
-                    SingleViewCard(post, onEditClick, profileViewModel = profileViewModel)
+                itemsIndexed(posts) { _, post ->
+                    SingleViewCard(post, profileViewModel = profileViewModel)
                 }
             }
         }
@@ -477,7 +471,6 @@ private fun GridViewCard(modifier: Modifier, post: Post, onClick: () -> Job) {
 @Composable
 private fun SingleViewCard(
     post: Post,
-    onEditClick: () -> Unit,
     profileViewModel: ProfileViewModel,
 ) {
 
@@ -588,7 +581,6 @@ private fun StatsBar(size: Int, modifier: Modifier = Modifier, padding: Dp) {
 private fun UserBar(
     userName: String,
     avatarUrl: Photo,
-    padding: Dp,
 ) {
     Column(
         modifier = Modifier

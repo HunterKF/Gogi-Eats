@@ -159,19 +159,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    //This is done when the camera button is clicked.
-    private fun takePhoto() {
-        if (hasCameraPermission() == PERMISSION_GRANTED && hasExternalStoragePermission() == PERMISSION_GRANTED) {
 
-        } else {
-            requestMultiplePermissions.launch(
-                arrayOf(
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                    Manifest.permission.CAMERA,
-                )
-            )
-        }
-    }
 
     private val requestMultiplePermissions = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
